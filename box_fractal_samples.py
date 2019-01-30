@@ -58,8 +58,8 @@ if __name__ == '__main__':
 	#ax.scatter(*reduced.T, s=1)
 
 	plt.scatter(*reduced.T, s=5)
-	#plt.xlabel("x")
-	#plt.ylabel("y")
-	plt.title("{} points".format(num_points))
+	plt.xlabel("x")
+	plt.ylabel("y")
+	plt.title("N={} dimensions, {} points".format(N_dim, num_points))
 	plt.show()
 	
