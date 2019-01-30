@@ -48,5 +48,7 @@ if __name__ == '__main__':
 	x_coords, y_coords = zip(*points)
 
 	plt.scatter(x_coords, y_coords)
+	plt.xlabel("x")
+	plt.ylabel("y")
 	plt.title("{} points".format(num_points))
 	plt.show()
