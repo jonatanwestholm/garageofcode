@@ -1,5 +1,6 @@
 import numpy as np
 
+
 from copy import copy
 
 class NBox:
@@ -31,22 +32,26 @@ def generate_points(b0, num_leafs):
 		b = boxes.pop(np.random.choice(len(boxes)))
 		boxes.extend(b.split())
 
-	print("Num boxes:", len(boxes))
-
-	for b in boxes:
-		yield b.sample_point()
+	return [b.sample_point() for b in boxes]
 
 if __name__ == '__main__':
+	from mpl_toolkits.mplot3d import Axes3D
 	import matplotlib.pyplot as plt
 
 	num_points = 1000
 	points_per_leaf = 1
-	points = list(generate_points(NBox(np.array([[0, 1.0], [0, 1.0]])), num_points))
+	points = list(generate_points(NBox(np.array([[0, 1.0], [0, 1.0], [0, 1.0]])), num_points))
 
-	x_coords, y_coords = zip(*points)
+	coords = zip(*points)
 
-	plt.scatter(x_coords, y_coords)
-	plt.xlabel("x")
-	plt.ylabel("y")
+	#fig = plt.figure()
+	#ax = fig.add_subplot(111, projection='3d')
+
+	fig = plt.figure()
+	ax = fig.add_subplot(111, projection='3d')
+
+	ax.scatter(*coords)
+	#plt.xlabel("x")
+	#plt.ylabel("y")
 	plt.title("{} points".format(num_points))
 	plt.show()
