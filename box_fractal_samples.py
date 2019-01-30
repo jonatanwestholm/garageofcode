@@ -1,49 +1,47 @@
 import numpy as np
 
-class Box:
-	def __init__(self, boundaries, depth=0):
+from copy import copy
+
+class NBox:
+	def __init__(self, boundaries):
 		self.boundaries = boundaries
-		self.depth = depth
+		self.N = len(self.boundaries)
 
 	def split(self):
-		u = np.random.random()
-		vertical = np.random.randint(2)
+		dim = np.random.randint(self.N)
 
-		x0, x1, y0, y1 = self.boundaries
+		x0, x1 = self.boundaries[dim]
+		mid = (x0 + x1) / 2
 
-		if vertical:
-			mid = (x0 + x1) / 2
-			bounds0 = [x0, mid, y0, y1]
-			bounds1 = [mid, x1, y0, y1]
-		else:
-			mid = (y0 + y1) / 2
-			bounds0 = [x0, x1, y0, mid]
-			bounds1 = [x0, x1, mid, y1]
+		bounds0 = copy(self.boundaries)
+		bounds1 = copy(self.boundaries)
 
-		return Box(bounds0, self.depth + 1), Box(bounds1, self.depth + 1)
+		bounds0[dim, :] = x0, mid
+		bounds1[dim, :] = mid, x1
 
-	def sample_points(self, num_points):
-		x0, x1, y0, y1 = self.boundaries
-		for _ in range(num_points):
-			x = x0 + (x1 - x0) * np.random.random()
-			y = y0 + (y1 - y0) * np.random.random()
-			yield [x, y]
+		return NBox(bounds0), NBox(bounds1)
 
-def generate_points(b0, num_leafs, points_per_leaf = 1):
+	def sample_point(self):
+		x, y = self.boundaries[:, 0], self.boundaries[:, 1]
+		return x + (y - x) * np.random.random([self.N])
+
+def generate_points(b0, num_leafs):
 	boxes = [b0]
-	for _ in range(num_leafs):
-		b = boxes.pop(np.random.choice(len(boxes))) #, p=[2**-b.depth for b in boxes]))
+	for _ in range(num_leafs - 1):
+		b = boxes.pop(np.random.choice(len(boxes)))
 		boxes.extend(b.split())
 
+	print("Num boxes:", len(boxes))
+
 	for b in boxes:
-		yield from b.sample_points(points_per_leaf)
+		yield b.sample_point()
 
 if __name__ == '__main__':
 	import matplotlib.pyplot as plt
 
 	num_points = 1000
 	points_per_leaf = 1
-	points = list(generate_points(Box([0, 1, 0, 1]), num_points, points_per_leaf))
+	points = list(generate_points(NBox(np.array([[0, 1.0], [0, 1.0]])), num_points))
 
 	x_coords, y_coords = zip(*points)
 
