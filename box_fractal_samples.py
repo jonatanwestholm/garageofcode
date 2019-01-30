@@ -38,20 +38,28 @@ if __name__ == '__main__':
 	from mpl_toolkits.mplot3d import Axes3D
 	import matplotlib.pyplot as plt
 
-	num_points = 1000
-	points_per_leaf = 1
-	points = list(generate_points(NBox(np.array([[0, 1.0], [0, 1.0], [0, 1.0]])), num_points))
+	from sklearn import decomposition
 
-	coords = zip(*points)
+	num_points = 1000
+	N_dim = 4
+	points = list(generate_points(NBox(np.array([[0, 1.0] for _ in range(N_dim)])), num_points))
+
+	coords = np.array(points)
 
 	#fig = plt.figure()
 	#ax = fig.add_subplot(111, projection='3d')
 
-	fig = plt.figure()
-	ax = fig.add_subplot(111, projection='3d')
+	pca = decomposition.PCA(n_components=2)
 
-	ax.scatter(*coords)
+	reduced = pca.fit_transform(coords)
+
+	#fig = plt.figure()
+	#ax = fig.add_subplot(111, projection='3d')
+	#ax.scatter(*reduced.T, s=1)
+
+	plt.scatter(*reduced.T, s=5)
 	#plt.xlabel("x")
 	#plt.ylabel("y")
 	plt.title("{} points".format(num_points))
 	plt.show()
+	
