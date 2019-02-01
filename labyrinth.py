@@ -4,16 +4,16 @@ from matplotlib.patches import Rectangle
 import networkx as nx
 
 def draw_labyrinth(ax, L, n, m):
-	ax.plot([0, n], [0, 0], 'k')
-	ax.plot([0, n], [m, m], 'k')
-	ax.plot([0, 0], [0, m], 'k')
-	ax.plot([n, n], [0, m], 'k')
-
 	start_tile = Rectangle((0, 0), 1, 1, facecolor='g')
 	end_tile = Rectangle((n - 1, m - 1), 1, 1, facecolor='r')
 
 	ax.add_patch(start_tile)
 	ax.add_patch(end_tile)
+
+	ax.plot([0, n], [0, 0], 'k')
+	ax.plot([0, n], [m, m], 'k')
+	ax.plot([0, 0], [0, m], 'k')
+	ax.plot([n, n], [0, m], 'k')
 
 	for i in range(n):
 		for j in range(m):
@@ -34,13 +34,6 @@ def init_grid_graph(n, m, p):
 				G.add_edge((i, j), (i + 1, j))
 	return G
 
-def get_grid_neighbours(L, n):
-	i, j = n
-	for di, dj in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
-		neigh = (i + di, j + dj)
-		if neigh in L:
-			yield neigh
-
 def connect_labyrinth(L):
 	while not nx.is_connected(L):
 		connect_components(L)
@@ -55,8 +48,15 @@ def connect_components(L):
 					L.add_edge(n, neigh)
 					return	
 
+def get_grid_neighbours(L, n):
+	i, j = n
+	for di, dj in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+		neigh = (i + di, j + dj)
+		if neigh in L:
+			yield neigh
+
 def main():
-	N = 10
+	N = 30
 	L = init_grid_graph(N, N, p=0)
 
 	connect_labyrinth(L)
@@ -65,6 +65,7 @@ def main():
 
 	draw_labyrinth(ax, L, N, N)
 
+	plt.axis("off")
 	plt.show()
 	
 
