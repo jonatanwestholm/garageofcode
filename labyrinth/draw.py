@@ -2,15 +2,15 @@ from matplotlib.patches import Rectangle
 
 def draw_labyrinth(ax, L, n, m):
     start_tile = Rectangle((0, 0), 1, 1, facecolor='g')
-    end_tile = Rectangle((n - 1, m - 1), 1, 1, facecolor='r')
+    end_tile = Rectangle((m - 1, n - 1), 1, 1, facecolor='r')
 
     ax.add_patch(start_tile)
     ax.add_patch(end_tile)
 
-    ax.plot([0, n], [0, 0], 'k')
-    ax.plot([0, n], [m, m], 'k')
-    ax.plot([0, 0], [0, m], 'k')
-    ax.plot([n, n], [0, m], 'k')
+    ax.plot([0, m], [0, 0], 'k')
+    ax.plot([0, m], [n, n], 'k')
+    ax.plot([0, 0], [0, n], 'k')
+    ax.plot([m, m], [0, n], 'k')
 
     for i in range(n):
         for j in range(m):

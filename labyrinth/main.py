@@ -59,9 +59,10 @@ def get_labyrinth_complexity(L, start, end):
             solver.Add(expected_cost == 0)
             continue
 
-        num_neighbours = len(L[node])
+        num_neighs = len(L[node])
         neigh2complexity = [node2complexity[neigh] for neigh in L[node]]
-        solver.Add(expected_cost == 1 + solver.Sum(neigh2complexity) / num_neighbours)
+        avg_neigh_complexity = solver.Sum(neigh2complexity) / num_neighs
+        solver.Add(expected_cost == 1 + avg_neigh_complexity)
 
     solver.Solve(time_limit=10)
 
@@ -70,21 +71,24 @@ def get_labyrinth_complexity(L, start, end):
 def main():
     random.seed(0)
     N = 10
+    M = N
     start = (0, 0)
-    end = (N-1, N-1)
-    L = init_grid_graph(N, N, p=0)
+    end = (N-1, M-1)
+    L = init_grid_graph(N, M, p=0)
 
     connect_labyrinth(L)
-    #node_expansion_buster(L, N, N)
+    #node_expansion_buster(L, N, M)
 
-    print(get_labyrinth_complexity(L, start, end))
+    e_steps = get_labyrinth_complexity(L, start, end)
     
     fig, ax = plt.subplots()
 
-    draw_labyrinth(ax, L, N, N)
+    draw_labyrinth(ax, L, N, M)
     
-    #nodes = nx.shortest_path(L, start, end)
-    #draw_path(ax, nodes)
+    nodes = nx.shortest_path(L, start, end)
+    draw_path(ax, nodes)
+
+    plt.title("Expected nbr of steps: {0:.0f}".format(e_steps))
 
     plt.axis("off")
     plt.show()
