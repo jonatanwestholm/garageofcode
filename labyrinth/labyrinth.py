@@ -1,31 +1,7 @@
 import time
 import random
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
 import networkx as nx
-
-def draw_labyrinth(ax, L, n, m):
-    start_tile = Rectangle((0, 0), 1, 1, facecolor='g')
-    end_tile = Rectangle((n - 1, m - 1), 1, 1, facecolor='r')
-
-    ax.add_patch(start_tile)
-    ax.add_patch(end_tile)
-
-    ax.plot([0, n], [0, 0], 'k')
-    ax.plot([0, n], [m, m], 'k')
-    ax.plot([0, 0], [0, m], 'k')
-    ax.plot([n, n], [0, m], 'k')
-
-    for i in range(n):
-        for j in range(m):
-            if (i, j + 1) not in L[(i, j)]:
-                ax.plot([j + 1, j + 1], [i, i + 1], 'k')
-            if (i + 1, j) not in L[(i, j)]:
-                ax.plot([j, j + 1], [i + 1, i + 1], 'k')
-
-def draw_path(ax, nodes):
-    for (i0, j0), (i1, j1) in zip(nodes[:-1], nodes[1:]):
-        ax.plot([j0+.5, j1+.5], [i0+.5, i1+.5], 'r', zorder=0)
 
 def init_grid_graph(n, m, p):
     G = nx.Graph()
@@ -59,17 +35,26 @@ def get_grid_neighbours(L, n):
         if neigh in L:
             yield neigh
 
+def node_expansion_buster(L, n, m):
+    for i in range(n):
+        for j in range(m):
+            if i < n - 1:
+                L.add_edge((i, j), (i + 1, j))
+            column_gate = (j % 2 == 0 and i == n - 1) or (j % 2 == 1 and i == 0)
+            if j < m - 1 and column_gate:
+                L.add_edge((i, j), (i, j + 1))
+
 def main():
-    N = 30
+    random.seed(0)
+    N = 9
     start = (0, 0)
     end = (N-1, N-1)
     L = init_grid_graph(N, N, p=0)
 
-    connect_labyrinth(L)
+    #connect_labyrinth(L)
+    node_expansion_buster(L, N, N)
     
-    t0 = time.time()
     nodes = nx.shortest_path(L, start, end)
-    print("Solve time: {0:.5f}s".format(time.time() - t0))
 
     fig, ax = plt.subplots()
 
