@@ -3,6 +3,10 @@ import random
 import matplotlib.pyplot as plt
 import networkx as nx
 
+from common.utils import flatten_simple
+from mip.solver import get_solver, solution_value
+from labyrinth.draw import draw_labyrinth, draw_path
+
 def init_grid_graph(n, m, p):
     G = nx.Graph()
     for i in range(n):
@@ -44,26 +48,46 @@ def node_expansion_buster(L, n, m):
             if j < m - 1 and column_gate:
                 L.add_edge((i, j), (i, j + 1))
 
+def get_labyrinth_complexity(L, start, end):
+    solver = get_solver("CBC")
+
+    node2complexity = dict([(node, solver.NumVar(lb=0)) for node in L])
+
+    for node in L:
+        expected_cost = node2complexity[node]
+        if node == end:
+            solver.Add(expected_cost == 0)
+            continue
+
+        num_neighbours = len(L[node])
+        neigh2complexity = [node2complexity[neigh] for neigh in L[node]]
+        solver.Add(expected_cost == 1 + solver.Sum(neigh2complexity) / num_neighbours)
+
+    solver.Solve(time_limit=10)
+
+    return solution_value(node2complexity[start])
+
 def main():
     random.seed(0)
-    N = 9
+    N = 10
     start = (0, 0)
     end = (N-1, N-1)
     L = init_grid_graph(N, N, p=0)
 
-    #connect_labyrinth(L)
-    node_expansion_buster(L, N, N)
-    
-    nodes = nx.shortest_path(L, start, end)
+    connect_labyrinth(L)
+    #node_expansion_buster(L, N, N)
 
+    print(get_labyrinth_complexity(L, start, end))
+    
     fig, ax = plt.subplots()
 
     draw_labyrinth(ax, L, N, N)
-    draw_path(ax, nodes)
+    
+    #nodes = nx.shortest_path(L, start, end)
+    #draw_path(ax, nodes)
 
     plt.axis("off")
     plt.show()
-    
 
 if __name__ == '__main__':
     main()
