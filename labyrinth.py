@@ -1,3 +1,4 @@
+import time
 import random
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
@@ -22,6 +23,9 @@ def draw_labyrinth(ax, L, n, m):
 			if (i + 1, j) not in L[(i, j)]:
 				ax.plot([j, j + 1], [i + 1, i + 1], 'k')
 
+def draw_path(ax, nodes):
+	for (i0, j0), (i1, j1) in zip(nodes[:-1], nodes[1:]):
+		ax.plot([j0+.5, j1+.5], [i0+.5, i1+.5], 'r', zorder=0)
 
 def init_grid_graph(n, m, p):
 	G = nx.Graph()
@@ -57,13 +61,20 @@ def get_grid_neighbours(L, n):
 
 def main():
 	N = 30
+	start = (0, 0)
+	end = (N-1, N-1)
 	L = init_grid_graph(N, N, p=0)
 
 	connect_labyrinth(L)
 	
+	t0 = time.time()
+	nodes = nx.shortest_path(L, start, end)
+	print("Solve time: {0:.5f}s".format(time.time() - t0))
+
 	fig, ax = plt.subplots()
 
 	draw_labyrinth(ax, L, N, N)
+	draw_path(ax, nodes)
 
 	plt.axis("off")
 	plt.show()
