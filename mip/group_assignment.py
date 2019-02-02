@@ -1,5 +1,5 @@
-from utils import transpose, flatten_simple, print_dataframe
-from solver import get_solver, solution_value
+from common.utils import transpose, flatten_simple, print_dataframe
+from mip.solver import get_solver, solution_value
 
 def main():
     solver = get_solver("CBC")

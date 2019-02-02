@@ -1,4 +1,3 @@
-
 def flatten_simple(lst):
     return [elem for sublist in lst for elem in sublist]
 
