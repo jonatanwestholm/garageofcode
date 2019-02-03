@@ -48,6 +48,16 @@ def node_expansion_buster(L, n, m):
             if j < m - 1 and column_gate:
                 L.add_edge((i, j), (i, j + 1))
 
+def bfs_buster(L, n, m):
+    for i in range(n):
+        for j in range(m):
+            if j < m - 2:
+                L.add_edge((i, j), (i, j + 1))
+            if (j == 0 or j == m - 1) and i < n - 1:
+                L.add_edge((i, j), (i + 1, j))
+
+    L.add_edge((0, m - 2), (0, m - 1))
+
 def get_labyrinth_complexity(L, start, end):
     solver = get_solver("CBC")
 
@@ -76,18 +86,22 @@ def main():
     end = (N-1, M-1)
     L = init_grid_graph(N, M, p=0)
 
-    connect_labyrinth(L)
+    #connect_labyrinth(L)
+    bfs_buster(L, N, M)
 
-    e_steps = get_labyrinth_complexity(L, start, end)
+    #e_steps = get_labyrinth_complexity(L, start, end)
     
     fig, ax = plt.subplots()
 
     draw_labyrinth(ax, L, N, M)
     
-    nodes = nx.shortest_path(L, start, end)
-    draw_path(ax, nodes)
+    #nodes = nx.shortest_path(L, start, end)
+    #draw_path(ax, nodes)
+    for node in L:
+        nodes = nx.shortest_path(L, node, end)
+        draw_path(ax, nodes)
 
-    plt.title("Expected nbr of steps: {0:.0f}".format(e_steps))
+    #plt.title("Expected nbr of steps: {0:.0f}".format(e_steps))
 
     plt.axis("off")
     plt.show()
