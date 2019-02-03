@@ -1,3 +1,4 @@
+import numpy as np
 import heapq
 
 def flatten_simple(lst):
@@ -15,6 +16,17 @@ def print_dataframe(X, rownames=None, colnames=None, spacing=10, ignore0=True):
     print(" "*spacing + "".join([colname.rjust(spacing) for colname in colnames]))
     for row, rowname in zip(X, rownames):
         print(rowname.ljust(spacing) + "".join([str(val).rjust(spacing) if val else " "*spacing for val in row]))
+
+def shuffled(iterable): 
+	"""
+	Returns a generator for the elements of the
+	iterable in a random order
+	"""
+	lst = list(iterable)
+	N = len(lst)
+	order = np.random.choice(N, N, replace=False)
+	for i in order:
+		yield lst[i]
 
 class Heap:
 	"""

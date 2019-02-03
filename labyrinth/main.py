@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from common.utils import flatten_simple
+from common.utils import flatten_simple, shuffled
 from mip.solver import get_solver, solution_value
 from labyrinth.draw import draw_labyrinth, draw_path
 from common.bfs import bfs_solve
@@ -26,11 +26,10 @@ def connect_labyrinth(L):
         components = connect_components(L, components)
 
 def connect_components(L, components):
-    for c in components:
-        for n in random.sample(c, len(c)):
+    for c in shuffled(components):
+        for n in shuffled(c):
             neighbours = list(get_grid_neighbours(L, n))
-            random.shuffle(neighbours)
-            for neigh in neighbours:
+            for neigh in shuffled(neighbours):
                 if neigh not in c:
                     neigh_c = nx.node_connected_component(L, neigh)
                     components.remove(c)
@@ -118,14 +117,15 @@ def mc_bfs(N, M, num_iter, start, end):
 
 def main():
     #random.seed(0)
-    N = 100
+    N = 10
     M = N
     start = (0, 0)
     end = (N - 1, M - 1)
 
-    #mc_bfs(N, M, 50, start, end)
+    mc_bfs(N, M, 1000, start, end)
 
-    #return
+    return
+
     L = init_grid_graph(N, M, p=0)
 
     t0 = time.time()
