@@ -139,19 +139,20 @@ def main_draw_search_tree(ax, T, start=None, end=None):
     return "\n".join(title)
 
 def main():
-    #random.seed(1)
+    random.seed(1)
     N = 10
     M = N
     start = (0, 0)
     end = (N - 1, M - 1)
 
-    mc_search_score(bfs, N, M, 1000, start, end)
+    mc_search_score(dfs, N, M, 10000, start, end)
     return
 
     L = init_grid_graph(N, M, p=0)
 
     t0 = time.time()
-    connect_labyrinth(L)
+    bfs_buster(L, N, M)
+    #connect_labyrinth(L)
     t1 = time.time()
     print("Is tree:", nx.is_tree(L))
     print("Is connected:", nx.is_connected(L))
