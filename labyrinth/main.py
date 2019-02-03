@@ -20,20 +20,6 @@ def init_grid_graph(n, m, p):
                 G.add_edge((i, j), (i + 1, j))
     return G
 
-def _connect_labyrinth(L):
-    while not nx.is_connected(L):
-        _connect_components(L)
-
-def _connect_components(L):
-    for c in nx.connected_components(L):
-        for n in random.sample(c, len(c)):
-            neighbours = list(get_grid_neighbours(L, n))
-            random.shuffle(neighbours)
-            for neigh in neighbours:
-                if neigh not in c:
-                    L.add_edge(n, neigh)
-                    return  
-
 def connect_labyrinth(L):
     components = list(nx.connected_components(L))
     while len(components) > 1:
