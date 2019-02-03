@@ -77,7 +77,6 @@ def main():
     L = init_grid_graph(N, M, p=0)
 
     connect_labyrinth(L)
-    #node_expansion_buster(L, N, M)
 
     e_steps = get_labyrinth_complexity(L, start, end)
     
