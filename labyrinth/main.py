@@ -1,5 +1,6 @@
 import time
 import random
+import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -79,25 +80,50 @@ def get_labyrinth_complexity(L, start, end):
 
     return solution_value(node2complexity[start])
 
-def mc_bfs(N, M, num_iter, start=None, end=None):
-    if start is None:
-        pass
+def bfs_score(L, start, end):
+    depth, expanded = bfs_solve(L, start, end)
+    sp_nodes = nx.shortest_path(L, start, end)
+    dead_end_nodes = expanded - set(sp_nodes)
+    total_edges_passed = len(sp_nodes) - 1 + 2*len(dead_end_nodes) 
+    return len(sp_nodes), total_edges_passed
+
+def mc_bfs(N, M, num_iter, start, end):
+    sp_lengths = []
+    costs = []
+    for _ in range(num_iter):
+        L = init_grid_graph(N, M, p=0)
+        connect_labyrinth(L)
+        sp_len, cost = bfs_score(L, start, end)
+        sp_lengths.append(sp_len)
+        costs.append(cost)
+
+    sp_lengths = np.array(sp_lengths)
+    costs = np.array(costs)
+
+    sp_avg = np.mean(sp_lengths)
+    sp_std = np.std(sp_lengths)
+    cost_avg = np.mean(costs)
+    cost_std = np.std(costs)
+
+    print("BFS, empirical figures, {} iterations".format(num_iter))
+    print("N={0:d}, M={1:d}".format(N, M))
+    print("Shortest path avg: {0:.1f}, std: {1:.1f}".format(sp_avg, sp_std))
+    print("Search cost   avg: {0:.1f}, std: {1:.1f}".format(cost_avg, cost_std))
 
 def main():
     #random.seed(0)
-    N = 10
+    N = 30
     M = N
     start = (0, 0)
     end = (N - 1, M - 1)
+
+    mc_bfs(N, M, 50, start, end)
+
+    return
     L = init_grid_graph(N, M, p=0)
 
     #connect_labyrinth(L)
     bfs_buster(L, N, M)
-    depth, expanded = bfs_solve(L, start, end)
-    sp_nodes = nx.shortest_path(L, start, end)
-    dead_end_nodes = expanded - set(sp_nodes)
-
-    total_edges_passed = len(sp_nodes) - 1 + 2*len(dead_end_nodes) 
 
     #print("End found at depth:", depth)
     #print("Nbr expanded nodes:", num_expanded)
@@ -118,7 +144,10 @@ def main():
     #plt.title("Expected nbr of steps: {0:.0f}".format(e_steps))
     title = ["Direct path nodes: {0:d}".format(len(sp_nodes)),
             "Dead end nodes: {0:d}".format(len(dead_end_nodes)),
-            "Total edges passed: {0:d}".format(total_edges_passed)]
+            "Total edges passed: {0:d} - 1 + 2*{1:d} = {2:d}".format(
+                                    len(sp_nodes),
+                                    len(dead_end_nodes),
+                                    total_edges_passed)]
     plt.title("\n".join(title))
     plt.axis("off")
     plt.show()
