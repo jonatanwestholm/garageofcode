@@ -35,25 +35,27 @@ class Heap:
 	Calls to heapq lib is done behind the scenes.
 	Naturally handles keys
 	"""
-	def __init__(self, lst=[], key=None):
+	def __init__(self, lst=None, key=None):
+		if lst is None:
+			lst = []
 		self.key = key
 		if self.key is None:
-			self._h = lst
+			self.h = lst
 		else:
-			self._h = [(self.key(elem), elem) for elem in lst]
-		heapq.heapify(self._h)
+			self.h = [(self.key(elem), elem) for elem in lst]
+		heapq.heapify(self.h)
 
 	def pop(self):
-		return heapq.heappop(self._h)
+		return heapq.heappop(self.h)
 
 	def push(self, elem):
 		if self.key is None:
-			return heapq.heappush(self._h, elem)
+			return heapq.heappush(self.h, elem)
 		else:
-			return heapq.heappush(self._h, (self.key(elem), elem))
+			return heapq.heappush(self.h, (self.key(elem), elem))
 
 	def __len__(self):
-		return len(self._h)
+		return len(self.h)
 
 if __name__ == '__main__':
 	h = Heap([10, 20, 6], key=lambda x: x**2)

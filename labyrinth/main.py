@@ -89,37 +89,9 @@ def get_labyrinth_complexity(L, start, end):
 
 def search_score(algo, L, start, end):
     T = algo(L, start, end)
-    return 0, 0
-    time.sleep(0.1)
-    
-    try:
-        path_nodes = nx.shortest_path(T, start, end)
-        print("Success")
-        '''
-        fig, ax = plt.subplots()
-
-        draw_labyrinth(ax, L, start, end, 10, 10)
-        title = main_draw_search_tree(ax, T)
-
-        plt.title(title)
-        plt.axis("off")
-        plt.show()
-        '''
-    except (nx.exception.NetworkXNoPath, nx.exception.NodeNotFound):
-        print("Fail")
-        '''
-        fig, ax = plt.subplots()
-
-        draw_labyrinth(ax, L, start, end, 10, 10)
-        title = main_draw_search_tree(ax, T)
-
-        plt.title(title)
-        plt.axis("off")
-        plt.show()
-        '''
-        return 0, 0
-    dead_end_nodes = T.nodes - set(path_nodes)
-    total_edges_passed = len(path_nodes) - 1 + 2*len(dead_end_nodes) 
+    path_nodes = nx.shortest_path(T, start, end)
+    backtrack_nodes = T.nodes - set(path_nodes)
+    total_edges_passed = len(path_nodes) - 1 + 2*len(backtrack_nodes)
     return len(path_nodes), total_edges_passed
 
 def mc_search_score(algo, N, M, num_iter, start, end):
@@ -154,15 +126,15 @@ def main_draw_search_tree(ax, T, start=None, end=None):
     path_nodes = nx.shortest_path(T, start, end)
     draw_path(ax, path_nodes, zorder=99, c='b', linewidth=3)
 
-    dead_end_nodes = T.nodes - set(path_nodes)
-    total_edges_passed = len(path_nodes) - 1 + 2*len(dead_end_nodes) 
+    backtrack_nodes = T.nodes - set(path_nodes)
+    total_edges_passed = len(path_nodes) - 1 + 2*len(backtrack_nodes) 
 
     #plt.title("Expected nbr of steps: {0:.0f}".format(e_steps))
     title = ["Direct path nodes: {0:d}".format(len(path_nodes)),
-            "Dead end nodes: {0:d}".format(len(dead_end_nodes)),
+            "Dead end nodes: {0:d}".format(len(backtrack_nodes)),
             "Total edges passed: {0:d} - 1 + 2*{1:d} = {2:d}".format(
                                     len(path_nodes),
-                                    len(dead_end_nodes),
+                                    len(backtrack_nodes),
                                     total_edges_passed)]
     return "\n".join(title)
 
@@ -171,7 +143,7 @@ def main():
     N = 10
     M = N
     start = (0, 0)
-    end = (N // 2 - 1, M // 2 - 1)
+    end = (N - 1, M - 1)
 
     mc_search_score(bfs, N, M, 1000, start, end)
     return
