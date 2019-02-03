@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import heapq
 
 def flatten_simple(lst):
@@ -24,7 +25,7 @@ def shuffled(iterable):
 	"""
 	lst = list(iterable)
 	N = len(lst)
-	order = np.random.choice(N, N, replace=False)
+	order = random.sample(range(N), N)
 	for i in order:
 		yield lst[i]
 

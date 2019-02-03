@@ -6,8 +6,10 @@ import networkx as nx
 
 from common.utils import flatten_simple, shuffled
 from mip.solver import get_solver, solution_value
-from labyrinth.draw import draw_labyrinth, draw_path
-from common.bfs import bfs_solve
+from labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree
+from common.search import bfs, dfs
+
+algo2name = {bfs: "BFS", dfs: "DFS"}
 
 def init_grid_graph(n, m, p):
     G = nx.Graph()
@@ -85,45 +87,93 @@ def get_labyrinth_complexity(L, start, end):
 
     return solution_value(node2complexity[start])
 
-def bfs_score(L, start, end):
-    depth, expanded = bfs_solve(L, start, end)
-    sp_nodes = nx.shortest_path(L, start, end)
-    dead_end_nodes = expanded - set(sp_nodes)
-    total_edges_passed = len(sp_nodes) - 1 + 2*len(dead_end_nodes) 
-    return len(sp_nodes), total_edges_passed
+def search_score(algo, L, start, end):
+    T = algo(L, start, end)
+    return 0, 0
+    time.sleep(0.1)
+    
+    try:
+        path_nodes = nx.shortest_path(T, start, end)
+        print("Success")
+        '''
+        fig, ax = plt.subplots()
 
-def mc_bfs(N, M, num_iter, start, end):
-    sp_lengths = []
+        draw_labyrinth(ax, L, start, end, 10, 10)
+        title = main_draw_search_tree(ax, T)
+
+        plt.title(title)
+        plt.axis("off")
+        plt.show()
+        '''
+    except (nx.exception.NetworkXNoPath, nx.exception.NodeNotFound):
+        print("Fail")
+        '''
+        fig, ax = plt.subplots()
+
+        draw_labyrinth(ax, L, start, end, 10, 10)
+        title = main_draw_search_tree(ax, T)
+
+        plt.title(title)
+        plt.axis("off")
+        plt.show()
+        '''
+        return 0, 0
+    dead_end_nodes = T.nodes - set(path_nodes)
+    total_edges_passed = len(path_nodes) - 1 + 2*len(dead_end_nodes) 
+    return len(path_nodes), total_edges_passed
+
+def mc_search_score(algo, N, M, num_iter, start, end):
+    path_lengths = []
     costs = []
     for _ in range(num_iter):
         L = init_grid_graph(N, M, p=0)
         connect_labyrinth(L)
-        sp_len, cost = bfs_score(L, start, end)
-        sp_lengths.append(sp_len)
+        path_len, cost = search_score(algo, L, start, end)
+        path_lengths.append(path_len)
         costs.append(cost)
 
-    sp_lengths = np.array(sp_lengths)
+    path_lengths = np.array(path_lengths)
     costs = np.array(costs)
 
-    sp_avg = np.mean(sp_lengths)
-    sp_std = np.std(sp_lengths)
+    path_avg = np.mean(path_lengths)
+    path_std = np.std(path_lengths)
     cost_avg = np.mean(costs)
     cost_std = np.std(costs)
 
-    print("BFS, empirical figures, {} iterations".format(num_iter))
+    print("{0:s}, empirical figures, {1:d} iterations".format(algo2name[algo], num_iter))
     print("N={0:d}, M={1:d}".format(N, M))
-    print("Shortest path avg: {0:.1f}, std: {1:.1f}".format(sp_avg, sp_std))
-    print("Search cost   avg: {0:.1f}, std: {1:.1f}".format(cost_avg, cost_std))
+    print("Path length avg: {0:.1f}, std: {1:.1f}".format(path_avg, path_std))
+    print("Search cost avg: {0:.1f}, std: {1:.1f}".format(cost_avg, cost_std))
+
+def main_draw_search_tree(ax, T, start=None, end=None):
+    draw_search_tree(ax, T, zorder=0, c='r')
+
+    if start is None or end is None:
+        return ""
+
+    path_nodes = nx.shortest_path(T, start, end)
+    draw_path(ax, path_nodes, zorder=99, c='b', linewidth=3)
+
+    dead_end_nodes = T.nodes - set(path_nodes)
+    total_edges_passed = len(path_nodes) - 1 + 2*len(dead_end_nodes) 
+
+    #plt.title("Expected nbr of steps: {0:.0f}".format(e_steps))
+    title = ["Direct path nodes: {0:d}".format(len(path_nodes)),
+            "Dead end nodes: {0:d}".format(len(dead_end_nodes)),
+            "Total edges passed: {0:d} - 1 + 2*{1:d} = {2:d}".format(
+                                    len(path_nodes),
+                                    len(dead_end_nodes),
+                                    total_edges_passed)]
+    return "\n".join(title)
 
 def main():
-    #random.seed(0)
+    #random.seed(1)
     N = 10
     M = N
     start = (0, 0)
-    end = (N - 1, M - 1)
+    end = (N // 2 - 1, M // 2 - 1)
 
-    mc_bfs(N, M, 1000, start, end)
-
+    mc_search_score(bfs, N, M, 1000, start, end)
     return
 
     L = init_grid_graph(N, M, p=0)
@@ -138,30 +188,18 @@ def main():
 
     #print("End found at depth:", depth)
     #print("Nbr expanded nodes:", num_expanded)
+    random.seed(time.time())
 
-    return
+    T = bfs(L, start, end)
+
+    #return
 
     fig, ax = plt.subplots()
 
     draw_labyrinth(ax, L, start, end, N, M)
-    
-    #nodes = nx.shortest_path(L, start, end)
-    #draw_path(ax, nodes)
-    '''
-    for node in dead_end_nodes:
-        nodes = nx.shortest_path(L, node, end)
-        draw_path(ax, nodes, zorder=0, c='r')
-    draw_path(ax, sp_nodes, zorder=99, c='b', linewidth=3)
+    title = main_draw_search_tree(ax, T, start, end)
 
-    #plt.title("Expected nbr of steps: {0:.0f}".format(e_steps))
-    title = ["Direct path nodes: {0:d}".format(len(sp_nodes)),
-            "Dead end nodes: {0:d}".format(len(dead_end_nodes)),
-            "Total edges passed: {0:d} - 1 + 2*{1:d} = {2:d}".format(
-                                    len(sp_nodes),
-                                    len(dead_end_nodes),
-                                    total_edges_passed)]
-    plt.title("\n".join(title))
-    '''
+    plt.title(title)
     plt.axis("off")
     plt.show()
 

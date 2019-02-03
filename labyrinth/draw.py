@@ -3,7 +3,7 @@ from matplotlib.patches import Rectangle
 
 def draw_patch(ax, node, **kwargs):
     i, j = node
-    patch = Rectangle((j, i), 1, 1, **kwargs)
+    patch = Rectangle((j + 0.1, i + 0.1), 0.8, 0.8, **kwargs)
     ax.add_patch(patch)
 
 def draw_labyrinth(ax, L, start, end, n, m):
@@ -25,5 +25,7 @@ def draw_labyrinth(ax, L, start, end, n, m):
 def draw_path(ax, nodes, **kwargs):
     i_coords, j_coords = zip(*nodes)
     ax.step(np.array(j_coords) + 0.5, np.array(i_coords) + 0.5, **kwargs)
-    #for (i0, j0), (i1, j1) in zip(nodes[:-1], nodes[1:]):
-    #    ax.plot([j0+.5, j1+.5], [i0+.5, i1+.5], **kwargs)
+
+def draw_search_tree(ax, T, **kwargs):
+    for (i0, j0), (i1, j1) in T.edges:
+        ax.plot([j0 + 0.5, j1 + 0.5], [i0 + 0.5, i1 + 0.5], **kwargs)
