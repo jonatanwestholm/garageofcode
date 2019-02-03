@@ -28,18 +28,18 @@ def connect_labyrinth(L):
         components = connect_components(L, components)
 
 def connect_components(L, components):
-    for c in shuffled(components):
-        for n in shuffled(c):
-            neighbours = list(get_grid_neighbours(L, n))
-            for neigh in shuffled(neighbours):
-                if neigh not in c:
-                    neigh_c = nx.node_connected_component(L, neigh)
-                    components.remove(c)
-                    components.remove(neigh_c)
-                    c.update(neigh_c)
-                    components.append(c)
-                    L.add_edge(n, neigh)
-                    return components
+    c = random.choice(components)
+    for n in shuffled(c):
+        neighbours = list(get_grid_neighbours(L, n))
+        for neigh in shuffled(neighbours):
+            if neigh not in c:
+                neigh_c = nx.node_connected_component(L, neigh)
+                components.remove(c)
+                components.remove(neigh_c)
+                c.update(neigh_c)
+                components.append(c)
+                L.add_edge(n, neigh)
+                return components
 
 def get_grid_neighbours(L, n):
     i, j = n
@@ -98,8 +98,10 @@ def mc_search_score(algo, N, M, num_iter, start, end):
     path_lengths = []
     costs = []
     for _ in range(num_iter):
+        random.seed(time.time())
         L = init_grid_graph(N, M, p=0)
         connect_labyrinth(L)
+        random.seed(time.time())
         path_len, cost = search_score(algo, L, start, end)
         path_lengths.append(path_len)
         costs.append(cost)
@@ -140,24 +142,25 @@ def main_draw_search_tree(ax, T, start=None, end=None):
 
 def main():
     random.seed(1)
-    N = 10
+    N = 100
     M = N
     start = (0, 0)
-    end = (N - 1, M - 1)
+    end = (N // 2 - 1, M // 2 - 1)
 
-    mc_search_score(dfs, N, M, 10000, start, end)
-    return
+    #mc_search_score(bfs, N, M, 1000, start, end)
+    #return
 
     L = init_grid_graph(N, M, p=0)
 
     t0 = time.time()
-    bfs_buster(L, N, M)
-    #connect_labyrinth(L)
+    #bfs_buster(L, N, M)
+    connect_labyrinth(L)
     t1 = time.time()
     print("Is tree:", nx.is_tree(L))
     print("Is connected:", nx.is_connected(L))
     print("Time: {0:.3f}s".format(t1 - t0))
     #bfs_buster(L, N, M)
+    return
 
     #print("End found at depth:", depth)
     #print("Nbr expanded nodes:", num_expanded)

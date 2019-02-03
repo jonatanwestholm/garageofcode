@@ -22,8 +22,12 @@ def shuffled(iterable):
 	"""
 	Returns a generator for the elements of the
 	iterable in a random order
+	Warning: slow
 	"""
-	lst = list(iterable)
+	if type(iterable) is not type([]):
+		lst = list(iterable)
+	else:
+		lst = iterable
 	N = len(lst)
 	order = random.sample(range(N), N)
 	for i in order:

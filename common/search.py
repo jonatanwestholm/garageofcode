@@ -15,7 +15,7 @@ def bfs(G, start, end):
         expanded_nodes.add(node)
         if node == end:
             break
-        for neigh in G[node]:
+        for neigh in shuffled(G[node]):
             if neigh not in expanded_nodes:
                 T.add_edge(node, neigh)
                 heap.push((depth + 1, neigh))
