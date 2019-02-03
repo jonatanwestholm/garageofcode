@@ -6,6 +6,7 @@ import networkx as nx
 from common.utils import flatten_simple
 from mip.solver import get_solver, solution_value
 from labyrinth.draw import draw_labyrinth, draw_path
+from common.bfs import bfs_solve
 
 def init_grid_graph(n, m, p):
     G = nx.Graph()
@@ -88,9 +89,12 @@ def main():
 
     #connect_labyrinth(L)
     bfs_buster(L, N, M)
+    depth, num_expanded = bfs_solve(L, start, end)
+    print("End found at depth:", depth)
+    print("Nbr expanded nodes:", num_expanded)
 
-    #e_steps = get_labyrinth_complexity(L, start, end)
-    
+    return
+
     fig, ax = plt.subplots()
 
     draw_labyrinth(ax, L, N, M)
