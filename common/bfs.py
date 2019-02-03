@@ -9,7 +9,7 @@ def bfs_solve(G, start, end):
 		depth, node = h.pop()
 		expanded_nodes.add(node)
 		if node == end:
-			return depth, len(expanded_nodes)
+			return depth, expanded_nodes
 		for neigh in G[node]:
 			if neigh not in expanded_nodes:
 				h.push((depth + 1, neigh))

@@ -79,34 +79,47 @@ def get_labyrinth_complexity(L, start, end):
 
     return solution_value(node2complexity[start])
 
+def mc_bfs(N, M, num_iter, start=None, end=None):
+    if start is None:
+        pass
+
 def main():
-    random.seed(0)
+    #random.seed(0)
     N = 10
     M = N
     start = (0, 0)
-    end = (N-1, M-1)
+    end = (N - 1, M - 1)
     L = init_grid_graph(N, M, p=0)
 
     #connect_labyrinth(L)
     bfs_buster(L, N, M)
-    depth, num_expanded = bfs_solve(L, start, end)
-    print("End found at depth:", depth)
-    print("Nbr expanded nodes:", num_expanded)
+    depth, expanded = bfs_solve(L, start, end)
+    sp_nodes = nx.shortest_path(L, start, end)
+    dead_end_nodes = expanded - set(sp_nodes)
 
-    return
+    total_edges_passed = len(sp_nodes) - 1 + 2*len(dead_end_nodes) 
+
+    #print("End found at depth:", depth)
+    #print("Nbr expanded nodes:", num_expanded)
+
+    #return
 
     fig, ax = plt.subplots()
 
-    draw_labyrinth(ax, L, N, M)
+    draw_labyrinth(ax, L, start, end, N, M)
     
     #nodes = nx.shortest_path(L, start, end)
     #draw_path(ax, nodes)
-    for node in L:
+    for node in dead_end_nodes:
         nodes = nx.shortest_path(L, node, end)
-        draw_path(ax, nodes)
+        draw_path(ax, nodes, zorder=0, c='r')
+    draw_path(ax, sp_nodes, zorder=99, c='b', linewidth=3)
 
     #plt.title("Expected nbr of steps: {0:.0f}".format(e_steps))
-
+    title = ["Direct path nodes: {0:d}".format(len(sp_nodes)),
+            "Dead end nodes: {0:d}".format(len(dead_end_nodes)),
+            "Total edges passed: {0:d}".format(total_edges_passed)]
+    plt.title("\n".join(title))
     plt.axis("off")
     plt.show()
 
