@@ -147,8 +147,8 @@ def main():
     start = (0, 0)
     end = (N // 2 - 1, M // 2 - 1)
 
-    #mc_search_score(bfs, N, M, 1000, start, end)
-    #return
+    mc_search_score(bfs, N, M, 1000, start, end)
+    return
 
     L = init_grid_graph(N, M, p=0)
 
