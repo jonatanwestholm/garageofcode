@@ -1,11 +1,14 @@
+import numpy as np
 from matplotlib.patches import Rectangle
 
-def draw_labyrinth(ax, L, n, m):
-    start_tile = Rectangle((0, 0), 1, 1, facecolor='g')
-    end_tile = Rectangle((m - 1, n - 1), 1, 1, facecolor='r')
+def draw_patch(ax, node, **kwargs):
+    i, j = node
+    patch = Rectangle((j, i), 1, 1, **kwargs)
+    ax.add_patch(patch)
 
-    ax.add_patch(start_tile)
-    ax.add_patch(end_tile)
+def draw_labyrinth(ax, L, start, end, n, m):
+    draw_patch(ax, start, facecolor='g', zorder=100)
+    draw_patch(ax, end, facecolor='r', zorder=100)
 
     ax.plot([0, m], [0, 0], 'k')
     ax.plot([0, m], [n, n], 'k')
@@ -19,6 +22,8 @@ def draw_labyrinth(ax, L, n, m):
             if (i + 1, j) not in L[(i, j)]:
                 ax.plot([j, j + 1], [i + 1, i + 1], 'k')
 
-def draw_path(ax, nodes):
-    for (i0, j0), (i1, j1) in zip(nodes[:-1], nodes[1:]):
-        ax.plot([j0+.5, j1+.5], [i0+.5, i1+.5], 'r', zorder=0)
+def draw_path(ax, nodes, **kwargs):
+    i_coords, j_coords = zip(*nodes)
+    ax.step(np.array(j_coords) + 0.5, np.array(i_coords) + 0.5, **kwargs)
+    #for (i0, j0), (i1, j1) in zip(nodes[:-1], nodes[1:]):
+    #    ax.plot([j0+.5, j1+.5], [i0+.5, i1+.5], **kwargs)
