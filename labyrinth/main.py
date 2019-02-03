@@ -20,11 +20,11 @@ def init_grid_graph(n, m, p):
                 G.add_edge((i, j), (i + 1, j))
     return G
 
-def connect_labyrinth(L):
+def _connect_labyrinth(L):
     while not nx.is_connected(L):
-        connect_components(L)
+        _connect_components(L)
 
-def connect_components(L):
+def _connect_components(L):
     for c in nx.connected_components(L):
         for n in random.sample(c, len(c)):
             neighbours = list(get_grid_neighbours(L, n))
@@ -33,6 +33,26 @@ def connect_components(L):
                 if neigh not in c:
                     L.add_edge(n, neigh)
                     return  
+
+def connect_labyrinth(L):
+    components = list(nx.connected_components(L))
+    while len(components) > 1:
+        components = connect_components(L, components)
+
+def connect_components(L, components):
+    for c in components:
+        for n in random.sample(c, len(c)):
+            neighbours = list(get_grid_neighbours(L, n))
+            random.shuffle(neighbours)
+            for neigh in neighbours:
+                if neigh not in c:
+                    neigh_c = nx.node_connected_component(L, neigh)
+                    components.remove(c)
+                    components.remove(neigh_c)
+                    c.update(neigh_c)
+                    components.append(c)
+                    L.add_edge(n, neigh)
+                    return components
 
 def get_grid_neighbours(L, n):
     i, j = n
@@ -112,23 +132,28 @@ def mc_bfs(N, M, num_iter, start, end):
 
 def main():
     #random.seed(0)
-    N = 30
+    N = 100
     M = N
     start = (0, 0)
     end = (N - 1, M - 1)
 
-    mc_bfs(N, M, 50, start, end)
+    #mc_bfs(N, M, 50, start, end)
 
-    return
+    #return
     L = init_grid_graph(N, M, p=0)
 
-    #connect_labyrinth(L)
-    bfs_buster(L, N, M)
+    t0 = time.time()
+    connect_labyrinth(L)
+    t1 = time.time()
+    print("Is tree:", nx.is_tree(L))
+    print("Is connected:", nx.is_connected(L))
+    print("Time: {0:.3f}s".format(t1 - t0))
+    #bfs_buster(L, N, M)
 
     #print("End found at depth:", depth)
     #print("Nbr expanded nodes:", num_expanded)
 
-    #return
+    return
 
     fig, ax = plt.subplots()
 
@@ -136,6 +161,7 @@ def main():
     
     #nodes = nx.shortest_path(L, start, end)
     #draw_path(ax, nodes)
+    '''
     for node in dead_end_nodes:
         nodes = nx.shortest_path(L, node, end)
         draw_path(ax, nodes, zorder=0, c='r')
@@ -149,6 +175,7 @@ def main():
                                     len(dead_end_nodes),
                                     total_edges_passed)]
     plt.title("\n".join(title))
+    '''
     plt.axis("off")
     plt.show()
 
