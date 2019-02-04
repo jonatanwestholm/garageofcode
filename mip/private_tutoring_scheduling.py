@@ -4,6 +4,9 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 import random
 from collections import defaultdict
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+
 from common.utils import transpose, flatten_simple
 from mip.solver import get_solver, solution_value
 
@@ -49,6 +52,33 @@ def get_total_time_span(solver, student2time2take, D, T_D):
 
     return solver.Sum(time_span_day)
 
+def draw_tutoring_schedule(ax, student2time2take, available, D, T_D):
+    T = D * T_D
+    N = len(student2time2take) + 1
+    # Draw time and date lines
+    for y in range(N):
+        if y == 1:
+            linewidth = 3 # teacher's line
+        else:
+            linewidth = 1
+        ax.plot([0, T], [y, y], c='k', linewidth=linewidth)
+
+    for x in range(T + 1):
+        if x % T_D == 0:
+            linewidth = 3 # date line
+        else:
+            linewidth = 1
+        ax.plot([x, x], [0, N], c='k', linewidth=linewidth)
+
+    # Draw student's schedules and available
+    for student, time2take in enumerate(student2time2take):
+        for time, take in enumerate(time2take):
+            if take:
+                patch = Rectangle((student + 1, time), 1, 1, alpha='1.0', facecolor='b')
+            elif available[student][time]:
+                patch = Rectangle((student + 1, time), 1, 1, alpha='0.3', facecolor='b')
+            ax.add_patch(patch)
+
 def main():
     # Set params and generate random data
     D = 5 # num days
@@ -82,6 +112,14 @@ def main():
     solver.SetObjective(obj, maximize=True)
 
     solver.Solve()
+
+    student2time2take_solve = [[solution_value(take) for take in time2take] 
+                                            for time2take in student2time2take]
+
+    fig, ax = plt.subplots()
+    draw_tutoring_schedule(ax, student2time2take)
+    plt.axis("off")
+    plt.show()
 
 if __name__ == '__main__':
     main()
