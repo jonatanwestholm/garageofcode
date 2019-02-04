@@ -71,19 +71,19 @@ def bfs_buster(L, n, m):
 
     L.add_edge((0, m - 2), (0, m - 1))
 
-def complicate_labyrinth(algo, L, start, end, num_iter=5000):
+def complicate_labyrinth(algo, L, start, end, num_iter=15000):
     best_cost = search_cost(algo, L, start, end)
     print("Initial cost:", best_cost)
     for i in range(num_iter):
         if i % 1000 == 0:
             print("iter", i)
-        removed_edges = random.sample(list(L.edges), 2)
+        removed_edges = random.sample(list(L.edges), 4)
         L.remove_edges_from(removed_edges)
         #print(edge)
         added_edges = connect_labyrinth(L)
         new_cost = search_cost(algo, L, start, end)
-        if new_cost >= best_cost:
-            if new_cost > best_cost:
+        if new_cost <= best_cost:
+            if new_cost < best_cost:
                 print("New best cost:", new_cost)
             best_cost = new_cost
             continue
