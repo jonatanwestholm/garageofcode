@@ -77,7 +77,7 @@ def complicate_labyrinth(algo, L, start, end, num_iter=5000):
     for i in range(num_iter):
         if i % 1000 == 0:
             print("iter", i)
-        removed_edges = random.sample(list(L.edges), 4)
+        removed_edges = random.sample(list(L.edges), 2)
         L.remove_edges_from(removed_edges)
         #print(edge)
         added_edges = connect_labyrinth(L)
@@ -175,10 +175,10 @@ def main_draw_search_tree(ax, T, start=None, end=None):
 
 def main():
     #random.seed(1)
-    N = 10
+    N = 30
     M = N
     start = (0, 0)
-    end = (0, 1)
+    end = (N - 1, M - 1)
 
     #mc_search_score(bfs, N, M, 1000, start, end)
     #return
