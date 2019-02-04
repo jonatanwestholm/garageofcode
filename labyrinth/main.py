@@ -23,9 +23,12 @@ def init_grid_graph(n, m, p):
     return G
 
 def connect_labyrinth(L):
+    added_edges = []
     components = list(nx.connected_components(L))
     while len(components) > 1:
-        components = connect_components(L, components)
+        components, edge = connect_components(L, components)
+        added_edges.append(edge)
+    return added_edges
 
 def connect_components(L, components):
     c = random.choice(components)
@@ -38,8 +41,9 @@ def connect_components(L, components):
                 components.remove(neigh_c)
                 c.update(neigh_c)
                 components.append(c)
-                L.add_edge(n, neigh)
-                return components
+                edge = (n, neigh)
+                L.add_edge(*edge)
+                return components, edge
 
 def get_grid_neighbours(L, n):
     i, j = n
@@ -67,6 +71,28 @@ def bfs_buster(L, n, m):
 
     L.add_edge((0, m - 2), (0, m - 1))
 
+def complicate_labyrinth(algo, L, start, end, num_iter=5000):
+    best_cost = search_cost(algo, L, start, end)
+    print("Initial cost:", best_cost)
+    for i in range(num_iter):
+        if i % 1000 == 0:
+            print("iter", i)
+        removed_edges = random.sample(list(L.edges), 4)
+        L.remove_edges_from(removed_edges)
+        #print(edge)
+        added_edges = connect_labyrinth(L)
+        new_cost = search_cost(algo, L, start, end)
+        if new_cost >= best_cost:
+            if new_cost > best_cost:
+                print("New best cost:", new_cost)
+            best_cost = new_cost
+            continue
+        else:
+            # revert changes
+            L.remove_edges_from(added_edges)
+            L.add_edges_from(removed_edges)
+    #print(len(L))
+
 def get_labyrinth_complexity(L, start, end):
     solver = get_solver("CBC")
 
@@ -86,6 +112,13 @@ def get_labyrinth_complexity(L, start, end):
     solver.Solve(time_limit=10)
 
     return solution_value(node2complexity[start])
+
+def search_cost(algo, L, start, end):
+    T = algo(L, start, end)
+    path_nodes = nx.shortest_path(T, start, end)
+    backtrack_nodes = T.nodes - set(path_nodes)
+    total_edges_passed = len(path_nodes) - 1 + 2*len(backtrack_nodes)
+    return total_edges_passed
 
 def search_score(algo, L, start, end):
     T = algo(L, start, end)
@@ -141,14 +174,14 @@ def main_draw_search_tree(ax, T, start=None, end=None):
     return "\n".join(title)
 
 def main():
-    random.seed(1)
-    N = 100
+    #random.seed(1)
+    N = 10
     M = N
     start = (0, 0)
-    end = (N // 2 - 1, M // 2 - 1)
+    end = (0, 1)
 
-    mc_search_score(bfs, N, M, 1000, start, end)
-    return
+    #mc_search_score(bfs, N, M, 1000, start, end)
+    #return
 
     L = init_grid_graph(N, M, p=0)
 
@@ -160,7 +193,9 @@ def main():
     print("Is connected:", nx.is_connected(L))
     print("Time: {0:.3f}s".format(t1 - t0))
     #bfs_buster(L, N, M)
-    return
+    #return
+
+    complicate_labyrinth(bfs, L, start, end)
 
     #print("End found at depth:", depth)
     #print("Nbr expanded nodes:", num_expanded)
