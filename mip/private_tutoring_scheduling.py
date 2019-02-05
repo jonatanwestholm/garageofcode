@@ -115,7 +115,7 @@ def main():
     D = 5 # num days
     T_D = 10 # num times per day
     T = D * T_D
-    N = 11 # num students
+    N = 10 # num students
     max_simultaneous = [3 for _ in range(T)] # max num student per time
     min_times = [1 for _ in range(N)] # min times per student
 
