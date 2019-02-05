@@ -154,12 +154,12 @@ def main():
     st_d_solve = [int(solution_value(st)) for st in st_d]
     et_d_solve = [int(solution_value(et)) for et in et_d]
 
-    print(st_d_solve)
-    print(et_d_solve)
+    #print(st_d_solve)
+    #print(et_d_solve)
 
     works_days_solve = [int(solution_value(wd)) for wd in works_days]
 
-    print(works_days_solve)
+    #print(works_days_solve)
 
     total_workdays_solve = int(solution_value(total_workdays))
     #total_time_solve = int(solution_value(total_time))
