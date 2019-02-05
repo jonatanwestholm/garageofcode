@@ -8,15 +8,15 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 from common.utils import transpose, flatten_simple
-from mip.solver import get_solver, solution_value
+from mip.solver import get_solver, solution_value, status2str
 
 def make_min_times_constraint(solver, student2time2take, min_times):
     for student, time2take in enumerate(student2time2take):
-        solver.Add(solver.Sum(time2take) >= min_times[student])
+        solver.Add(solver.Sum(time2take) == min_times[student])
     
 def make_max_simultaneous_constraint(solver, student2time2take, max_simultaneous):
     for time, student2take in enumerate(transpose(student2time2take)):
-        solver.Add(solver.Sum(student2take) >= max_simultaneous[time])
+        solver.Add(solver.Sum(student2take) <= max_simultaneous[time])
 
 def make_availability_constraint(solver, student2time2take, available):
     for student, time2take in enumerate(student2time2take):
@@ -34,29 +34,34 @@ def get_total_workdays(solver, student2time2take, D, T_D):
         for take in student2take:
             solver.Add(works_day >= take)
 
+    return solver.Sum(works_days), works_days
+
 def get_total_time_span(solver, student2time2take, D, T_D):
-    start_time_day = [solver.NumVar(lb=0) for _ in range(D)]
-    end_time_day = [solver.NumVar(ub=T_D-1) for _ in range(D)]
+    start_time_day = [solver.NumVar(lb=0, ub=T_D-1) for _ in range(D)]
+    end_time_day = [solver.NumVar(lb=0, ub=T_D-1) for _ in range(D)]
+    #end_time_day = [1 for _ in range(D)]
 
     time2student2take = list(transpose(student2time2take))
 
-    for d, start_time, end_time in enumerate(zip(start_time_day, end_time_day)):
-        for t in range(T_D):
+    for d, (start_time, end_time) in enumerate(zip(start_time_day, end_time_day)):
+        for t_of_d in range(T_D):
+            t = d * T_D + t_of_d
             any_take = solver.IntVar(0, 1)
-            for take in time2student2take[d*T_D+t]:
+            for take in time2student2take[t]:
                 solver.Add(any_take >= take)
-            solver.Add(start_time <= any_take * t)
-            solver.Add(end_time >= any_take * t)
+            #any_take = 1
+            solver.Add(start_time <= any_take * (t_of_d) + (1 - any_take) * T_D)
+            solver.Add(end_time >= any_take * t_of_d)
 
     time_span_day = [et - st for st, et in zip(start_time_day, end_time_day)]
 
-    return solver.Sum(time_span_day)
+    return solver.Sum(time_span_day), start_time_day, end_time_day
 
 def draw_tutoring_schedule(ax, student2time2take, available, D, T_D):
     T = D * T_D
     N = len(student2time2take) + 1
     # Draw time and date lines
-    for y in range(N):
+    for y in range(N + 1):
         if y == 1:
             linewidth = 3 # teacher's line
         else:
@@ -73,13 +78,39 @@ def draw_tutoring_schedule(ax, student2time2take, available, D, T_D):
     # Draw student's schedules and available
     for student, time2take in enumerate(student2time2take):
         for time, take in enumerate(time2take):
+            #print(student, time)
             if take:
-                patch = Rectangle((student + 1, time), 1, 1, alpha='1.0', facecolor='b')
+                patch = Rectangle((time, student + 1), 1, 1, facecolor='b')
             elif available[student][time]:
-                patch = Rectangle((student + 1, time), 1, 1, alpha='0.3', facecolor='b')
+                patch = Rectangle((time, student + 1), 1, 1, facecolor='b', alpha=0.3)
+            else:
+                continue
+            ax.add_patch(patch)
+
+    ax.set_yticks([elem + 0.5 for elem in range(N)])
+    ax.set_yticklabels(["Teacher"] + ["Student {}".format(i+1) for i in range(N-1)])
+
+    ax.set_xticks(range(T_D // 2, T, T_D))
+    ax.set_xticklabels(["Day {}".format(i+1) for i in range(D)])
+
+def draw_teacher_schedule(ax, student2time2take, st_d, et_d, D, T_D):
+    T = D * T_D
+
+    time2student2take = list(transpose(student2time2take))
+
+    for d in range(D):
+        for t_of_d in range(T_D):
+            t = d * T_D + t_of_d
+            if sum(time2student2take[t]) > 0:
+                patch = Rectangle((t, 0), 1, 1, facecolor='b')
+            elif st_d[d] <= t_of_d and t_of_d < et_d[d]:
+                patch = Rectangle((t, 0), 1, 1, facecolor='r', alpha=0.3)
+            else:
+                continue
             ax.add_patch(patch)
 
 def main():
+    random.seed(1)
     # Set params and generate random data
     D = 5 # num days
     T_D = 10 # num times per day
@@ -88,10 +119,10 @@ def main():
     max_simultaneous = [3 for _ in range(T)] # max num student per time
     min_times = [1 for _ in range(N)] # min times per student
 
-    available = [[random.random() < 0.5 for _ in range(T)] for _ in range(N)]
+    available = [[random.random() < 0.05 for _ in range(T)] for _ in range(N)]
 
     # Preference parameters
-    per_diem_cost = 100
+    per_diem_cost = 200
     time_cost = 30
 
     # Generate variables
@@ -106,19 +137,42 @@ def main():
 
     # Add costs and values
     obj = 0
-    obj -= get_total_workdays(solver, student2time2take, D, T_D) * per_diem_cost
-    obj -= get_total_time_span(solver, student2time2take, D, T_D) * time_cost
+    total_workdays, works_days = get_total_workdays(solver, student2time2take, D, T_D)
+    obj -= total_workdays * per_diem_cost
+    total_time, st_d, et_d = get_total_time_span(solver, student2time2take, D, T_D)
+    obj -= total_time * time_cost
 
     solver.SetObjective(obj, maximize=True)
 
-    solver.Solve()
+    status = solver.Solve(time_limit=10)
+    print(status2str[status])
+    if status2str[status] not in ["OPTIMAL", "FEASIBLE"]:
+        return
 
     student2time2take_solve = [[solution_value(take) for take in time2take] 
                                             for time2take in student2time2take]
+    st_d_solve = [int(solution_value(st)) for st in st_d]
+    et_d_solve = [int(solution_value(et)) for et in et_d]
+
+    print(st_d_solve)
+    print(et_d_solve)
+
+    works_days_solve = [int(solution_value(wd)) for wd in works_days]
+
+    print(works_days_solve)
+
+    total_workdays_solve = int(solution_value(total_workdays))
+    #total_time_solve = int(solution_value(total_time))
+    total_time_solve = sum([(et - st + 1)*wd for st, et, wd in 
+                            zip(st_d_solve, et_d_solve, works_days_solve)])
 
     fig, ax = plt.subplots()
-    draw_tutoring_schedule(ax, student2time2take)
-    plt.axis("off")
+    draw_tutoring_schedule(ax, student2time2take_solve, available, D, T_D)
+    draw_teacher_schedule(ax, student2time2take_solve, st_d_solve, et_d_solve, D, T_D)
+    #plt.axis("off")
+    title = ["Total nbr workdays: {}".format(total_workdays_solve),
+             "Total time: {}".format(total_time_solve)]
+    plt.title("\n".join(title))
     plt.show()
 
 if __name__ == '__main__':
