@@ -119,7 +119,7 @@ def main():
     max_simultaneous = [3 for _ in range(T)] # max num student per time
     min_times = [1 for _ in range(N)] # min times per student
 
-    available = [[random.random() < 0.05 for _ in range(T)] for _ in range(N)]
+    available = [[random.random() < 0.1 for _ in range(T)] for _ in range(N)]
 
     # Preference parameters
     per_diem_cost = 200
