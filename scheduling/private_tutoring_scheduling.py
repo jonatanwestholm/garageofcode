@@ -3,18 +3,22 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 import random
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 from common.utils import transpose, flatten_simple
 from mip.solver import get_solver, solution_value, status2str
+from scheduling.read import read
+import scheduling.conf as conf
 
-def make_min_times_constraint(solver, student2time2take, min_times):
-    for student, time2take in enumerate(student2time2take):
-        solver.Add(solver.Sum(time2take) == min_times[student])
+def make_take_times_constraint(solver, student2time2take, take_times):
+    for student, time2take in student2time2take.items():
+        solver.Add(solver.Sum(time2take.Values()) == take_times[student])
     
 def make_max_simultaneous_constraint(solver, student2time2take, max_simultaneous):
+    student2time2take_matrix = [[elem for dt, take in time2take.items()] 
+                        for student, time2take in student2time2take.items()]
     for time, student2take in enumerate(transpose(student2time2take)):
         solver.Add(solver.Sum(student2take) <= max_simultaneous[time])
 
@@ -110,29 +114,20 @@ def draw_teacher_schedule(ax, student2time2take, st_d, et_d, D, T_D):
             ax.add_patch(patch)
 
 def main():
-    random.seed(1)
-    # Set params and generate random data
-    D = 5 # num days
-    T_D = 10 # num times per day
-    T = D * T_D
-    N = 10 # num students
-    max_simultaneous = [3 for _ in range(T)] # max num student per time
-    min_times = [1 for _ in range(N)] # min times per student
+    students, times, available = read(conf.fn)
 
-    available = [[random.random() < 0.1 for _ in range(T)] for _ in range(N)]
-
-    # Preference parameters
-    per_diem_cost = 200
-    time_cost = 30
+    take_times = dict([(student, 1) for student in students])
+    max_simultaneous = dict([(dt, 3) for dt in times])
 
     # Generate variables
     solver = get_solver("CBC")
 
-    student2time2take = [[solver.IntVar(0, 1) for _ in range(T)] for _ in range(N)]
+    student2time2take = OrderedDict([(student, OrderedDict([(dt, solver.IntVar(0, 1)) for student in sorted(times)])) 
+                                                                                        for id in sorted(students)])
 
     # Add constraints
     make_availability_constraint(solver, student2time2take, available)
-    make_min_times_constraint(solver, student2time2take, min_times)
+    make_min_times_constraint(solver, student2time2take, take_times)
     make_max_simultaneous_constraint(solver, student2time2take, max_simultaneous)
 
     # Add costs and values
