@@ -24,34 +24,32 @@ def constraint_max_simultaneous(solver, times, student_time2take, max_simultaneo
         takes = [take for (_, t), take in student_time2take.items() if t == dt]
         solver.Add(solver.Sum(takes) <= max_simultaneous[dt])
 
-def get_total_workdays(solver, times, student_time2take):
-    day2takes = []
+def get_day2works(solver, times, student_time2take):
+    day2works = {}
     for day in equivalence_partition(times, lambda x: x.date()):
+        date = next(iter(day)).date()
         takes = [take for (_, t), take in student_time2take.items() if t in day]
-        day2takes.append(takes)
+        works = max_var(takes, lb=0, ub=1)
+        day2works[date] = works
 
-    works_days = [solver.IntVar(0, 1) for _ in day2takes]
+    return day2works
 
-    for works_day, takes in zip(works_days, day2takes):
-        for take in takes:
-            solver.Add(works_day >= take)
-
-    return solver.Sum(works_days), works_days
-
-def get_total_time_span(solver, times, student_time2take):
+def get_day2time_span(solver, times, student_time2take):
     day2start_time = {}
     day2end_time = {}
     day2time_span = {}
     for day in equivalence_partition(times, lambda x: x.date()):
-        date = next(iter(day))
-        midnight = datetime.combine(date, date.time())
+        dt0 = next(iter(day))
+        midnight = datetime.combine(dt0, dt0.time())
+        date = dt0.date()
 
         day_takes = [(t, take) for (_, t), take in student_time2take.items() if t in day]
 
         busy_times = []
         for dt in equivalence_partition(day, lambda x: x.time()):
             t_of_d = (next(iter(dt)) - midnight).total_seconds()
-            busy = max_var([take for t, take in day_takes if t in dt], lb=0, ub=1)
+            takes = [take for t, take in day_takes if t in dt]
+            busy = max_var(takes, lb=0, ub=1)
             busy_times.append(t_of_d * busy)
 
         start_time = min_var(busy_times, 'NumVar', lb=0, ub=DAY2SEC)
@@ -61,7 +59,7 @@ def get_total_time_span(solver, times, student_time2take):
         day2end_time[date] = end_time
         day2time_span = end_time - start_time
 
-    return solver.Sum(day2time_span.Values()), day2start_time, day2end_time
+    return day2time_span, day2start_time, day2end_time
 
 def draw_tutoring_schedule(ax, student_time2take, available, D, T_D):
     T = D * T_D
