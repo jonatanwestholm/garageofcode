@@ -1,5 +1,5 @@
 
-fn = "/home/jdw/garageofcode/results/private_tutoring_scheduling/test_data.csv"
+fn = "/home/jdw/garageofcode/results/private_tutoring_scheduling/test_data2.csv"
 
 date_format = "%Y-%m-%d"
 time_format = "%H:%M"
@@ -16,4 +16,4 @@ min_times = [1 for _ in range(N)] # min times per student
 
 # Preference parameters
 per_diem_cost = 200
-time_cost = 30
+time_cost = 30 / 3600

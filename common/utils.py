@@ -1,12 +1,23 @@
 import numpy as np
 import random
 import heapq
+from datetime import datetime, timedelta
+from copy import copy
+
+HRS2SEC = 3600
+DAY2SEC = HRS2SEC * 24
 
 def flatten_simple(lst):
     return [elem for sublist in lst for elem in sublist]
 
 def transpose(l):
     return zip(*l)
+
+def date_range(start_date, end_date):
+	t = copy(start_date)
+	while t <= end_date:
+		yield t
+		t += timedelta(days=1)
 
 def print_dataframe(X, rownames=None, colnames=None, spacing=10, ignore0=True):
     if rownames is None:
@@ -62,7 +73,7 @@ class Heap:
 		return len(self.h)
 
 def equivalence_partition(iterable, key):
-	classes = set()
+	classes = []
 	for item in iterable:
 		for c in classes:
 			c_item = next(iter(c))

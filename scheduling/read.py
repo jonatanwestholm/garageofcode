@@ -8,7 +8,7 @@ def read(fn):
 	dt_format = conf.date_format + conf.time_format
 	students = set()
 	times = set()
-	available = defaultdict(set)
+	available = set()
 
 	with open(fn, "r") as f:
 		reader = csv.DictReader(f, delimiter=',')
@@ -21,6 +21,6 @@ def read(fn):
 
 			students.add(student)
 			times.add(dt)
-			available[student].add(dt)
+			available.add((student, dt))
 
 	return students, times, available
