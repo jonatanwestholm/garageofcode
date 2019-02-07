@@ -61,6 +61,18 @@ class Heap:
 	def __len__(self):
 		return len(self.h)
 
+def equivalence_partition(iterable, key):
+	classes = set()
+	for item in iterable:
+		for c in classes:
+			c_item = next(iter(c))
+			if key(c_item) == key(item):
+				c.add(item)
+				break
+		else:
+			classes.append({item})
+	return classes
+
 if __name__ == '__main__':
 	h = Heap([10, 20, 6], key=lambda x: x**2)
 
