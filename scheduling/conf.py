@@ -1,5 +1,5 @@
 
-fn = "/home/jdw/garageofcode/results/private_tutoring_scheduling/test_data2.csv"
+fn = "/home/jdw/garageofcode/results/private_tutoring_scheduling/test_data.csv"
 
 date_format = "%Y-%m-%d"
 time_format = "%H:%M"

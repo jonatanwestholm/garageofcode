@@ -2,8 +2,11 @@ import sys
 import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
+import numpy as np
+import random
 from collections import defaultdict, OrderedDict
-from datetime import time, datetime, timedelta
+from datetime import datetime, timedelta
+from datetime import time as midnight_time
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
@@ -16,7 +19,6 @@ import scheduling.conf as conf
 def constraint_take_times(solver, students, student_time2take, take_times):
     for student in students:
         takes = [take for (st_id, _), take in student_time2take.items() if st_id == student]
-        print(student, takes)
         solver.Add(solver.Sum(takes) == take_times[student])
 
 def constraint_max_simultaneous(solver, times, student_time2take, max_simultaneous):
@@ -28,12 +30,7 @@ def get_day2works(solver, times, student_time2take):
     day2works = {}
     for day in equivalence_partition(times, lambda x: x.date()):
         date = next(iter(day)).date()
-        print(date)
-        time_takes = [(t, take) for (_, t), take in student_time2take.items() if t in day]
-        for t, takes in sorted(time_takes):
-            print(t, takes)
-        print("\n")
-        takes = [take for t, take in time_takes]
+        takes = [take for (_, t), take in student_time2take.items() if t in day]
         works = max_var(solver, takes, lb=0, ub=1)
         day2works[date] = works
 
@@ -45,7 +42,7 @@ def get_day2time_span(solver, times, student_time2take):
     day2time_span = {}
     for day in equivalence_partition(times, lambda x: x.date()):
         dt0 = next(iter(day))
-        midnight = datetime.combine(dt0, dt0.time())
+        midnight = datetime.combine(dt0.date(), midnight_time())
         date = dt0.date()
 
         day_takes = [(t, take) for (_, t), take in student_time2take.items() if t in day]
@@ -75,7 +72,7 @@ def draw_tutoring_schedule(ax, students, times, student_time2take):
 
     day_classes = equivalence_partition(times, lambda x: x.date())
     dates = [next(iter(d_c)).date() for d_c in day_classes]
-    dts = [datetime.combine(date, time()) for date in dates]
+    dts = [datetime.combine(date, midnight_time()) for date in dates]
     min_dt = min(dts)
     max_dt = max(dts)+timedelta(days=1)
     for dt in date_range(min_dt, max_dt):
@@ -132,26 +129,26 @@ def main():
 
     # Add constraints
     constraint_take_times(solver, students, student_time2take, take_times)
-    #constraint_max_simultaneous(solver, times, student_time2take, max_simultaneous)
+    constraint_max_simultaneous(solver, times, student_time2take, max_simultaneous)
 
     # Add costs and values
     obj = solver.NumVar(lb=0, ub=0)
-    #day2works = get_day2works(solver, times, student_time2take)
-    #obj -= solver.Sum(day2works.values()) * conf.per_diem_cost
+    day2works = get_day2works(solver, times, student_time2take)
+    obj -= solver.Sum(day2works.values()) * conf.per_diem_cost
     day2t_s, day2st, day2et = get_day2time_span(solver, times, student_time2take)
-    #obj -= solver.Sum(day2t_s.values()) * conf.time_cost
+    obj -= solver.Sum(day2t_s.values()) * conf.time_cost
 
-    #solver.Add(obj >= -401)
+    #solver.Add(obj >= -200)
 
     solver.SetObjective(obj, maximize=True)
 
     status = solver.Solve(time_limit=10)
     print(status2str[status])
     if status2str[status] not in ["OPTIMAL", "FEASIBLE"]:
-        return
-    print(solution_value(obj))
+        return 0
+    print(int(np.around(solution_value(obj))))
 
-    return
+    #return 1
 
     student_time2take_solve = dict([(key, solution_value(take)) 
                                 for key, take in student_time2take.items()])
@@ -165,10 +162,10 @@ def main():
     '''
     day2works_solve = dict([(key, solution_value(take)) 
                             for key, take in day2works.items()])
-    for day, works in sorted(day2works_solve.items()):
-        print(day, works)
+    #for day, works in sorted(day2works_solve.items()):
+    #    print(day, works)
 
-    return
+    #return
     #st_d_solve = [int(solution_value(st)) for st in st_d]
     #et_d_solve = [int(solution_value(et)) for et in et_d]
 
