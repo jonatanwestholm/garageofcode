@@ -49,21 +49,24 @@ def get_day2time_span(solver, times, student_time2take):
 
         start_busy_times = []
         end_busy_times = []
+        busy_times = []
         for dt in equivalence_partition(day, lambda x: x.time()):
             t_of_d = (next(iter(dt)) - midnight).total_seconds()
             takes = [take for t, take in day_takes if t in dt]
             busy = max_var(solver, takes, lb=0, ub=1)
             start_busy_times.append(busy * t_of_d + (1 - busy) * DAY2SEC)
             end_busy_times.append(busy * t_of_d)
+            busy_times.append(busy)
 
-        start_time = min_var(solver, start_busy_times, 'NumVar', lb=0, ub=DAY2SEC)
+        busy_at_all = [solver.Sum(busy_times) * DAY2SEC]
+        start_time = min_var(solver, start_busy_times + busy_at_all, 'NumVar', lb=0, ub=DAY2SEC)
         end_time = max_var(solver, end_busy_times, 'NumVar', lb=0, ub=DAY2SEC)
 
         day2start_time[date] = start_time
         day2end_time[date] = end_time
-        day2time_span[date] = end_time - start_time
+        day2time_span[date] = (end_time - start_time) / 3600.0
 
-    return day2time_span, day2start_time, day2end_time
+    return day2time_span #, day2start_time, day2end_time
 
 def draw_tutoring_schedule(ax, students, times, student_time2take):
     students = list(sorted(students))
@@ -89,31 +92,28 @@ def draw_tutoring_schedule(ax, students, times, student_time2take):
     for (student, dt), take in student_time2take.items():
         st_idx = students.index(student) + 1
         if take:
-            patch = Rectangle((dt, st_idx), timedelta(minutes=60), 1, facecolor='b', zorder=1)
+            patch = Rectangle((dt, st_idx), conf.lesson_length, 1, facecolor='b', zorder=1)
         else: # just available
-            patch = Rectangle((dt, st_idx), timedelta(minutes=60), 1, facecolor='b', alpha=0.3, zorder=0)
+            patch = Rectangle((dt, st_idx), conf.lesson_length, 1, facecolor='b', alpha=0.3, zorder=0)
         ax.add_patch(patch)
 
-    #ax.set_yticks([elem + 0.5 for elem in range(N)])
-    #ax.set_yticklabels(["Teacher"] + ["Student {}".format(i+1) for i in range(N-1)])
+    ax.set_yticks([elem + 0.5 for elem in range(N)])
+    ax.set_yticklabels(["Teacher"] + ["Student {}".format(i+1) for i in range(N-1)])
 
-    #ax.set_xticks(range(T_D // 2, T, T_D))
-    #ax.set_xticklabels(["Day {}".format(i+1) for i in range(D)])
+def draw_teacher_schedule(ax, times, student_time2take):
+    for day in equivalence_partition(times, lambda x: x.date()):
+        day_times = [t for (_, t), take in student_time2take.items() if t in day and take]
+        if not len(day_times):
+            continue
 
-def draw_teacher_schedule(ax, student_time2take, st_d, et_d, D, T_D):
-    T = D * T_D
+        st = min(day_times)
+        et = max(day_times)
 
-    time2student2take = list(transpose(student_time2take))
+        patch = Rectangle((st, 0), et-st, 1, facecolor='r', alpha=0.3)
+        ax.add_patch(patch)
 
-    for d in range(D):
-        for t_of_d in range(T_D):
-            t = d * T_D + t_of_d
-            if sum(time2student2take[t]) > 0:
-                patch = Rectangle((t, 0), 1, 1, facecolor='b')
-            elif st_d[d] <= t_of_d and t_of_d < et_d[d]:
-                patch = Rectangle((t, 0), 1, 1, facecolor='r', alpha=0.3)
-            else:
-                continue
+        for t in day_times:
+            patch = Rectangle((t, 0), conf.lesson_length, 1, facecolor='b')
             ax.add_patch(patch)
 
 def main():
@@ -135,10 +135,8 @@ def main():
     obj = solver.NumVar(lb=0, ub=0)
     day2works = get_day2works(solver, times, student_time2take)
     obj -= solver.Sum(day2works.values()) * conf.per_diem_cost
-    day2t_s, day2st, day2et = get_day2time_span(solver, times, student_time2take)
+    day2t_s = get_day2time_span(solver, times, student_time2take)
     obj -= solver.Sum(day2t_s.values()) * conf.time_cost
-
-    #solver.Add(obj >= -200)
 
     solver.SetObjective(obj, maximize=True)
 
@@ -147,8 +145,6 @@ def main():
     if status2str[status] not in ["OPTIMAL", "FEASIBLE"]:
         return 0
     print(int(np.around(solution_value(obj))))
-
-    #return 1
 
     student_time2take_solve = dict([(key, solution_value(take)) 
                                 for key, take in student_time2take.items()])
@@ -162,6 +158,9 @@ def main():
     '''
     day2works_solve = dict([(key, solution_value(take)) 
                             for key, take in day2works.items()])
+
+    day2t_s_solve = dict([(key, solution_value(take))
+                            for key, take in day2t_s.items()])
     #for day, works in sorted(day2works_solve.items()):
     #    print(day, works)
 
@@ -181,13 +180,16 @@ def main():
     #total_time_solve = sum([(et - st + 1)*wd for st, et, wd in 
     #                        zip(st_d_solve, et_d_solve, works_days_solve)])
 
+    total_days = int(sum(day2works_solve.values()))
+    lesson_length_hrs = conf.lesson_length.total_seconds() / 3600
+    total_time = sum(day2t_s_solve.values()) + total_days * lesson_length_hrs
     fig, ax = plt.subplots()
     draw_tutoring_schedule(ax, students, times, student_time2take_solve)
-    #draw_teacher_schedule(ax, student_time2take_solve, st_d_solve, et_d_solve, D, T_D)
+    draw_teacher_schedule(ax, times, student_time2take_solve)
     #plt.axis("off")
-    #title = ["Total nbr workdays: {}".format(total_workdays_solve),
-    #         "Total time: {}".format(total_time_solve)]
-    #plt.title("\n".join(title))
+    title = ["Total nbr workdays: {0:d}".format(total_days),
+             "Total time: {0:.2f} h".format(total_time)]
+    plt.title("\n".join(title))
     plt.show()
 
 if __name__ == '__main__':
