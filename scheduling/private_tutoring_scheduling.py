@@ -66,7 +66,7 @@ def get_day2time_span(solver, times, student_time2take):
         day2end_time[date] = end_time
         day2time_span[date] = (end_time - start_time) / 3600.0
 
-    return day2time_span #, day2start_time, day2end_time
+    return day2time_span
 
 def draw_tutoring_schedule(ax, students, times, student_time2take):
     students = list(sorted(students))
@@ -149,44 +149,18 @@ def main():
     student_time2take_solve = dict([(key, solution_value(take)) 
                                 for key, take in student_time2take.items()])
 
-    '''
-    for (student, dt), take in sorted(student_time2take_solve.items()):
-        print(student, dt, take)
-
-    print("\n")
-
-    '''
     day2works_solve = dict([(key, solution_value(take)) 
                             for key, take in day2works.items()])
 
     day2t_s_solve = dict([(key, solution_value(take))
                             for key, take in day2t_s.items()])
-    #for day, works in sorted(day2works_solve.items()):
-    #    print(day, works)
-
-    #return
-    #st_d_solve = [int(solution_value(st)) for st in st_d]
-    #et_d_solve = [int(solution_value(et)) for et in et_d]
-
-    #print(st_d_solve)
-    #print(et_d_solve)
-
-    #works_days_solve = [int(solution_value(wd)) for wd in works_days]
-
-    #print(works_days_solve)
-
-    #total_workdays_solve = int(solution_value(total_workdays))
-    #total_time_solve = int(solution_value(total_time))
-    #total_time_solve = sum([(et - st + 1)*wd for st, et, wd in 
-    #                        zip(st_d_solve, et_d_solve, works_days_solve)])
-
+    
     total_days = int(sum(day2works_solve.values()))
     lesson_length_hrs = conf.lesson_length.total_seconds() / 3600
     total_time = sum(day2t_s_solve.values()) + total_days * lesson_length_hrs
     fig, ax = plt.subplots()
     draw_tutoring_schedule(ax, students, times, student_time2take_solve)
     draw_teacher_schedule(ax, times, student_time2take_solve)
-    #plt.axis("off")
     title = ["Total nbr workdays: {0:d}".format(total_days),
              "Total time: {0:.2f} h".format(total_time)]
     plt.title("\n".join(title))
