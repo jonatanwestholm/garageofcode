@@ -5,6 +5,7 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 import time
 import random
 import numpy as np
+import copy
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -14,16 +15,20 @@ from labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree
 from common.search import bfs, dfs
 
 algo2name = {bfs: "BFS", dfs: "DFS"}
+gif_dir = "/home/jdw/garageofcode/results/labyrinth/gif"
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(5.7, 6.5))
 
-N = 20
+N = 30
 M = N
 start = (0, 0)
 #end = (N - 1, M - 1)
-#end = (0, 1)
+#end = (10, 10)
 end = (0, 1)
 algo = bfs
+leniency_iters = 100
+
+img_number = 0
 
 def init_grid_graph(n, m, p):
     G = nx.Graph()
@@ -100,8 +105,8 @@ def adversarial_random(algo, L, start, end, num_iter=5000):
             if new_cost > best_cost:
                 print("New best cost:", new_cost)
             best_cost = new_cost
-            if i % 10 == 0:
-                visualize_labyrinth(algo, L, start, end)
+            if i % 100 == 0:
+                visualize_labyrinth(algo, L, start, end, iteration=i)
             continue
         else:
             # revert changes
@@ -112,6 +117,8 @@ def adversarial_random(algo, L, start, end, num_iter=5000):
 def adversarial_targeted_random(algo, L, start, end, num_iter=20000):
     best_cost = search_cost(algo, L, start, end)
     old_len_sp = len(L)
+    best_L = copy.deepcopy(L)
+    best_iter = 0
     print("Initial cost:", best_cost)
     for i in range(num_iter):
         if i % 100 == 0:
@@ -150,7 +157,7 @@ def adversarial_targeted_random(algo, L, start, end, num_iter=20000):
                     added_edges.add(up_edge)
 
         #path_removed_edges = sp_edges[remove_edge_idx:remove_edge_idx+num_path_remove]
-        remain_removed_edges = random.sample(list(L.edges), 2)
+        remain_removed_edges = random.sample(list(L.edges), 4)
         #removed_edges = set(path_removed_edges)
         removed_edges.update(remain_removed_edges)
         L.remove_edges_from(removed_edges)
@@ -159,23 +166,33 @@ def adversarial_targeted_random(algo, L, start, end, num_iter=20000):
         L.add_edges_from(added_edges)
 
         new_cost = search_cost(algo, L, start, end)
-        if new_cost >= best_cost or (new_cost >= best_cost - 10 and len(sp_nodes) < old_len_sp and random.random() < 0.1):
+        if new_cost >= best_cost or \
+                (new_cost >= best_cost - 2 and random.random() < 0.1) or \
+                (new_cost >= best_cost - 10 and len(sp_nodes) < old_len_sp and random.random() < 0.1):
+            if new_cost >= best_cost:
+                best_L = copy.deepcopy(L)
+                best_iter = i
             if new_cost > best_cost:
                 print("New best cost:", new_cost)
                 best_cost = new_cost
+                visualize_labyrinth(algo, L, start, end, iteration=i)
             old_len_sp = len(sp_nodes)
-            visualize_labyrinth(algo, L, start, end)
+            if i % 50 == 0:
+                visualize_labyrinth(algo, L, start, end, iteration=i)
             continue
         else:
-            # revert changes
-            L.remove_edges_from(added_edges)
-            L.remove_edges_from(new_edges)
-            L.add_edges_from(removed_edges)
+            if i > best_iter + leniency_iters:
+                #backtrack to best
+                L = copy.deepcopy(best_L)
+            else:
+                # revert changes
+                L.remove_edges_from(added_edges)
+                L.remove_edges_from(new_edges)
+                L.add_edges_from(removed_edges)
 
         assert nx.is_connected(L)
 
-        #if i % 20 == 0:
-        #    visualize_labyrinth(algo, L, start, end)
+    L = best_L
 
 def get_labyrinth_complexity(L, start, end):
     solver = get_solver("CBC")
@@ -236,7 +253,7 @@ def mc_search_score(algo, N, M, num_iter, start, end):
     print("Path length avg: {0:.1f}, std: {1:.1f}".format(path_avg, path_std))
     print("Search cost avg: {0:.1f}, std: {1:.1f}".format(cost_avg, cost_std))
 
-def main_draw_search_tree(ax, T, start=None, end=None):
+def main_draw_search_tree(ax, L, T, start=None, end=None):
     draw_search_tree(ax, T, zorder=0, c='r')
 
     if start is None or end is None:
@@ -247,10 +264,12 @@ def main_draw_search_tree(ax, T, start=None, end=None):
 
     backtrack_nodes = T.nodes - set(path_nodes)
     total_edges_passed = len(path_nodes) - 1 + 2*len(backtrack_nodes) 
+    unexpanded_nodes = len(L) - len(T)
 
     #plt.title("Expected nbr of steps: {0:.0f}".format(e_steps))
     title = ["Direct path nodes: {0:d}".format(len(path_nodes)),
             "Dead end nodes: {0:d}".format(len(backtrack_nodes)),
+            "Unexpanded nodes: {0:d}".format(unexpanded_nodes),
             "Total edges passed: {0:d} - 1 + 2*{1:d} = {2:d}".format(
                                     len(path_nodes),
                                     len(backtrack_nodes),
@@ -273,29 +292,39 @@ def main():
     print("Time: {0:.3f}s".format(t1 - t0))
     #bfs_buster(L, N, M)
     #return
-
-    adversarial_targeted_random(algo, L, start, end)
-    #adversarial_random(algo, L, start, end)
+    num_iter = 200000
+    adversarial_targeted_random(algo, L, start, end, num_iter)
+    #adversarial_random(algo, L, start, end, num_iter)
 
     #print("End found at depth:", depth)
     #print("Nbr expanded nodes:", num_expanded)
     visualize_labyrinth(algo, L, start, end, show=True)
 
-def visualize_labyrinth(algo, L, start, end, show=False):
+def visualize_labyrinth(algo, L, start, end, show=False, iteration=0):
     T = algo(L, start, end)
 
     ax.cla()
 
     draw_labyrinth(ax, L, start, end, N, M)
-    title = main_draw_search_tree(ax, T, start, end)
+    title = main_draw_search_tree(ax, L, T, start, end)
+    title = "Iteration: {}\n".format(iteration) + title
 
+    #ax.set_figsize((6, 4))
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.8, right=0.9)
     plt.title(title)
     plt.axis("off")
     if show:
         plt.show()
     else:
-        plt.draw()
-        plt.pause(0.001)
+        pass
+        #plt.draw()
+        #plt.pause(0.001)
+
+    global img_number
+    path = os.path.join(gif_dir, "{:03d}".format(img_number))
+    plt.savefig(path)
+    img_number += 1
 
 if __name__ == '__main__':
     main()
