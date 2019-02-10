@@ -1,15 +1,29 @@
+import sys
+import os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
 import time
 import random
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from common.utils import flatten_simple, shuffled
+from common.utils import flatten_simple, shuffled, manhattan
 from mip.solver import get_solver, solution_value
 from labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree
 from common.search import bfs, dfs
 
 algo2name = {bfs: "BFS", dfs: "DFS"}
+
+fig, ax = plt.subplots()
+
+N = 20
+M = N
+start = (0, 0)
+#end = (N - 1, M - 1)
+#end = (0, 1)
+end = (0, 1)
+algo = bfs
 
 def init_grid_graph(n, m, p):
     G = nx.Graph()
@@ -71,27 +85,97 @@ def bfs_buster(L, n, m):
 
     L.add_edge((0, m - 2), (0, m - 1))
 
-def complicate_labyrinth(algo, L, start, end, num_iter=15000):
+def adversarial_random(algo, L, start, end, num_iter=5000):
     best_cost = search_cost(algo, L, start, end)
     print("Initial cost:", best_cost)
     for i in range(num_iter):
-        if i % 1000 == 0:
+        if i % 100 == 0:
             print("iter", i)
         removed_edges = random.sample(list(L.edges), 4)
         L.remove_edges_from(removed_edges)
         #print(edge)
         added_edges = connect_labyrinth(L)
         new_cost = search_cost(algo, L, start, end)
-        if new_cost <= best_cost:
-            if new_cost < best_cost:
+        if new_cost >= best_cost:
+            if new_cost > best_cost:
                 print("New best cost:", new_cost)
             best_cost = new_cost
+            if i % 10 == 0:
+                visualize_labyrinth(algo, L, start, end)
             continue
         else:
             # revert changes
             L.remove_edges_from(added_edges)
             L.add_edges_from(removed_edges)
     #print(len(L))
+
+def adversarial_targeted_random(algo, L, start, end, num_iter=20000):
+    best_cost = search_cost(algo, L, start, end)
+    old_len_sp = len(L)
+    print("Initial cost:", best_cost)
+    for i in range(num_iter):
+        if i % 100 == 0:
+            print("iter", i)
+        T = algo(L, start, end)
+        sp_nodes = nx.shortest_path(T, start, end)
+        #sp_edges = [(n0, n1) for n0, n1 in zip(sp_nodes[:-1], sp_nodes[1:])]
+
+        #removed_edges = random.sample(sp_edges, 1)
+        #num_path_remove = np.random.randint(0, min(len(sp_edges), 10))
+        
+        removed_edges = set()
+        added_edges = set()
+        (i0, j0) = random.choice(sp_nodes)
+        radius = 3
+        for d_i in range(-radius, radius):
+            for d_j in range(-radius, radius):
+                center_node = (i0 + d_i, j0 + d_j)
+                if center_node not in L:
+                    continue
+                
+                right_node = (i0 + d_i, j0 + d_j + 1)
+                right_edge = (center_node, right_node)
+                rnd = random.random()
+                base = 1.4
+                if right_edge in L.edges and rnd < base**(-(1 + manhattan(center_node, right_node))):
+                    removed_edges.add(right_edge)
+                elif right_node in L and rnd < base**(-(2 + manhattan(center_node, right_node))):
+                    added_edges.add(right_edge)
+                up_node = (i0 + d_i + 1, j0 + d_j)
+                up_edge = (center_node, up_node)
+                #rnd = random.random()
+                if up_edge in L.edges and rnd < base**(-(1 + manhattan(center_node, right_node))):
+                    removed_edges.add(up_edge)
+                elif up_node in L and rnd < base**(-(2 + manhattan(center_node, right_node))):
+                    added_edges.add(up_edge)
+
+        #path_removed_edges = sp_edges[remove_edge_idx:remove_edge_idx+num_path_remove]
+        remain_removed_edges = random.sample(list(L.edges), 2)
+        #removed_edges = set(path_removed_edges)
+        removed_edges.update(remain_removed_edges)
+        L.remove_edges_from(removed_edges)
+        new_edges = connect_labyrinth(L)
+        added_edges = [e for e in added_edges if e not in L]
+        L.add_edges_from(added_edges)
+
+        new_cost = search_cost(algo, L, start, end)
+        if new_cost >= best_cost or (new_cost >= best_cost - 10 and len(sp_nodes) < old_len_sp and random.random() < 0.1):
+            if new_cost > best_cost:
+                print("New best cost:", new_cost)
+                best_cost = new_cost
+            old_len_sp = len(sp_nodes)
+            visualize_labyrinth(algo, L, start, end)
+            continue
+        else:
+            # revert changes
+            L.remove_edges_from(added_edges)
+            L.remove_edges_from(new_edges)
+            L.add_edges_from(removed_edges)
+
+        assert nx.is_connected(L)
+
+        #if i % 20 == 0:
+        #    visualize_labyrinth(algo, L, start, end)
 
 def get_labyrinth_complexity(L, start, end):
     solver = get_solver("CBC")
@@ -175,11 +259,6 @@ def main_draw_search_tree(ax, T, start=None, end=None):
 
 def main():
     #random.seed(1)
-    N = 30
-    M = N
-    start = (0, 0)
-    end = (N - 1, M - 1)
-
     #mc_search_score(bfs, N, M, 1000, start, end)
     #return
 
@@ -195,24 +274,28 @@ def main():
     #bfs_buster(L, N, M)
     #return
 
-    complicate_labyrinth(bfs, L, start, end)
+    adversarial_targeted_random(algo, L, start, end)
+    #adversarial_random(algo, L, start, end)
 
     #print("End found at depth:", depth)
     #print("Nbr expanded nodes:", num_expanded)
-    random.seed(time.time())
+    visualize_labyrinth(algo, L, start, end, show=True)
 
-    T = bfs(L, start, end)
+def visualize_labyrinth(algo, L, start, end, show=False):
+    T = algo(L, start, end)
 
-    #return
-
-    fig, ax = plt.subplots()
+    ax.cla()
 
     draw_labyrinth(ax, L, start, end, N, M)
     title = main_draw_search_tree(ax, T, start, end)
 
     plt.title(title)
     plt.axis("off")
-    plt.show()
+    if show:
+        plt.show()
+    else:
+        plt.draw()
+        plt.pause(0.001)
 
 if __name__ == '__main__':
     main()
