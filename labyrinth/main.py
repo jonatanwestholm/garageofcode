@@ -125,10 +125,6 @@ def adversarial_targeted_random(algo, L, start, end, num_iter=20000):
             print("iter", i)
         T = algo(L, start, end)
         sp_nodes = nx.shortest_path(T, start, end)
-        #sp_edges = [(n0, n1) for n0, n1 in zip(sp_nodes[:-1], sp_nodes[1:])]
-
-        #removed_edges = random.sample(sp_edges, 1)
-        #num_path_remove = np.random.randint(0, min(len(sp_edges), 10))
         
         removed_edges = set()
         added_edges = set()
@@ -156,9 +152,7 @@ def adversarial_targeted_random(algo, L, start, end, num_iter=20000):
                 elif up_node in L and rnd < base**(-(2 + manhattan(center_node, right_node))):
                     added_edges.add(up_edge)
 
-        #path_removed_edges = sp_edges[remove_edge_idx:remove_edge_idx+num_path_remove]
         remain_removed_edges = random.sample(list(L.edges), 4)
-        #removed_edges = set(path_removed_edges)
         removed_edges.update(remain_removed_edges)
         L.remove_edges_from(removed_edges)
         new_edges = connect_labyrinth(L)
