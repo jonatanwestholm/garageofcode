@@ -19,6 +19,12 @@ def date_range(start_date, end_date):
 		yield t
 		t += timedelta(days=1)
 
+def manhattan(X, Y):
+	dist = 0
+	for x, y in zip(X, Y):
+		dist += abs(x - y)
+	return dist
+
 def print_dataframe(X, rownames=None, colnames=None, spacing=10, ignore0=True):
     if rownames is None:
         rownames = [str(i) for i in range(len(X))]
