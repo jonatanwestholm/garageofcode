@@ -12,7 +12,7 @@ import networkx as nx
 from common.utils import flatten_simple, shuffled, manhattan
 from mip.solver import get_solver, solution_value
 from labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree
-from common.search import bfs, dfs
+from common.search import bfs, dfs, a_star, anti_obstruction
 
 algo2name = {bfs: "BFS", dfs: "DFS"}
 gif_dir = "/home/jdw/garageofcode/results/labyrinth/gif"
@@ -23,9 +23,9 @@ N = 30
 M = N
 start = (0, 0)
 #end = (N - 1, M - 1)
-#end = (10, 10)
+#end = (N // 2, M // 2)
 end = (0, 1)
-algo = bfs
+algo = anti_obstruction
 leniency_iters = 100
 
 img_number = 0
@@ -96,6 +96,7 @@ def adversarial_random(algo, L, start, end, num_iter=5000):
     for i in range(num_iter):
         if i % 100 == 0:
             print("iter", i)
+            visualize_labyrinth(algo, L, start, end, iteration=i)
         removed_edges = random.sample(list(L.edges), 4)
         L.remove_edges_from(removed_edges)
         #print(edge)
@@ -105,7 +106,7 @@ def adversarial_random(algo, L, start, end, num_iter=5000):
             if new_cost > best_cost:
                 print("New best cost:", new_cost)
             best_cost = new_cost
-            if i % 100 == 0:
+            if i % 10 == 0:
                 visualize_labyrinth(algo, L, start, end, iteration=i)
             continue
         else:
@@ -311,9 +312,8 @@ def visualize_labyrinth(algo, L, start, end, show=False, iteration=0):
     if show:
         plt.show()
     else:
-        pass
-        #plt.draw()
-        #plt.pause(0.001)
+        plt.draw()
+        plt.pause(0.001)
 
     global img_number
     path = os.path.join(gif_dir, "{:03d}".format(img_number))
