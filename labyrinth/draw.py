@@ -22,6 +22,16 @@ def draw_labyrinth(ax, L, start, end, n, m):
             if (i + 1, j) not in L[(i, j)]:
                 ax.plot([j, j + 1], [i + 1, i + 1], 'k')
 
+def draw_obstruction_graph(ax, Obs):
+    n, m = max(Obs)
+
+    for i in range(n):
+        for j in range(m):
+            if (i, j + 1) not in Obs[(i, j)]:
+                ax.plot([j + 1, j + 1], [i, i + 1], 'g', linewidth=2)
+            if (i + 1, j) not in Obs[(i, j)]:
+                ax.plot([j, j + 1], [i + 1, i + 1], 'g', linewidth=2)
+
 def draw_path(ax, nodes, **kwargs):
     i_coords, j_coords = zip(*nodes)
     ax.step(np.array(j_coords) + 0.5, np.array(i_coords) + 0.5, **kwargs)

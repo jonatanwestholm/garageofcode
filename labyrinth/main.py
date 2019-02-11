@@ -9,67 +9,12 @@ import copy
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from common.utils import flatten_simple, shuffled, manhattan
 from mip.solver import get_solver, solution_value
-from labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree
-from common.search import bfs, dfs, a_star, anti_obstruction
-
-algo2name = {bfs: "BFS", dfs: "DFS"}
-gif_dir = "/home/jdw/garageofcode/results/labyrinth/gif"
-
-fig, ax = plt.subplots(figsize=(5.7, 6.5))
-
-N = 30
-M = N
-start = (0, 0)
-#end = (N - 1, M - 1)
-#end = (N // 2, M // 2)
-end = (0, 1)
-algo = anti_obstruction
-leniency_iters = 100
-
-img_number = 0
-
-def init_grid_graph(n, m, p):
-    G = nx.Graph()
-    for i in range(n):
-        for j in range(m):
-            G.add_node((i, j))
-            if j < m - 1 and random.random() < p:
-                G.add_edge((i, j), (i, j + 1))
-            if i < n - 1 and random.random() < p:
-                G.add_edge((i, j), (i + 1, j))
-    return G
-
-def connect_labyrinth(L):
-    added_edges = []
-    components = list(nx.connected_components(L))
-    while len(components) > 1:
-        components, edge = connect_components(L, components)
-        added_edges.append(edge)
-    return added_edges
-
-def connect_components(L, components):
-    c = random.choice(components)
-    for n in shuffled(c):
-        neighbours = list(get_grid_neighbours(L, n))
-        for neigh in shuffled(neighbours):
-            if neigh not in c:
-                neigh_c = nx.node_connected_component(L, neigh)
-                components.remove(c)
-                components.remove(neigh_c)
-                c.update(neigh_c)
-                components.append(c)
-                edge = (n, neigh)
-                L.add_edge(*edge)
-                return components, edge
-
-def get_grid_neighbours(L, n):
-    i, j = n
-    for di, dj in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
-        neigh = (i + di, j + dj)
-        if neigh in L:
-            yield neigh
+from common.utils import flatten_simple, shuffled, manhattan
+from common.search import bfs, dfs, a_star
+from labyrinth.utils import connect_labyrinth, init_grid_graph
+from labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree, draw_obstruction_graph
+from labyrinth.search import anti_obstruction
 
 def node_expansion_buster(L, n, m):
     for i in range(n):
@@ -90,6 +35,20 @@ def bfs_buster(L, n, m):
 
     L.add_edge((0, m - 2), (0, m - 1))
 
+def anti_obstruction_buster(L):
+    n, m = max(L)
+    for i in range(n + 1):
+        for j in range(m + 1):
+            if i == n and j < m:
+                L.add_edge((i, j), (i, j + 1))
+
+            if i == 0 and j > 0 and j < m:
+                L.add_edge((i, j), (i, j + 1))
+
+            if i < n:
+                if j == 0 or j == m or i != 0:
+                    L.add_edge((i, j), (i + 1, j))
+
 def adversarial_random(algo, L, start, end, num_iter=5000):
     best_cost = search_cost(algo, L, start, end)
     print("Initial cost:", best_cost)
@@ -105,9 +64,10 @@ def adversarial_random(algo, L, start, end, num_iter=5000):
         if new_cost >= best_cost:
             if new_cost > best_cost:
                 print("New best cost:", new_cost)
-            best_cost = new_cost
-            if i % 10 == 0:
                 visualize_labyrinth(algo, L, start, end, iteration=i)
+            best_cost = new_cost
+            #if i % 10 == 0:
+            #    visualize_labyrinth(algo, L, start, end, iteration=i)
             continue
         else:
             # revert changes
@@ -127,38 +87,43 @@ def adversarial_targeted_random(algo, L, start, end, num_iter=20000):
         T = algo(L, start, end)
         sp_nodes = nx.shortest_path(T, start, end)
         
+
         removed_edges = set()
         added_edges = set()
-        (i0, j0) = random.choice(sp_nodes)
-        radius = 3
-        for d_i in range(-radius, radius):
-            for d_j in range(-radius, radius):
-                center_node = (i0 + d_i, j0 + d_j)
-                if center_node not in L:
-                    continue
-                
-                right_node = (i0 + d_i, j0 + d_j + 1)
-                right_edge = (center_node, right_node)
-                rnd = random.random()
-                base = 1.4
-                if right_edge in L.edges and rnd < base**(-(1 + manhattan(center_node, right_node))):
-                    removed_edges.add(right_edge)
-                elif right_node in L and rnd < base**(-(2 + manhattan(center_node, right_node))):
-                    added_edges.add(right_edge)
-                up_node = (i0 + d_i + 1, j0 + d_j)
-                up_edge = (center_node, up_node)
-                #rnd = random.random()
-                if up_edge in L.edges and rnd < base**(-(1 + manhattan(center_node, right_node))):
-                    removed_edges.add(up_edge)
-                elif up_node in L and rnd < base**(-(2 + manhattan(center_node, right_node))):
-                    added_edges.add(up_edge)
+        remain_removed_edges = set()
+        new_edges = set()
 
-        remain_removed_edges = random.sample(list(L.edges), 4)
-        removed_edges.update(remain_removed_edges)
-        L.remove_edges_from(removed_edges)
-        new_edges = connect_labyrinth(L)
-        added_edges = [e for e in added_edges if e not in L]
-        L.add_edges_from(added_edges)
+        if random.random() < 0.5:
+            (i0, j0) = random.choice(sp_nodes)
+            radius = 3
+            for d_i in range(-radius, radius):
+                for d_j in range(-radius, radius):
+                    center_node = (i0 + d_i, j0 + d_j)
+                    if center_node not in L:
+                        continue
+                    
+                    right_node = (i0 + d_i, j0 + d_j + 1)
+                    right_edge = (center_node, right_node)
+                    rnd = random.random()
+                    base = 1.4
+                    if right_edge in L.edges and rnd < base**(-(1 + manhattan(center_node, right_node))):
+                        removed_edges.add(right_edge)
+                    elif right_node in L and rnd < 0*base**(-(2 + manhattan(center_node, right_node))):
+                        added_edges.add(right_edge)
+                    up_node = (i0 + d_i + 1, j0 + d_j)
+                    up_edge = (center_node, up_node)
+                    #rnd = random.random()
+                    if up_edge in L.edges and rnd < base**(-(1 + manhattan(center_node, right_node))):
+                        removed_edges.add(up_edge)
+                    elif up_node in L and rnd < 0*base**(-(2 + manhattan(center_node, right_node))):
+                        added_edges.add(up_edge)
+
+            L.remove_edges_from(removed_edges)
+            new_edges = connect_labyrinth(L)
+            added_edges = [e for e in added_edges if e not in L]
+            L.add_edges_from(added_edges)
+        else:
+            remain_removed_edges = random.sample(list(L.edges), 4)
 
         new_cost = search_cost(algo, L, start, end)
         if new_cost >= best_cost or \
@@ -184,6 +149,7 @@ def adversarial_targeted_random(algo, L, start, end, num_iter=20000):
                 L.remove_edges_from(added_edges)
                 L.remove_edges_from(new_edges)
                 L.add_edges_from(removed_edges)
+                L.add_edges_from(remain_removed_edges)
 
         assert nx.is_connected(L)
 
@@ -271,6 +237,25 @@ def main_draw_search_tree(ax, L, T, start=None, end=None):
                                     total_edges_passed)]
     return "\n".join(title)
 
+
+algo2name = {bfs: "BFS", dfs: "DFS"}
+gif_dir = "/home/jdw/garageofcode/results/labyrinth/gif"
+
+fig, ax = plt.subplots(figsize=(5.7, 6.5))
+
+N = 10
+M = N
+start = (0, 0)
+#end = (N - 1, M - 1)
+end = (N // 2, M // 2)
+#end = (0, 1)
+algo = anti_obstruction
+adversary = adversarial_targeted_random
+leniency_iters = 100
+
+img_number = 0
+
+
 def main():
     #random.seed(1)
     #mc_search_score(bfs, N, M, 1000, start, end)
@@ -279,6 +264,7 @@ def main():
     L = init_grid_graph(N, M, p=0)
 
     t0 = time.time()
+    #anti_obstruction_buster(L)
     #bfs_buster(L, N, M)
     connect_labyrinth(L)
     t1 = time.time()
@@ -288,12 +274,16 @@ def main():
     #bfs_buster(L, N, M)
     #return
     num_iter = 200000
-    adversarial_targeted_random(algo, L, start, end, num_iter)
-    #adversarial_random(algo, L, start, end, num_iter)
+    #adversarial_targeted_random(algo, L, start, end, num_iter)
+    adversary(algo, L, start, end, num_iter)
 
     #print("End found at depth:", depth)
     #print("Nbr expanded nodes:", num_expanded)
     visualize_labyrinth(algo, L, start, end, show=True)
+    #visualize_search(algo, L, start, end)
+
+def visualize_search(algo, L, start, end):
+    pass
 
 def visualize_labyrinth(algo, L, start, end, show=False, iteration=0):
     T = algo(L, start, end)
@@ -301,6 +291,10 @@ def visualize_labyrinth(algo, L, start, end, show=False, iteration=0):
     ax.cla()
 
     draw_labyrinth(ax, L, start, end, N, M)
+    if algo == anti_obstruction:
+        from labyrinth.search import Obs
+        draw_obstruction_graph(ax, Obs)
+    title = ""
     title = main_draw_search_tree(ax, L, T, start, end)
     title = "Iteration: {}\n".format(iteration) + title
 
