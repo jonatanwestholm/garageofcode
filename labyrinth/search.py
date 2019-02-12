@@ -1,3 +1,4 @@
+import random
 import networkx as nx
 from common.utils import Heap, shuffled, manhattan
 from labyrinth.utils import init_obstruction_graph, get_grid_neighbours
@@ -19,6 +20,7 @@ def anti_obstruction(G, start, end, inspection=False):
 
     while heap:
         (h_node, depth), node = heap.pop()
+        nx.set_node_attributes(T, {node: h_node}, "h")
         if inspection:
             yield T
         if node in expanded_nodes:
@@ -34,17 +36,15 @@ def anti_obstruction(G, start, end, inspection=False):
             if neigh not in expanded_nodes:
                 Obs.remove_edge(node, neigh)
                 T.add_edge(node, neigh)
-                heap.push(((obstructed_h(Obs, neigh, end) + depth + 1, depth + 1), neigh))
-        '''
-        for neigh in shuffled(G[node]):
-            if neigh not in expanded_nodes:
-                T.add_edge(node, neigh)
-                heap.push((obstructed_h(Obs, neigh, end), neigh))
-        '''
+                if random.random() < 1:
+                    h_neigh = obstructed_h(Obs, neigh, end) + depth + 1
+                else:
+                    h_neigh = h_node + 1
+                heap.push(((h_neigh, depth + 1), neigh))
     else:
         print("Warning: algo did not find path from {} to {}".format(start, end))
 
 
     dead_end_nodes = set(T.nodes) - expanded_nodes
     T.remove_nodes_from(dead_end_nodes)
-    return T
+    yield T

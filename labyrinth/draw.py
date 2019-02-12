@@ -22,6 +22,12 @@ def draw_labyrinth(ax, L, start, end, n, m):
             if (i + 1, j) not in L[(i, j)]:
                 ax.plot([j, j + 1], [i + 1, i + 1], 'k')
 
+def draw_heuristics(ax, T, nodes):
+    for node in nodes:
+        h_node = T[node]["h"]
+        h_node = h_node / 60
+        draw_patch(ax, node, c=np.array([1, 1, 1]) * h_node)
+
 def draw_obstruction_graph(ax, Obs):
     n, m = max(Obs)
 

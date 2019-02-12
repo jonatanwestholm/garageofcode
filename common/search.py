@@ -28,7 +28,7 @@ def a_star(G, start, end, inspection=False):
 
     dead_end_nodes = set(T.nodes) - expanded_nodes
     T.remove_nodes_from(dead_end_nodes)
-    return T
+    yield T
 
 def bfs(G, start, end, inspection=False):
     T = nx.Graph() # the search tree
@@ -55,7 +55,7 @@ def bfs(G, start, end, inspection=False):
 
     dead_end_nodes = set(T.nodes) - expanded_nodes
     T.remove_nodes_from(dead_end_nodes)
-    return T
+    yield T
 
 def dfs(G, start, end, inspection=False):
     T = nx.Graph() # the search tree
@@ -80,4 +80,4 @@ def dfs(G, start, end, inspection=False):
 
     dead_end_nodes = set(T.nodes) - expanded_nodes
     T.remove_nodes_from(dead_end_nodes)
-    return T
+    yield T

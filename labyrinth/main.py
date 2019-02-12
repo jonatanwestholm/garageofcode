@@ -13,7 +13,7 @@ from mip.solver import get_solver, solution_value
 from common.utils import flatten_simple, shuffled, manhattan
 from common.search import bfs, dfs, a_star
 from labyrinth.utils import connect_labyrinth, init_grid_graph
-from labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree, draw_obstruction_graph
+from labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree, draw_obstruction_graph, draw_heuristics
 from labyrinth.search import anti_obstruction
 
 def node_expansion_buster(L, n, m):
@@ -273,12 +273,15 @@ def main():
     t1 = time.time()
     print("Is tree:", nx.is_tree(L))
     print("Is connected:", nx.is_connected(L))
-    print("Time: {0:.3f}s".format(t1 - t0))
+    print("Time, connecting: {0:.3f}s".format(t1 - t0))
     #bfs_buster(L, N, M)
     #return
     num_iter = 100
     #adversarial_targeted_random(algo, L, start, end, num_iter)
+    t0 = time.time()
     adversary(algo, L, start, end, num_iter)
+    t1 = time.time()
+    print("Time, adversary: {0:.3f}".format(t1 - t0))
 
     #print("End found at depth:", depth)
     #print("Nbr expanded nodes:", num_expanded)
@@ -292,14 +295,20 @@ def visualize_labyrinth(algo, L, start, end, show=False, iteration=0, inspection
     for T in algo(L, start, end, inspection):
         if end not in T:
             T = copy.deepcopy(T)
+            #to_be_plotted = set()
             to_be_removed = set()
             for edge in T.edges:
                 if edge in T_old.edges:
                     to_be_removed.add(edge)
+            #for node in T:
+            #    if node not in T_old:
+            #        to_be_plotted.add(node)
             T.remove_edges_from(to_be_removed)
             T_old.add_edges_from(T.edges)
+            #draw_heuristics(ax, T, to_be_plotted)
+            #T.remove_nodes_from(to_be_plotted)
 
-        if and algo == anti_obstruction:
+        if algo == anti_obstruction:
             pass
             #from labyrinth.search import Obs
             #draw_obstruction_graph(ax, Obs)
