@@ -1,7 +1,7 @@
 import networkx as nx
 from common.utils import Heap, shuffled, manhattan
 
-def a_star(G, start, end):
+def a_star(G, start, end, inspection=False):
     T = nx.Graph() # the search tree
     expanded_nodes = set()
     heap = Heap()
@@ -12,6 +12,8 @@ def a_star(G, start, end):
 
     while heap:
         (h_node, depth), node = heap.pop()
+        if inspection:
+            yield T
         if node in expanded_nodes:
             continue
         expanded_nodes.add(node)
@@ -28,7 +30,7 @@ def a_star(G, start, end):
     T.remove_nodes_from(dead_end_nodes)
     return T
 
-def bfs(G, start, end):
+def bfs(G, start, end, inspection=False):
     T = nx.Graph() # the search tree
     expanded_nodes = set()
     heap = Heap()
@@ -37,6 +39,8 @@ def bfs(G, start, end):
 
     while heap:
         depth, node = heap.pop()
+        if inspection:
+            yield T
         if node in expanded_nodes:
             continue
         expanded_nodes.add(node)
@@ -53,13 +57,15 @@ def bfs(G, start, end):
     T.remove_nodes_from(dead_end_nodes)
     return T
 
-def dfs(G, start, end):
+def dfs(G, start, end, inspection=False):
     T = nx.Graph() # the search tree
     expanded_nodes = set()
     stack = [start]
 
     while stack:
         node = stack.pop()
+        if inspection:
+            yield T
         if node in expanded_nodes:
             continue
         expanded_nodes.add(node)

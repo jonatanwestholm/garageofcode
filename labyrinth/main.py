@@ -84,7 +84,7 @@ def adversarial_targeted_random(algo, L, start, end, num_iter=20000):
     for i in range(num_iter):
         if i % 100 == 0:
             print("iter", i)
-        T = algo(L, start, end)
+        T = next(algo(L, start, end))
         sp_nodes = nx.shortest_path(T, start, end)
         
 
@@ -176,14 +176,14 @@ def get_labyrinth_complexity(L, start, end):
     return solution_value(node2complexity[start])
 
 def search_cost(algo, L, start, end):
-    T = algo(L, start, end)
+    T = next(algo(L, start, end))
     path_nodes = nx.shortest_path(T, start, end)
     backtrack_nodes = T.nodes - set(path_nodes)
     total_edges_passed = len(path_nodes) - 1 + 2*len(backtrack_nodes)
     return total_edges_passed
 
 def search_score(algo, L, start, end):
-    T = algo(L, start, end)
+    T = next(algo(L, start, end))
     path_nodes = nx.shortest_path(T, start, end)
     backtrack_nodes = T.nodes - set(path_nodes)
     total_edges_passed = len(path_nodes) - 1 + 2*len(backtrack_nodes)
@@ -220,8 +220,11 @@ def main_draw_search_tree(ax, L, T, start=None, end=None):
     if start is None or end is None:
         return ""
 
-    path_nodes = nx.shortest_path(T, start, end)
-    draw_path(ax, path_nodes, zorder=99, c='b', linewidth=3)
+    if end in T:
+        path_nodes = nx.shortest_path(T, start, end)
+        draw_path(ax, path_nodes, zorder=99, c='b', linewidth=3)
+    else:
+        path_nodes = [start]
 
     backtrack_nodes = T.nodes - set(path_nodes)
     total_edges_passed = len(path_nodes) - 1 + 2*len(backtrack_nodes) 
@@ -243,7 +246,7 @@ gif_dir = "/home/jdw/garageofcode/results/labyrinth/gif"
 
 fig, ax = plt.subplots(figsize=(5.7, 6.5))
 
-N = 10
+N = 30
 M = N
 start = (0, 0)
 #end = (N - 1, M - 1)
@@ -273,46 +276,52 @@ def main():
     print("Time: {0:.3f}s".format(t1 - t0))
     #bfs_buster(L, N, M)
     #return
-    num_iter = 200000
+    num_iter = 100
     #adversarial_targeted_random(algo, L, start, end, num_iter)
     adversary(algo, L, start, end, num_iter)
 
     #print("End found at depth:", depth)
     #print("Nbr expanded nodes:", num_expanded)
-    visualize_labyrinth(algo, L, start, end, show=True)
+    visualize_labyrinth(algo, L, start, end, show=True, inspection=True)
     #visualize_search(algo, L, start, end)
 
-def visualize_search(algo, L, start, end):
-    pass
-
-def visualize_labyrinth(algo, L, start, end, show=False, iteration=0):
-    T = algo(L, start, end)
-
+def visualize_labyrinth(algo, L, start, end, show=False, iteration=0, inspection=False):
     ax.cla()
-
     draw_labyrinth(ax, L, start, end, N, M)
-    if algo == anti_obstruction:
-        from labyrinth.search import Obs
-        draw_obstruction_graph(ax, Obs)
-    title = ""
-    title = main_draw_search_tree(ax, L, T, start, end)
-    title = "Iteration: {}\n".format(iteration) + title
+    T_old = nx.Graph()
+    for T in algo(L, start, end, inspection):
+        if end not in T:
+            T = copy.deepcopy(T)
+            to_be_removed = set()
+            for edge in T.edges:
+                if edge in T_old.edges:
+                    to_be_removed.add(edge)
+            T.remove_edges_from(to_be_removed)
+            T_old.add_edges_from(T.edges)
 
-    #ax.set_figsize((6, 4))
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.8, right=0.9)
-    plt.title(title)
-    plt.axis("off")
-    if show:
-        plt.show()
-    else:
-        plt.draw()
-        plt.pause(0.001)
+        if and algo == anti_obstruction:
+            pass
+            #from labyrinth.search import Obs
+            #draw_obstruction_graph(ax, Obs)
+        title = ""
+        title = main_draw_search_tree(ax, L, T, start, end)
+        title = "Iteration: {}\n".format(iteration) + title
 
-    global img_number
-    path = os.path.join(gif_dir, "{:03d}".format(img_number))
-    plt.savefig(path)
-    img_number += 1
+        #ax.set_figsize((6, 4))
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.8, right=0.9)
+        plt.title(title)
+        plt.axis("off")
+        if show and not inspection:
+            plt.show()
+        else:
+            plt.draw()
+            plt.pause(0.001)
+
+        global img_number
+        path = os.path.join(gif_dir, "{:03d}".format(img_number))
+        plt.savefig(path)
+        img_number += 1
 
 if __name__ == '__main__':
     main()

@@ -3,9 +3,12 @@ from common.utils import Heap, shuffled, manhattan
 from labyrinth.utils import init_obstruction_graph, get_grid_neighbours
 
 def obstructed_h(Obs, node, end):
-    return len(nx.shortest_path(Obs, node, end)) - 1
+    try: 
+        return len(nx.shortest_path(Obs, node, end)) - 1
+    except nx.exception.NetworkXNoPath:
+        return len(Obs)
 
-def anti_obstruction(G, start, end):
+def anti_obstruction(G, start, end, inspection=False):
     T = nx.Graph() # the search tree
     global Obs
     Obs = init_obstruction_graph(G) # obstruction graph
@@ -16,6 +19,8 @@ def anti_obstruction(G, start, end):
 
     while heap:
         (h_node, depth), node = heap.pop()
+        if inspection:
+            yield T
         if node in expanded_nodes:
             continue
         expanded_nodes.add(node)
@@ -27,6 +32,7 @@ def anti_obstruction(G, start, end):
             if neigh not in G[node]:
                 continue
             if neigh not in expanded_nodes:
+                Obs.remove_edge(node, neigh)
                 T.add_edge(node, neigh)
                 heap.push(((obstructed_h(Obs, neigh, end) + depth + 1, depth + 1), neigh))
         '''
