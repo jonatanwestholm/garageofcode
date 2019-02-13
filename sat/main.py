@@ -1,26 +1,25 @@
-from satispy import Variable, Cnf
-from satispy.solver import Minisat
+from pysat.solvers import Glucose4
+
+class GlucoseRush(Glucose4):
+
+	def __init__(self):
+		super().__init__()
+		self.var_num = 0
+
+	def var(self):
+		self.var_num += 1
+		return self.var_num
 
 def main():
-	v1 = Variable('v1')
-	v2 = Variable('v2')
-	v3 = Variable('v3')
+	g = GlucoseRush()
 
-	exp = v1 & v2 | v3
-	exp = exp & -v1
-	exp = exp & -v3
+	a = g.var()
+	b = g.var()
 
-	exp = Cnf.create_from(v1)
-	exp = Cnf.create_from(exp)
+	g.add_clause([-a, b])
 
-	solver = Minisat()
-
-	solution = solver.solve(exp)
-
-	if solution.success:
-		print(solution[v1]) #, solution[v2], solution[v3])
-	else:
-		print("Unsatisfiable")
+	g.solve()
+	print(g.get_model())
 
 if __name__ == '__main__':
 	main()
