@@ -1,25 +1,29 @@
-from pysat.solvers import Glucose4
+import sys
+import os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
-class GlucoseRush(Glucose4):
-
-	def __init__(self):
-		super().__init__()
-		self.var_num = 0
-
-	def var(self):
-		self.var_num += 1
-		return self.var_num
+from sat.solver import get_solver
 
 def main():
-	g = GlucoseRush()
+    solver = get_solver("Minisat22")
 
-	a = g.var()
-	b = g.var()
+    a = solver.var()
+    b = solver.var()
+    d = solver.var()
+    c = solver.var()
 
-	g.add_clause([-a, b])
+    cnf = [[a, -b, -c], [-a, b, -c], [-a, -b, c]]
 
-	g.solve()
-	print(g.get_model())
+    solver.add_clauses_from(cnf)
+
+    solver.solve()
+    #print(solver.get_model())
+    #>> [-1, -2]
+
+    for var in [a, b, c, d]:
+        print("Var: {}, Value: {}".format(var, solver.solution_value(var)))
+    solver.solution_value(d)
+    #print(solver.get_model())
 
 if __name__ == '__main__':
-	main()
+    main()
