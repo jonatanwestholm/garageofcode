@@ -1,13 +1,8 @@
-from pysat.solvers import Glucose4, Minisat22
+from pysat.solvers import Solver
 
-def get_solver(solver_name):
-    if solver_name == "Glucose4":
-        return SugarRush_Glucose4()
-    elif solver_name == "Minisat22":
-        return SugarRush_Minisat22()
-
-class SugarRush():
-    def __init__(self):
+class SugarRush(Solver):
+    def __init__(self, name="glucose4"):
+        super().__init__(name=name)
         self.var_num = 0
         self.var2val = {}
         
@@ -26,13 +21,3 @@ class SugarRush():
         if not self.var2val:
             self._init_var2val()
         return self.var2val[var]
-
-class SugarRush_Glucose4(Glucose4, SugarRush):
-    def __init__(self):
-        Glucose4.__init__(self)
-        SugarRush.__init__(self)
-
-class SugarRush_Minisat22(Minisat22, SugarRush):
-    def __init__(self):
-        Minisat22.__init__(self)
-        SugarRush.__init__(self)

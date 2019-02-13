@@ -2,10 +2,10 @@ import sys
 import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
-from sat.solver import get_solver
+from sat.solver import SugarRush
 
 def main():
-    solver = get_solver("Minisat22")
+    solver = SugarRush()
 
     a = solver.var()
     b = solver.var()
