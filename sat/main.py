@@ -44,7 +44,7 @@ def print_langford_solution(solver, X):
             position2num[idx1] = k + 1
 
     _, nums = zip(*sorted(position2num.items()))
-    langford_str = ",".join(map(str, nums))
+    langford_str = ", ".join(map(str, nums))
     print(langford_str)
 
 def main():
