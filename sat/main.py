@@ -12,7 +12,8 @@ def langford(solver, n):
     X = [[solver.var() for _ in range(2*n - k - 2)] for k in range(n)]
 
     for row in X:
-        solver.symmetric(row)
+        solver.add(solver.symmetric(row))
+        #solver.symmetric(row)
 
     position2covering = defaultdict(list)
     for k, row in enumerate(X):
@@ -21,7 +22,8 @@ def langford(solver, n):
             position2covering[i + k + 2].append(var)
 
     for lits in position2covering.values():
-        solver.symmetric(lits)
+        solver.add(solver.symmetric(lits))
+        #solver.symmetric(lits)
 
     return X
 
@@ -48,9 +50,16 @@ def print_langford_solution(solver, X):
     print(langford_str)
 
 def main():
+    n = 20
     solver = SugarRush()
 
-    X = langford(solver, 12)
+    X = langford(solver, n)
+
+    print("n:", n)
+    print("Nof variables:", solver.nof_vars())
+    print("Nof clauses:", solver.nof_clauses())
+
+    #return
 
     satisfiable = solver.solve()
     print(satisfiable)
