@@ -1,7 +1,8 @@
-from common.utils import flatten_simple
+from common.utils import flatten_simple as flatten
 
 from pysat.solvers import Solver
 from pysat.card import CardEnc, EncType
+from pysat.formula import CNF
 
 class SugarRush(Solver):
     """
@@ -44,25 +45,40 @@ class SugarRush(Solver):
 
     def _init_var2val(self):
         for var, val in enumerate(self.get_model()):
-            self.var2val[var+1] = val > 0 # 1-indexed
+            self.var2val[var+1] = (val > 0) * 1 # 1-indexed
 
     def solution_value(self, var):
         if not self.var2val:
             self._init_var2val()
         return self.var2val[var]
 
+    def solution_values(self, variables):
+        return [self.solution_value(var) for var in variables]
+
+    def print_stats(self):
+        print("Nof variables:", self.nof_vars())
+        print("Nof clauses:", self.nof_clauses())
+
     """
     Constructs
     """
-    def symmetric(self, lits, encoding=EncType.seqcounter):
-        cnf = CardEnc.equals(lits=lits, 
-                              encoding=encoding, 
+    def equals(self, lits, bound=1, encoding=EncType.seqcounter):
+        cnf = CardEnc.equals(lits=lits,
+                              bound=bound,
+                              encoding=encoding,
                               top_id=self.top_id())
         clauses = cnf.clauses
-        self.add_lits(flatten_simple(clauses))
+        self.add_lits(flatten(clauses))
         return clauses
         #self.add(clauses)
         #return cnf.clauses
 
+    def negate(self, clauses):
+        cnf = CNF(from_clauses=clauses)
+        neg = cnf.negate(topv=self.top_id())
+        neg_clauses = neg.clauses
+        self.add_lits(flatten(neg_clauses))
+        return neg_clauses
+
     def disjunction(self, cnfs):
-        pass
+        return self.negate([self.negate(cnf) for cnf in cnfs])

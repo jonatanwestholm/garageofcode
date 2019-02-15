@@ -2,94 +2,59 @@ import sys
 import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
-from itertools import zip_longest
-from collections import defaultdict
+from pysat.card import EncType
 
-from common.utils import flatten_simple
 from sat.solver import SugarRush
+from sat.langford import langford, print_langford_solution
 
-def langford(solver, n):
-    X = [[solver.var() for _ in range(2*n - k - 2)] for k in range(n)]
+def langford_test(n):
+    with SugarRush() as solver:
+        X = langford(solver, n)
 
-    for row in X:
-        solver.add(solver.symmetric(row))
-        #solver.symmetric(row)
+        print("n:", n)
+        solver.print_stats()
 
-    position2covering = defaultdict(list)
-    for k, row in enumerate(X):
-        for i, var in enumerate(row):
-            position2covering[i].append(var)
-            position2covering[i + k + 2].append(var)
+        satisfiable = solver.solve()
+        print("Satisfiable:", satisfiable)
+        if not satisfiable:
+            return
 
-    for lits in position2covering.values():
-        solver.add(solver.symmetric(lits))
-        #solver.symmetric(lits)
+        print_langford_solution(solver, X)
 
-    return X
+def negate_test():
+    n = 3
 
-def print_langford_solution(solver, X):
-    position2num = {}
-    for k, row in enumerate(X):
-        row_solve = [solver.solution_value(var) for var in row]
-        #print(row_solve)
-        idx0 = row_solve.index(True)
-        idx1 = idx0 + k + 2
-
-        if idx0 in position2num:            
-            print("{} already taken by {}".format(idx0, position2num[idx0]))
-        else:
-            position2num[idx0] = k + 1
-
-        if idx1 in position2num:            
-            print("{} already taken by {}".format(idx1, position2num[idx1]))
-        else:
-            position2num[idx1] = k + 1
-
-    _, nums = zip(*sorted(position2num.items()))
-    langford_str = ", ".join(map(str, nums))
-    print(langford_str)
-
-def main():
-    n = 20
     solver = SugarRush()
 
-    X = langford(solver, n)
+    X = [solver.var() for _ in range(n)]
 
-    print("n:", n)
-    print("Nof variables:", solver.nof_vars())
-    print("Nof clauses:", solver.nof_clauses())
+    print(solver.top_id())
+    bound_X = solver.equals(X, bound=1) #, encoding=EncType.pairwise)
+    print(bound_X)
+    print(solver.top_id())
+    bound_X_neg = solver.negate(bound_X)
+    print(bound_X_neg)
+    print(solver.top_id())
 
-    #return
+    solver.add(bound_X_neg)
+
+    solver.add([[X[0]]]) #, [-X[1]], [X[5]]])
+
+    solver.print_stats()
 
     satisfiable = solver.solve()
-    print(satisfiable)
+    print("Satisfiable:", satisfiable)
     if not satisfiable:
         return
 
-    print_langford_solution(solver, X)
+    print(solver.solution_values(X))
 
-    '''
-    X = [solver.var() for _ in range(20)]
+def main():
+    #langford_test(20)
 
-    for enctype in [EncType.pairwise, EncType.seqcounter, EncType.bitwise]: 
-        cnf = CardEnc.atmost(lits=X, encoding=enctype).clauses
-        print(cnf)
-        print()
+    negate_test()
 
-    return
 
-    print(cnf)
-
-    solver.add_clauses_from(cnf)
-
-    solver.solve()
-    #print(solver.get_model())
-    #>> [-1, -2]
-    '''
-
-    #for var in flatten_simple(X):
-    #    print("Var: {}, Value: {}".format(var, solver.solution_value(var)))
-    #print(solver.get_model())
 
 if __name__ == '__main__':
     main()

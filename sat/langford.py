@@ -4,8 +4,8 @@ def langford(solver, n):
     X = [[solver.var() for _ in range(2*n - k - 2)] for k in range(n)]
 
     for row in X:
-        solver.add(solver.symmetric(row))
-        #solver.symmetric(row)
+        solver.add(solver.equals(row))
+        #solver.equals(row)
 
     position2covering = defaultdict(list)
     for k, row in enumerate(X):
@@ -14,8 +14,8 @@ def langford(solver, n):
             position2covering[i + k + 2].append(var)
 
     for lits in position2covering.values():
-        solver.add(solver.symmetric(lits))
-        #solver.symmetric(lits)
+        solver.add(solver.equals(lits))
+        #solver.equals(lits)
 
     return X
 
