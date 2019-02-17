@@ -59,14 +59,28 @@ class SugarRush(Solver):
         print("Nof variables:", self.nof_vars())
         print("Nof clauses:", self.nof_clauses())
 
+    def print_values(self):
+        for var, val in sorted(self.var2val.items()):
+            print("{}: {}".format(var, val))
+
+
     """
     Constructs
     """
     def equals(self, lits, bound=1, encoding=EncType.seqcounter):
         cnf = CardEnc.equals(lits=lits,
-                              bound=bound,
-                              encoding=encoding,
-                              top_id=self.top_id())
+                             bound=bound,
+                             encoding=encoding,
+                             top_id=self.top_id())
+        clauses = cnf.clauses
+        self.add_lits(flatten(clauses))
+        return clauses
+
+    def atmost(self, lits, bound=1, encoding=EncType.seqcounter):
+        cnf = CardEnc.atmost(lits=lits,
+                             bound=bound,
+                             encoding=encoding,
+                             top_id=self.top_id())
         clauses = cnf.clauses
         self.add_lits(flatten(clauses))
         return clauses
@@ -78,6 +92,11 @@ class SugarRush(Solver):
         neg = cnf.negate(topv=self.top_id())
         neg_clauses = neg.clauses
         self.add_lits(flatten(neg_clauses))
+        #neg_force = [[-auxvar] for auxvar in neg.auxvars]
+        #print(neg_force)
+        #self.add(neg_force)
+        #print(neg.auxvars)
+        self.add([neg.auxvars])
         return neg_clauses
 
     def disjunction(self, cnfs):
