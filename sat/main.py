@@ -37,10 +37,17 @@ def enumeration_test(solver, variables):
 
     print("Satisfying assignments:")
     [print(lits) for lits in sorted(satisfying_assignments)]
+    #print(set([sum(lits[:3]) for lits in satisfying_assignments]))
     print()
-    print("Unsatisfying assignments:")
-    [print(lits) for lits in sorted(unsatisfying_assignments)]
+    #print("False positives:")
+    #[print(lits) for lits in sorted(satisfying_assignments) if sum(lits[:3]) < 2]
+    
 
+    
+    #print("Unsatisfying assignments:")
+    #print(set([sum(lits[:3]) for lits in unsatisfying_assignments]))
+    #[print(lits) for lits in sorted(unsatisfying_assignments)]
+    
 
 def langford_test(n):
     with SugarRush() as solver:
@@ -57,20 +64,20 @@ def langford_test(n):
         print_langford_solution(solver, X)
 
 def negate_test():
-    n = 3
+    n = 4
 
     solver = SugarRush()
 
     X = [solver.var() for _ in range(n)]
 
     print(solver.top_id())
-    bound_X = solver.atmost(X, bound=1) #, encoding=EncType.pairwise)
+    bound_X = solver.atmost(X, bound=2) #, encoding=EncType.pairwise)
     #bound_X = [[X[0], X[1]], [X[2]]]
     print(bound_X)
     print(solver.top_id())
-    bound_X_neg = solver.negate(bound_X)
-    print(bound_X_neg)
-    print(solver.top_id())
+    #bound_X_neg = solver.negate(bound_X)
+    #print(bound_X_neg)
+    #print(solver.top_id())
     #bound_X_neg_neg = solver.negate(bound_X_neg)
     #print(bound_X_neg_neg)
     #print(solver.top_id())
@@ -86,7 +93,8 @@ def negate_test():
 
     solver.print_stats()
 
-    enumeration_test(solver, X)
+    enumeration_test(solver, list(sorted(solver.lits - set([0]))))
+    #enumeration_test(solver, X)
 
     '''
     satisfiable = solver.solve(assumptions=[-1, 2, 3])
