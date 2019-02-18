@@ -26,18 +26,15 @@ def enumeration_test(solver, variables):
             unsatisfying_assignments.append(tuple(bin_lits))
 
     print("Satisfying assignments:")
-    [print(lits) for lits in sorted(satisfying_assignments)]
-    #print(set([sum(lits[:3]) for lits in satisfying_assignments]))
+    #[print(lits) for lits in sorted(satisfying_assignments)]
+    print(set([sum(lits) for lits in satisfying_assignments]))
     print()
     #print("False positives:")
     #[print(lits) for lits in sorted(satisfying_assignments) if sum(lits[:3]) < 2]
     
-
-    
     print("Unsatisfying assignments:")
-    #print(set([sum(lits[:3]) for lits in unsatisfying_assignments]))
-    [print(lits) for lits in sorted(unsatisfying_assignments)]
-    
+    print(set([sum(lits) for lits in unsatisfying_assignments]))
+    #[print(lits) for lits in sorted(unsatisfying_assignments)]
 
 def langford_test(n):
     with SugarRush() as solver:
@@ -63,41 +60,39 @@ def negate_test():
     #enumeration_test(solver, X)
     enumeration_test(solver, list(sorted(solver.lits - set([0]))))
     
-    #print(bound_X_neg)
-    #print(solver.top_id())
-    #bound_X_neg_neg = solver.negate(bound_X_neg)
-    #print(bound_X_neg_neg)
-    #print(solver.top_id())
+def disjunction_test():
+    n = 10
+    solver = SugarRush()
+    X = [solver.var() for _ in range(n)]
 
-    #solver.add([[4]])
-    #solver.add(bound_X_neg_neg)
+    bounds_even = [solver.equals(X, k) for k in range(0, n+1, 2)]
+    bound = solver.disjunction(bounds_even)
 
-    #solver.add([[x] for x in X])
-    #solver.add([[-X[0]]]) #, [-X[1]], [X[5]]])
+    solver.add(bound)
+    enumeration_test(solver, X)
 
-    #solver.print_stats()
+    ''' successful test
+    bound_X_1 = solver.equals(X, bound=0)
+    bound_X_2 = solver.equals(X, bound=3)
+    bound_X_1or2 = solver.disjunction([bound_X_1, bound_X_2])
+    print(bound_X_1)
+    print()
+    print(bound_X_2)
+    print()
+    print(bound_X_1or2)
+    print()
 
+    solver.add(bound_X_1or2)
 
-    '''
-    satisfiable = solver.solve(assumptions=[-1, 2, 3])
-    print("Satisfiable:", satisfiable)
-    if not satisfiable:
-        return
-
-    print(solver.solution_values(X))
-
-    solver.print_values()
+    enumeration_test(solver, X)
     '''
 
 def main():
     #langford_test(20)
 
-    negate_test()
+    #negate_test()
 
-    #for lst in power_set_literals([1, 2, 3, 4]):
-    #    print(lst)
-
-
+    disjunction_test()
 
 if __name__ == '__main__':
     main()

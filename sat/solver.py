@@ -99,5 +99,19 @@ class SugarRush(Solver):
         self.add([neg.auxvars])
         return neg_clauses
 
+    def indicator(self, clauses):
+        p = self.var()
+        right_imp = [clause + [-p] for clause in clauses]
+        left_imp = [[-lit for lit in flatten(clauses)] + [p]]
+        equiv = left_imp + right_imp
+        return p, equiv
+
     def disjunction(self, cnfs):
-        return self.negate([self.negate(cnf) for cnf in cnfs])
+        inds = []
+        clauses = []
+        for cnf in cnfs:
+            p, equiv = self.indicator(cnf)
+            inds.append(p)
+            clauses.extend(equiv)
+        clauses.append(inds)
+        return clauses
