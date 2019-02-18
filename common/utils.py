@@ -35,6 +35,18 @@ def print_dataframe(X, rownames=None, colnames=None, spacing=10, ignore0=True):
     for row, rowname in zip(X, rownames):
         print(rowname.ljust(spacing) + "".join([str(val).rjust(spacing) if val else " "*spacing for val in row]))
 
+def power_set(a):
+    """
+    Takes lists only
+    """
+    if not a:
+        yield []
+    else:
+        s = a[0]
+        for subset in power_set(a[1:]):
+            yield subset
+            yield [s] + subset
+
 def shuffled(iterable): 
 	"""
 	Returns a generator for the elements of the

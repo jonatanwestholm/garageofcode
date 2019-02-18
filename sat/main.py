@@ -4,20 +4,10 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 from pysat.card import EncType
 
+from common.utils import power_set
+
 from sat.solver import SugarRush
 from sat.langford import langford, print_langford_solution
-
-def power_set(a):
-    """
-    Takes lists only
-    """
-    if not a:
-        yield []
-    else:
-        s = a[0]
-        for subset in power_set(a[1:]):
-            yield subset
-            yield [s] + subset
 
 def power_set_literals(lits):
     for subset in power_set(lits):
