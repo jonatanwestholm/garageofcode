@@ -81,7 +81,6 @@ def disjunction_test():
     print()
     print(bound_X_1or2)
     print()
-
     solver.add(bound_X_1or2)
 
     enumeration_test(solver, X)
