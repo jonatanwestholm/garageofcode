@@ -34,9 +34,9 @@ def enumeration_test(solver, variables):
     
 
     
-    #print("Unsatisfying assignments:")
+    print("Unsatisfying assignments:")
     #print(set([sum(lits[:3]) for lits in unsatisfying_assignments]))
-    #[print(lits) for lits in sorted(unsatisfying_assignments)]
+    [print(lits) for lits in sorted(unsatisfying_assignments)]
     
 
 def langford_test(n):
@@ -54,26 +54,20 @@ def langford_test(n):
         print_langford_solution(solver, X)
 
 def negate_test():
-    n = 4
-
+    n = 3
     solver = SugarRush()
-
     X = [solver.var() for _ in range(n)]
-
-    print(solver.top_id())
-    bound_X = solver.atmost(X, bound=2) #, encoding=EncType.pairwise)
-    #bound_X = [[X[0], X[1]], [X[2]]]
-    print(bound_X)
-    print(solver.top_id())
+    bound_X = solver.atmost(X, bound=1)
     #bound_X_neg = solver.negate(bound_X)
+    solver.add(bound_X)
+    #enumeration_test(solver, X)
+    enumeration_test(solver, list(sorted(solver.lits - set([0]))))
+    
     #print(bound_X_neg)
     #print(solver.top_id())
     #bound_X_neg_neg = solver.negate(bound_X_neg)
     #print(bound_X_neg_neg)
     #print(solver.top_id())
-
-
-    solver.add(bound_X)
 
     #solver.add([[4]])
     #solver.add(bound_X_neg_neg)
@@ -81,10 +75,8 @@ def negate_test():
     #solver.add([[x] for x in X])
     #solver.add([[-X[0]]]) #, [-X[1]], [X[5]]])
 
-    solver.print_stats()
+    #solver.print_stats()
 
-    enumeration_test(solver, list(sorted(solver.lits - set([0]))))
-    #enumeration_test(solver, X)
 
     '''
     satisfiable = solver.solve(assumptions=[-1, 2, 3])
