@@ -8,6 +8,7 @@ from common.utils import power_set
 
 from sat.solver import SugarRush
 from sat.langford import langford, print_langford_solution
+from sat.rokicki16 import rokicki16
 
 def power_set_literals(lits):
     for subset in power_set(lits):
@@ -91,7 +92,9 @@ def main():
 
     #negate_test()
 
-    disjunction_test()
+    #disjunction_test()
+
+    rokicki16()
 
 if __name__ == '__main__':
     main()
