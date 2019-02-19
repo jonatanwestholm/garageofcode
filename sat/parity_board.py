@@ -6,7 +6,7 @@ def allowed_cards(solver, variables, cardinalities):
     bounds = [solver.equals(variables, bound=card) for card in cardinalities]
     return solver.disjunction(bounds)
 
-def get_covering(coord, coord2tiles):
+def get_covering_vars(coord, coord2tiles):
     incident_tiles = []
     x, y = coord
     for dx, dy in [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)]:
@@ -18,17 +18,19 @@ def get_covering(coord, coord2tiles):
 def parity_board_solve(board, num_moves):
     solver = SugarRush()
 
-    coord2tiles = dict((coord, solver.var()) for coord in sorted(board))
-    coord2covering = dict((coord, get_covering(coord, coord2tiles)) for coord in board)
+    coord2tiles = dict((coord, solver.var()) 
+                       for coord in sorted(board))
+    coord2covering_vars = dict((coord, get_covering_vars(coord, coord2tiles))
+                          for coord in board)
 
     evens = list(range(0, num_moves+1, 2))
     odds  = list(range(1, num_moves+1, 2))
     for coord, val in board.items():
-        covering = coord2covering[coord]
+        covering_vars = coord2covering_vars[coord]
         if val:
-            parity_bound = allowed_cards(solver, covering, odds)
+            parity_bound = allowed_cards(solver, covering_vars, odds)
         else:
-            parity_bound = allowed_cards(solver, covering, evens)
+            parity_bound = allowed_cards(solver, covering_vars, evens)
         solver.add(parity_bound)
 
     tile_vars = list(coord2tiles.values())
@@ -76,6 +78,6 @@ def parity_board():
 
     #print()
     #print("Verification:")
-    #coord2covering = dict((coord, get_covering(coord, coord2val)) for coord in board_dict)
+    #coord2covering = dict((coord, get_covering_vars(coord, coord2val)) for coord in board_dict)
     #for i in range(N):
     #    print(", ".join([str((board_dict[(i, j)] + sum(coord2covering[(i, j)])) % 2) for j in range(M)]))
