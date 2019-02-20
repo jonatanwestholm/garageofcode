@@ -1,7 +1,7 @@
 from common.utils import flatten_simple as flatten
 
 from pysat.solvers import Solver
-from pysat.card import CardEnc, EncType
+from pysat.card import CardEnc, EncType, ITotalizer
 from pysat.formula import CNF
 
 class SugarRush(Solver):
@@ -40,6 +40,9 @@ class SugarRush(Solver):
         for lit in lits:
             self.lits.add(abs(lit))
 
+    def add_lits_from(self, cnf):
+        self.add_lits(flatten(cnf))
+
     def top_id(self):
         return max(self.lits)
 
@@ -73,7 +76,7 @@ class SugarRush(Solver):
                              encoding=encoding,
                              top_id=self.top_id())
         clauses = cnf.clauses
-        self.add_lits(flatten(clauses))
+        self.add_lits_from(clauses)
         return clauses
 
     def atmost(self, lits, bound=1, encoding=EncType.seqcounter):
@@ -82,7 +85,7 @@ class SugarRush(Solver):
                              encoding=encoding,
                              top_id=self.top_id())
         clauses = cnf.clauses
-        self.add_lits(flatten(clauses))
+        self.add_lits_from(clauses)
         return clauses
         #self.add(clauses)
         #return cnf.clauses
@@ -91,7 +94,7 @@ class SugarRush(Solver):
         cnf = CNF(from_clauses=clauses)
         neg = cnf.negate(topv=self.top_id())
         neg_clauses = neg.clauses
-        self.add_lits(flatten(neg_clauses))
+        self.add_lits_from(neg_clauses)
         #neg_force = [[-auxvar] for auxvar in neg.auxvars]
         #print(neg_force)
         #self.add(neg_force)
@@ -115,3 +118,35 @@ class SugarRush(Solver):
             clauses.extend(equiv)
         clauses.append(inds)
         return clauses
+
+    def itotalizer(self, lits, ubound=None):
+        if ubound is None:
+            ubound = len(lits)
+        itot = ITotalizer(lits, ubound)
+        clauses = itot.clauses
+        bound_vars = itot.rhs
+        self.add_lits_from(clauses)
+        return clauses, bound_vars
+
+    def optimize(self, itot):
+        """
+        Performs binary search
+        It is assumed that
+            i < j -> satisfiable(i) <= satisfiable(j)
+        Where
+            satisfiable(i) = self.solve(assumptions=[-i])
+        """
+        upper = len(bound_vars) - 1 # smallest known to be feasible
+        lower = 0 # largest known to be infeasible (after initial check)
+        if not self.solve(assumptions=[-itot[upper]]):
+            return None
+        if self.solve(assumptions=[-itot[lower]]):
+            return 0
+        while True:
+            mid = (upper + lower) // 2
+            if mid == lower:
+                return upper
+            if self.solve(assumptions=[-itot[mid]]):
+                upper = mid
+            else:
+                lower = mid
