@@ -3,7 +3,7 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 from common.utils import flatten_simple as flatten
- 
+
 def read_infile(fn):
 	mat = []
 	char2int = {"M": 0, "T": 1}
