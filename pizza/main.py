@@ -55,7 +55,7 @@ def maximize_row(row):
     #print()
 
 def main():
-    fn = "/home/jdw/garageofcode/data/pizza/big.in"
+    fn = "/home/jdw/garageofcode/data/pizza/medium.in"
     mat = read_infile(fn)
 
     #[print(row) for row in mat]

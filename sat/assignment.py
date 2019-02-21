@@ -34,7 +34,7 @@ def interval_selection(sequence, feasible, max_len=None):
 
     if 0: # optimize number of intervals
         selected = list(coord2var.values())
-        opt_vars = [-var for var in selected] # itotalizer can only do atmost
+        opt_vars = [-var for var in selected] # itotalizer does atmost
     else: # optimize covered elements
         idx2cov = []
         for i in range(N):
@@ -49,7 +49,7 @@ def interval_selection(sequence, feasible, max_len=None):
             p, equiv = solver.indicator([covering])
             solver.add(equiv)
             covered.append(p)
-        opt_vars = [-var for var in covered]
+        opt_vars = [-var for var in covered] # itotalizer does atmost
     itot_clauses, itot_vars = solver.itotalizer(opt_vars)
     solver.add(itot_clauses)
 

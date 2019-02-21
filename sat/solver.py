@@ -126,9 +126,7 @@ class SugarRush(Solver):
         itot = ITotalizer(lits, ubound)
         clauses = itot.cnf.clauses
         bound_vars = itot.rhs
-        #print("len lits:", len(lits))
         self.add_lits_from(clauses)
-        #print(bound_vars)
         return clauses, bound_vars
 
     def optimize(self, itot, debug=False):
