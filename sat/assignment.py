@@ -2,6 +2,9 @@ import sys
 import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
+from pysat.examples.fm import FM
+from pysat.formula import WCNF
+
 from common.utils import interval_overlap
 from sat.solver import SugarRush
 
@@ -10,6 +13,7 @@ def interval_selection(sequence, feasible, max_len=None):
     if not max_len:
         max_len = N
     solver = SugarRush()
+    wcnf = WCNF()
     coord2var = {}
     for i in range(N):
         for j in range(i, min(i + max_len, N)):
@@ -30,12 +34,13 @@ def interval_selection(sequence, feasible, max_len=None):
             mutex_clauses.append([-var0, -var1])
         else:
             pass #print("Not mutually exclusive:", c0, c1)
+    wcnf.extend(mutex_clauses)
     solver.add(mutex_clauses)
 
     if 0: # optimize number of intervals
         selected = list(coord2var.values())
         opt_vars = [-var for var in selected] # itotalizer does atmost
-    else: # optimize covered elements
+    elif 0: # optimize covered elements
         idx2cov = []
         for i in range(N):
             covering = []
@@ -50,20 +55,30 @@ def interval_selection(sequence, feasible, max_len=None):
             solver.add(equiv)
             covered.append(p)
         opt_vars = [-var for var in covered] # itotalizer does atmost
-    itot_clauses, itot_vars = solver.itotalizer(opt_vars)
-    solver.add(itot_clauses)
-
-    best = solver.optimize(itot_vars, debug=False)
-    if best is None:
-        return []
-
-    #satisfiable = solver.solve()
-    #print("Satisfiable:", satisfiable)
-    #if not satisfiable:
-    #    return []
-    selected_coords = [coord for coord, var in coord2var.items()
-                       if solver.solution_value(var)]
-    return selected_coords
+    
+    if 0: # using ITotalizer
+        itot_clauses, itot_vars = solver.itotalizer(opt_vars)
+        solver.add(itot_clauses)
+        best = solver.optimize(itot_vars, debug=False)
+        if best is None:
+            return []
+        selected_coords = [coord for coord, var in coord2var.items()
+                           if solver.solution_value(var)]
+        return selected_coords
+    else: # using weighted CNF and FuMalik
+        soft_clauses = [[var] for coord, var in sorted(coord2var.items())]
+        #weights = [j - i + 1 for (i, j), var in sorted(coord2var.items())]
+        weights = [1 for (i, j), var in sorted(coord2var.items())]
+        best_score = sum(weights)
+        wcnf.extend(soft_clauses, weights=weights)
+        fm = FM(wcnf)
+        satisfiable = fm.compute()
+        print("satisfiable:", satisfiable)
+        print("cost:", fm.cost)
+        score = best_score - fm.cost
+        print("score:", score)
+        print(list(fm.model))
+        return score
 
 def main():
     sequence = [0, 0, 0, 0, 0, 0]
