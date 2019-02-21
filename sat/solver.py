@@ -1,4 +1,5 @@
 from common.utils import flatten_simple as flatten
+from common.utils import dbg
 
 from pysat.solvers import Solver
 from pysat.card import CardEnc, EncType, ITotalizer
@@ -99,7 +100,7 @@ class SugarRush(Solver):
         #print(neg_force)
         #self.add(neg_force)
         #print(neg.auxvars)
-        self.add([neg.auxvars])
+        #self.add([neg.auxvars])
         return neg_clauses
 
     def indicator(self, clauses):
@@ -123,12 +124,14 @@ class SugarRush(Solver):
         if ubound is None:
             ubound = len(lits)
         itot = ITotalizer(lits, ubound)
-        clauses = itot.clauses
+        clauses = itot.cnf.clauses
         bound_vars = itot.rhs
+        #print("len lits:", len(lits))
         self.add_lits_from(clauses)
+        #print(bound_vars)
         return clauses, bound_vars
 
-    def optimize(self, itot):
+    def optimize(self, itot, debug=False):
         """
         Performs binary search
         It is assumed that
@@ -136,7 +139,7 @@ class SugarRush(Solver):
         Where
             satisfiable(i) = self.solve(assumptions=[-i])
         """
-        upper = len(bound_vars) - 1 # smallest known to be feasible
+        upper = len(itot) - 1 # smallest known to be feasible
         lower = 0 # largest known to be infeasible (after initial check)
         if not self.solve(assumptions=[-itot[upper]]):
             return None
@@ -144,9 +147,17 @@ class SugarRush(Solver):
             return 0
         while True:
             mid = (upper + lower) // 2
+            dbg("upper: %d" % upper, debug)
+            dbg("mid: %d" % mid, debug)
+            dbg("lower: %d" % lower, debug)
             if mid == lower:
-                return upper
-            if self.solve(assumptions=[-itot[mid]]):
+                break
+            satisfiable = self.solve(assumptions=[-itot[mid]])
+            dbg("satisfiable: %d" % satisfiable, debug)
+            if satisfiable:
                 upper = mid
             else:
                 lower = mid
+            dbg("", debug)
+        self.solve(assumptions=[-itot[upper]])
+        return upper

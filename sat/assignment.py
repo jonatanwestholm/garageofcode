@@ -32,21 +32,42 @@ def interval_selection(sequence, feasible, max_len=None):
             pass #print("Not mutually exclusive:", c0, c1)
     solver.add(mutex_clauses)
 
-    select_vars = list(coord2var.values())
-    cardinality = solver.equals(select_vars, bound=2)
-    solver.add(cardinality)
+    if 0: # optimize number of intervals
+        selected = list(coord2var.values())
+        opt_vars = [-var for var in selected] # itotalizer can only do atmost
+    else: # optimize covered elements
+        idx2cov = []
+        for i in range(N):
+            covering = []
+            for c, var in coord2var.items():
+                if interval_overlap(c, (i, i)):
+                    covering.append(var)
+            if covering:
+                idx2cov.append(covering)
+        covered = []
+        for covering in idx2cov:
+            p, equiv = solver.indicator([covering])
+            solver.add(equiv)
+            covered.append(p)
+        opt_vars = [-var for var in covered]
+    itot_clauses, itot_vars = solver.itotalizer(opt_vars)
+    solver.add(itot_clauses)
 
-    satisfiable = solver.solve()
-    print("Satisfiable:", satisfiable)
-    if not satisfiable:
+    best = solver.optimize(itot_vars, debug=False)
+    if best is None:
         return []
+
+    #satisfiable = solver.solve()
+    #print("Satisfiable:", satisfiable)
+    #if not satisfiable:
+    #    return []
     selected_coords = [coord for coord, var in coord2var.items()
                        if solver.solution_value(var)]
     return selected_coords
 
 def main():
     sequence = [0, 0, 0, 0, 0, 0]
-    feasible = lambda x: len(x) >= 2
+    feasible = lambda x: len(x) >= 2 and len(x) <= 5
     coords = interval_selection(sequence, feasible)
     for coord in coords:
         print(coord)

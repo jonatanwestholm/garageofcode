@@ -7,6 +7,10 @@ from copy import copy
 HRS2SEC = 3600
 DAY2SEC = HRS2SEC * 24
 
+def dbg(s, debug):
+	if debug:
+		print(s)
+
 def flatten_simple(lst):
     return [elem for sublist in lst for elem in sublist]
 

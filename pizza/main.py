@@ -2,6 +2,8 @@ import sys
 import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
+import time
+
 from common.utils import flatten_simple as flatten
 from sat.assignment import interval_selection
 
@@ -40,20 +42,31 @@ def feasible_in_row(row):
     return [feasible(row[i:i+H]) for i in range(len(row))]
 
 def maximize_row(row):
-    coords = interval_selection(row, feasible)
-    for coord in coords:
-        print(coord)
+    #print(row, ":")
+    t0 = time.time()
+    coords = interval_selection(row, feasible, max_len=14)
+    t1 = time.time()
+    print("Row time: {0:.3f}".format(t1 - t0))
+    score = sum([j - i + 1 for i, j in coords], 0)
+    #for i, j in coords:
+    #    print("\t", row[i:j+1])
+    print("Row score:", sum([j - i + 1 for i, j in coords], 0))
+    return score
+    #print()
 
 def main():
-    fn = "/home/jdw/garageofcode/data/pizza/small.in"
+    fn = "/home/jdw/garageofcode/data/pizza/big.in"
     mat = read_infile(fn)
 
-    [print(row) for row in mat]
-    print()
-    for row in mat:
-        print(feasible_in_row(row))
+    #[print(row) for row in mat]
+    #print()
+    #for row in mat:
+    #    print(feasible_in_row(row))
 
-    maximize_row(mat[0])
+    score = 0
+    for row in mat[:10]:
+        score += maximize_row(row)
+    print("Total score:", score)
 
 if __name__ == '__main__':
     main()
