@@ -46,12 +46,12 @@ def maximize_row(row):
     t0 = time.time()
     score = interval_selection(row, feasible, max_len=14)
     t1 = time.time()
-    #print("Row time: {0:.3f}".format(t1 - t0))
+    print("Row time: {0:.3f}".format(t1 - t0))
     #score = sum([j - i + 1 for i, j in coords], 0)
     #for i, j in coords:
     #    print("\t", row[i:j+1])
     #print("Row score:", sum([j - i + 1 for i, j in coords], 0))
-    return score
+    return 0
     #print()
 
 def main():
