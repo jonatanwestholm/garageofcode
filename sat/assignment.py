@@ -31,16 +31,11 @@ def interval_selection2(mat, feasible, max_width=None):
     mutex_clauses = []
     coord_2 = [(c0, c1) for c0 in coord2var for c1 in coord2var]
     for c0, c1 in coord_2:
-        #if c0 > c1: # ignore symmetries
-        #    continue
+        if c0 > c1: # ignore symmetries
+            continue
         if c0 == c1: # can't forbid overlap with self
             continue
-        if c0 == (0, 2, 4, 6) and c1 == (0, 5, 5, 6):
-                print("Testing: {}, {}".format(c0, c1))
         if interval_overlap2(c0, c1):
-            #if c0 == (1, 3, 3, 5) and c1 == (1, 3, 4, 6):
-            if c0 == (0, 2, 4, 6) and c1 == (0, 5, 5, 6):
-                print("Mutex: {}, {}".format(c0, c1))
             var0 = coord2var[c0]
             var1 = coord2var[c1]
             mutex_clauses.append([-var0, -var1])

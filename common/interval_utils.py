@@ -14,11 +14,7 @@ def get_area2(c):
     ix, jx, iy, jy = c    
     for x in range(ix, jx):
         for y in range(iy, jy):
-            #if c == (0, 4, 4, 5):
-            #    print(x, y)
             yield (x, y)
-    #if c == (0, 4, 4, 5):
-    #    print()
 
 def interval_overlap2(c0, c1):
     if any([interval_contains2(c0, p) for p in get_area2(c1)]):

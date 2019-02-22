@@ -25,7 +25,7 @@ def read_infile(fn):
         R, C, L, H = map(int, header.split(" "))
 
         for line in lines:
-            mat.append([char2int[ch] for ch in line])
+            mat.append([char2int[ch] for ch in line if line])
 
     return mat
 
@@ -54,7 +54,6 @@ def draw_solution(mat, coords):
             ax.add_patch(patch)
     draw_border(ax, (0, N, 0, M), color='k', linewidth=3)
 
-    
     for c0 in coords:
         for c1 in coords:
             if c0 >= c1:
@@ -71,6 +70,8 @@ def draw_solution(mat, coords):
         ax.add_patch(patch)
         draw_border(ax, c, linewidth=1)
 
+    plt.title("Black: M, White: T, Blue: slice \nL={}, H={}".format(L, H))
+    plt.axis("off")
     plt.plot()
     plt.show()
 
@@ -97,11 +98,11 @@ def maximize_mat(mat):
     if not list(mat):
         return 0
     t0 = time.time()
-    coords = interval_selection2(mat, feasible, max_width=12)
+    coords = interval_selection2(mat, feasible, max_width=14)
     t1 = time.time()
-    print("Mat time: {0:.3f}".format(t1 - t0))
+    #print("Mat time: {0:.3f}".format(t1 - t0))
     score = get_score(coords)
-    print("Mat score:", score)
+    #print("Mat score:", score)
 
     #print(coords)
     #draw_solution(mat, coords)
@@ -113,7 +114,7 @@ def maximize_row(row):
     t0 = time.time()
     score = interval_selection(row, feasible, max_len=14)
     t1 = time.time()
-    print("Row time: {0:.3f}".format(t1 - t0))
+    #print("Row time: {0:.3f}".format(t1 - t0))
     #score = sum([j - i + 1 for i, j in coords], 0)
     #for i, j in coords:
     #    print("\t", row[i:j+1])
@@ -126,15 +127,25 @@ def main():
     mat = read_infile(fn)
     mat = np.array(mat)
 
-    res = 10
+    res = 12
     N, M = mat.shape
     score = 0.0
     num_iters = 0
+    num_elems = 0
+    missed = 0
     for i in range(0, N, res):
         for j in range(0, M, res):
-            score += maximize_mat(mat[i:i+res, j:j+res])
+            submat = mat[i:i+res, j:j+res]
+            subnum_elems = np.size(submat)
+            subscore = maximize_mat(submat)
+            submissed = subnum_elems - subscore
+            num_elems += subnum_elems
+            score += subscore
+            missed += submissed
             num_iters += 1
-            print("Average: {0:.3f}%".format(score / num_iters / res**2 * 100))
+            #print("Average: {0:.3f}%".format(score / num_iters / num_elems * 100))
+            print("Completed: {0:.2f}%".format(num_elems / (N*M) * 100))       
+            print("Missed: {}".format(missed))
     print("Total score:", score)
 
     #[print(row) for row in mat]
