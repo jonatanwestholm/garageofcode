@@ -4,6 +4,8 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 import numpy as np
 from copy import copy
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 
 from common.utils import flatten_simple as simple
 from common.box import profile, get_corners
@@ -74,13 +76,13 @@ if __name__ == '__main__':
     np.random.seed(0)
     num_boxes = 100
     N_dim = 2
-    points_per_box = 0
+    points_per_box = 100
     N = num_boxes*points_per_box
     b0 = np.array([[0, 1.0] for _ in range(N_dim)])
     boxes = generate_boxes(b0, num_boxes)
     points = generate_points(boxes, num_boxes, points_per_box)
 
-    print(profile_sample([0.1], boxes))
+    #print(profile_sample([0.1], boxes))
 
     fig, ax = plt.subplots()
 
@@ -88,7 +90,7 @@ if __name__ == '__main__':
 
     if points:
         coords = np.array(points)
-        ax.scatter(*coords.T, s=5)
+        ax.scatter(*coords.T, s=1)
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_title("N={} dimensions, {} points".format(N_dim, N))
