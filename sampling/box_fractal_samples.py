@@ -49,7 +49,6 @@ def profile_sample(dim2val, boxes):
         # if dim2val not dict, assume dim=idx
         dim2val = {dim: val for dim, val in enumerate(dim2val)}
     boxes = profile(dim2val, [box.dim2ij for box in boxes])
-    print(boxes)
     box = np.random.choice(boxes)
     return NBox(box).sample_point()    
 
