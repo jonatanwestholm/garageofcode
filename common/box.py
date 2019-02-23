@@ -1,3 +1,5 @@
+from itertools import product
+
 def contains(x, box):
     if len(x) != len(box):
         msg = "Dimension mismatch {} vs. {}".format(len(x), len(box))
@@ -33,9 +35,14 @@ def profile(dim2val, boxes):
         boxes = profile_d(x_d, dim, boxes)
     return boxes
 
+def get_corners(box):
+    boundaries = [(i, j) for dim, (i, j) in sorted(box.items())]
+    return product(*boundaries)
+
 if __name__ == '__main__':
     #contains([1], [0, 2])
     dim2val = {0: 0.5, 1: 0.3}
     box = {0: (0, 1), 1: (0, 2), 2: (-1, 5)}
 
     print(profile(dim2val, [box]))
+    #print(list(get_corners(box)))
