@@ -3,6 +3,7 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 import numpy as np
+from itertools import product
 
 from pysat.examples.fm import FM
 from pysat.examples.lsu import LSU
@@ -13,24 +14,23 @@ from common.interval_utils import interval_overlap
 from common.interval_utils import interval_overlap2, interval_contains2
 from sat.solver import SugarRush
 
-def interval_selection2(mat, feasible, max_width=None):
+def interval_selection2(mat, feasible):
     N, M = mat.shape
-    if not max_width:
-        max_width = max(N, M)
     solver = SugarRush()
 
     coord2var = {}
-    for ix in range(N):
-        for jx in range(ix, min(ix + max_width, N+1)):
-            for iy in range(M):
-                for jy in range(iy, min(iy + max_width, M+1)):
-                    slize = mat[ix:jx, iy:jy]
-                    if feasible(slize):
-                        coord2var[(ix, jx, iy, jy)] = solver.var()
+    for ix, iy, jx, jy in product(range(N+1), range(M+1), repeat=2):
+        if jx <= ix:
+            continue
+        if jy <= iy:
+            continue
+        slize = mat[ix:jx, iy:jy]
+        if feasible(slize):
+            coord2var[(ix, jx, iy, jy)] = solver.var()
 
     mutex_clauses = []
-    coord_2 = [(c0, c1) for c0 in coord2var for c1 in coord2var]
-    for c0, c1 in coord_2:
+    #coord_2 = [(c0, c1) for c0 in coord2var for c1 in coord2var]
+    for c0, c1 in product(coord2var, repeat=2):
         if c0 > c1: # ignore symmetries
             continue
         if c0 == c1: # can't forbid overlap with self
@@ -42,15 +42,14 @@ def interval_selection2(mat, feasible, max_width=None):
     solver.add(mutex_clauses)
 
     p2covering = {}
-    for i in range(N):
-        for j in range(M):
-            p = (i, j)
-            covering = []
-            for c, var in coord2var.items():
-                if interval_contains2(c, p):
-                    covering.append(var)
-            if covering:
-                p2covering[p] = covering
+    for i, j in product(range(N), range(M)):
+        p = (i, j)
+        covering = []
+        for c, var in coord2var.items():
+            if interval_contains2(c, p):
+                covering.append(var)
+        if covering:
+            p2covering[p] = covering
     p2covered = {}
     for p, covering in p2covering.items():
         ind, clauses = solver.indicator([covering])

@@ -98,7 +98,7 @@ def maximize_mat(mat):
     if not list(mat):
         return 0
     t0 = time.time()
-    coords = interval_selection2(mat, feasible, max_width=14)
+    coords = interval_selection2(mat, feasible)
     t1 = time.time()
     #print("Mat time: {0:.3f}".format(t1 - t0))
     score = get_score(coords)
