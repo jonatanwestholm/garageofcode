@@ -3,7 +3,9 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 import numpy as np
+from sklearn import decomposition
 from copy import copy
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
@@ -66,23 +68,48 @@ def draw_boxes(ax, boxes):
         patch = Rectangle(i, *delta, fill=False)
         ax.add_patch(patch)
 
-if __name__ == '__main__':
-    from mpl_toolkits.mplot3d import Axes3D
-    import matplotlib.pyplot as plt
-    from matplotlib.patches import Rectangle
-
-    from sklearn import decomposition
-
+def hist_test():
     np.random.seed(0)
     num_boxes = 100
     N_dim = 2
-    points_per_box = 100
+    b0 = np.array([[0, 1.0] for _ in range(N_dim)])
+    boxes = generate_boxes(b0, num_boxes)
+
+    x_d = 0.4
+
+    y = np.array([profile_sample([x_d], boxes) for _ in range(1000)])
+
+    fig, (ax_boxes, ax_hist) = plt.subplots(nrows=2)
+
+    draw_boxes(ax_boxes, boxes)
+
+    ax_boxes.plot([x_d, x_d], [0, 1])
+    #print(np.histogram(y))
+    ax_hist.hist(y, weights=[0.001 for _ in range(1000)])
+
+    ax_boxes.set_xlabel("y(t-1)")
+    ax_boxes.set_ylabel("y(t)")
+    ax_boxes.set_title("Profile distribution")
+    
+    ax_hist.set_xlabel("y(t) | y(t-1)==0.4")
+    ax_hist.set_ylabel("density")
+
+    plt.show()
+
+if __name__ == '__main__':
+    hist_test()
+
+    '''
+    np.random.seed(0)
+    num_boxes = 100
+    N_dim = 2
+    points_per_box = 0
     N = num_boxes*points_per_box
     b0 = np.array([[0, 1.0] for _ in range(N_dim)])
     boxes = generate_boxes(b0, num_boxes)
     points = generate_points(boxes, num_boxes, points_per_box)
 
-    #print(profile_sample([0.1], boxes))
+    print(profile_sample([0.1], boxes))
 
     fig, ax = plt.subplots()
 
@@ -96,7 +123,7 @@ if __name__ == '__main__':
     ax.set_title("N={} dimensions, {} points".format(N_dim, N))
 
     plt.show()
-
+    '''
     #fig = plt.figure()
     #ax = fig.add_subplot(111, projection='3d')
 
