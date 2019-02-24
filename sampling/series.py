@@ -3,9 +3,11 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 
-from sampling.box_fractal_samples import NBox, generate_boxes, profile_sample, draw_boxes
+from utils import remove_subtree
+from sampling.box_sampling import NBox, generate_boxes, profile_sample, draw_boxes
 
 def white_noise(y, std):
     return y + np.random.normal()*std
