@@ -2,6 +2,7 @@ import sys
 import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
+import time
 import numpy as np
 import random
 import matplotlib.pyplot as plt
@@ -22,7 +23,8 @@ def adversarial_random(T, num_iter):
     for i in range(num_iter):
         T_new = mutate_box_tree(T)
         score = box_tree_entropy(T_new)
-        if score < best_score:
+        #score = series_entropy(T_new)
+        if score > best_score:
             print(i, "New best score: {0:.3f}".format(score))
             T = T_new
             best_score = score
@@ -42,31 +44,34 @@ def adversarial_random(T, num_iter):
             path = os.path.join(save_dir, "{0:06d}.png".format(i))
             plt.savefig(path)
 
+def series_entropy(T):
+    pass
+
 def main():
-    N = 64
-    num_iter = 100000
+    N = 10000
+    num_iter = 1000
     #transition = lambda y: white_noise(y, 1)
     #space = {"yt_1": (0, 1), "yt": (0, 1)}
     residual = False
     if residual:
         space = [(-1, 1), (-0.01, 0.01)]        
     else:
-        space = [(0, 1), (0, 1)]
+        space = [(-1, 1), (-1, 1)]
 
     T = generate_box_tree(space, N)
-    adversarial_random(T, num_iter)
-
-    return
+    boxes = get_leafs(T)
 
     if residual:
-        transition = lambda yt_1: yt_1 + profile_sample([yt_1], boxes)
+        transition = lambda yt_1: yt_1 + profile_sample([yt_1], T)
     else:
-        transition = lambda yt_1: profile_sample([yt_1], boxes)
+        transition = lambda yt_1: profile_sample([yt_1], T)
 
+    #adversarial_random(T, num_iter)
     y = []
     yt = 0
 
-    for t in range(N):
+    t0 = time.time()
+    for t in range(num_iter):
         yt = transition(yt)
         if yt < -1 or yt > 1:
             break
@@ -74,6 +79,8 @@ def main():
             y.append(None)
         else:
             y.append(yt)
+        t1 = time.time()
+        print("Time: {0:.3f}".format(t1 - t0))
     y = np.array(y)
 
     y_prev, y_post = y[:-1], y[1:]
@@ -87,7 +94,7 @@ def main():
     ax_series.set_ylabel("Value")
     ax_series.set_title("Series")
 
-    draw_boxes(ax_scatter, boxes)
+    draw_boxes(ax_scatter, T)
     if residual:
         ax_scatter.scatter(y_prev, y_diff, s=0.3, c='r')
         ax_scatter.set_ylabel("y(t) - y(t-1)")

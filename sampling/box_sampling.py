@@ -57,16 +57,51 @@ class NBox:
             vol *= np.abs(j - i)
         return vol
 
+    def contains(self, dim2val):
+        for dim, (i, j) in self.dim2ij.items():
+            val = dim2val[dim]
+            if val < i or j < val:
+                return False
+        return True        
+
+    def contains_profile(self, dim2val):
+        """
+        contains when the value has infinite span in some 
+        dimensions
+        """
+        for dim, val in dim2val.items():
+            i, j = self.dim2ij[dim]
+            if val < i or j < val:
+                return False
+        return True
+
+    def profile(self, dim2val):
+        """
+        Returns the expansion of the box in the 
+        dimensions missing from dim2val
+        """
+        if not self.contains_profile(dim2val):
+            return {}
+        return {d: (i, j) for d, (i, j) in self.dim2ij.items() 
+                if d not in dim2val}
+
 def generate_box_tree(b0, N):
     T = nx.DiGraph()
     T.add_node(NBox(b0))
     return generate_box_tree_from(T, N-1)
 
 def generate_box_tree_from(T, N):
+    leafs = [v for v, d in T.out_degree() if d == 0]
     for _ in range(N):
-        leafs = [v for v, d in T.out_degree() if d == 0]
-        b = np.random.choice(leafs)
-        b.split_and_add_to(T)
+        #b = np.random.choice(leafs) # np.random.choice is very slow!!
+        idx = random.randint(0, len(leafs)-1)
+        b = leafs[idx]
+        leafs.remove(b)
+        ch0, ch1 = b.split()
+        T.add_edge(b, ch0)
+        T.add_edge(b, ch1)
+        leafs.append(ch0)
+        leafs.append(ch1)
     return T
 
 def num_leafs(T):
@@ -114,11 +149,33 @@ def generate_boxes(b0, N):
         boxes.extend(b.split())
     return boxes
 
-def profile_sample(dim2val, boxes):
+def get_root(T):
+    for node, deg in T.in_degree():
+        if deg == 0:
+            return node
+    else:
+        print("Found no root!")
+
+def tree_profile(dim2val, T):
+    """
+    Returns leafs of T that overlap with dim2val,
+    projected onto the dimensions that are not specified in dim2val
+    """
+    stack = [get_root(T)]
+    while stack:
+        box = stack.pop()
+        if box.contains_profile(dim2val):
+            if not T[box]: # found a leaf
+                yield box.profile(dim2val)
+            for child in T[box]:
+                stack.append(child)
+
+def profile_sample(dim2val, T):
     if not isinstance(dim2val, dict):
         # if dim2val not dict, assume dim=idx
         dim2val = {dim: val for dim, val in enumerate(dim2val)}
-    boxes = profile(dim2val, [box.dim2ij for box in boxes])
+    #boxes = profile(dim2val, [box.dim2ij for box in boxes])
+    boxes = list(tree_profile(dim2val, T))
     box = np.random.choice(boxes)
     return NBox(box).sample_point()    
 
