@@ -53,7 +53,7 @@ class NBox:
 
     def volume(self):
         vol = 1
-        for dim, (i, j) in self.dim2ij:
+        for dim, (i, j) in self.dim2ij.items():
             vol *= np.abs(j - i)
         return vol
 
@@ -100,8 +100,8 @@ def entropy(boxes):
     """
     volumes = np.array([box.volume() for box in boxes])
     volumes = volumes / sum(volumes)
-    S = np.mean([np.log2(v) * v if v else 0 for v in volumes])
-    S += np.log2(len(leafs))
+    S = np.sum([np.log2(v) * v if v else 0 for v in volumes])
+    #S += np.log2(len(boxes))
     return -S
 
 def box_tree_entropy(T):
@@ -173,6 +173,7 @@ def mutation_test():
     fig, ax = plt.subplots()
     num_iter = 0
     while True:
+        print(entropy(get_leafs(T)))
         ax.clear()
         draw_boxes(ax, T.nodes)
         ax.axis("off")
@@ -181,7 +182,7 @@ def mutation_test():
 
         path = os.path.join(save_dir, "{0:04d}.png".format(num_iter))
         plt.savefig(path)
-        mutate_box_tree(T)
+        T = mutate_box_tree(T)
         num_iter += 1
 
 
