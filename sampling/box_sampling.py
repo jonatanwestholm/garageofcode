@@ -5,7 +5,9 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 import time
 import random
 import numpy as np
-from sklearn import decomposition
+from itertools import product
+from scipy.linalg import null_space
+#from sklearn import decomposition
 from copy import copy
 import networkx as nx
 
@@ -14,7 +16,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 from common.utils import flatten_simple as simple
-from common.utils import remove_subtree
+from common.utils import remove_subtree, entropy
 from common.box import profile, get_corners
 
 class NBox:
@@ -71,7 +73,7 @@ class NBox:
         """
         for dim, val in dim2val.items():
             i, j = self.dim2ij[dim]
-            if val < i or j < val:
+            if val < i or j <= val:
                 return False
         return True
 
@@ -80,10 +82,13 @@ class NBox:
         Returns the expansion of the box in the 
         dimensions missing from dim2val
         """
-        if not self.contains_profile(dim2val):
-            return {}
+        #if not self.contains_profile(dim2val):
+        #    return {}
         return {d: (i, j) for d, (i, j) in self.dim2ij.items() 
                 if d not in dim2val}
+
+    def tuple_2(self):
+        return ((i, j) for d, (i, j) in sorted(self.dim2ij.items()))
 
 def generate_box_tree(b0, N):
     T = nx.DiGraph()
@@ -93,29 +98,97 @@ def generate_box_tree(b0, N):
 def generate_box_tree_from(T, N):
     leafs = [v for v, d in T.out_degree() if d == 0]
     for _ in range(N):
-        #b = np.random.choice(leafs) # np.random.choice is very slow!!
         idx = random.randint(0, len(leafs)-1)
-        b = leafs[idx]
-        leafs.remove(b)
-        ch0, ch1 = b.split()
-        T.add_edge(b, ch0)
-        T.add_edge(b, ch1)
+        box = leafs[idx]
+        leafs.remove(box)
+        ch0, ch1 = box.split()
+        T.add_edge(box, ch0)
+        T.add_edge(box, ch1)
         leafs.append(ch0)
         leafs.append(ch1)
     return T
 
 def num_leafs(T):
-    return len([v for v, d in T.out_degree() if d == 0])
+    return sum([d == 0 for v, d in T.out_degree()])
 
 def get_leafs(T):
     return [v for v, d in T.out_degree() if d == 0]
+
+def interval_overlap(c0, c1):
+    i0, j0 = c0
+    i1, j1 = c1
+
+    i, j = max(i0, i1), min(j0, j1)
+    if i < j:
+        return (i, j)
+    else:
+        return ()
+
+def row_transition(from_state, to_states, T):
+    row = np.zeros(len(to_states))
+    mid = (from_state[0] + from_state[1]) / 2
+    dim2val = {0: mid}
+    boxes = list(tree_profile(dim2val, T))
+    get_end = lambda box: box.dim2ij[0][1]
+    for box in sorted(boxes, key=get_end):
+        c0 = box.profile(dim2val)
+        c0 = c0[1]
+        intensity = 1/(c0[1] - c0[0])/len(boxes)
+        tot_len = 0
+        for idx, c1 in enumerate(to_states):
+            tot_len += (c1[1] - c1[0])
+            overlap = interval_overlap(c0, c1)
+            if overlap:
+                (i, j) = overlap
+                row[idx] += (j - i) * intensity
+    '''
+    box_bins = [box.profile(dim2val)[1] for box in boxes]
+    for c10, c11 in product(box_bins, repeat=2):
+        if c10 == c11:
+            continue
+        if interval_overlap(c10, c11):
+            print("Overlapping:", c10, c11)
+    '''
+    #exit(0)
+    #print(sum(row))
+    return row
+
+def markov_transition(T):
+    boxes = get_leafs(T)
+    get_start = lambda box: box.dim2ij[0][0]
+    get_end = lambda box: box.dim2ij[0][1]
+    #bins = list(sorted(boxes, key=get_end))
+    #bins = [get_end(b) for b in bins]
+    bins = [get_end(box) for box in boxes]
+    bins = [min(map(get_start, boxes))] + bins
+    bins = list(sorted(set(bins)))
+    bins = [(b0, b1) for b0, b1 in zip(bins[:-1], bins[1:])]
+    #[print(i, j) for i, j in bins]
+    P = [row_transition(b, bins, T) for b in bins]
+    return np.array(P)
+
+def stationary_distribution(T):
+    P = markov_transition(T)
+    N = len(P)
+    I = np.identity(N)
+    A = P.T - I # get right-kernel
+    #print(P)
+    #print(A)
+    #print(np.sum(P, axis=1))
+    pi = null_space(A)
+    pi = pi / sum(pi)
+    pi = [float(item) for item in pi]
+    #print(pi)
+    #exit(0)
+    return pi
 
 def mutate_box_tree(T):
     T = T.copy()
     num_leafs_before = num_leafs(T)
     #print("Nodes before:", num_leafs_before)
     non_leafs = [v for v, d in T.out_degree() if d > 0]
-    box = np.random.choice(non_leafs)
+    idx = random.randint(0, len(non_leafs)-1)
+    box = non_leafs[idx]
     children = list(T[box])
     for child in children:
         remove_subtree(T, child)
@@ -129,18 +202,13 @@ def mutate_box_tree(T):
     #print("Nodes after add:", num_leafs(T))
     #print()
 
-def entropy(boxes):
-    """
-    S = -log2(N) - sum(log2(vi/v)*vi/v)
-    """
-    volumes = np.array([box.volume() for box in boxes])
-    volumes = volumes / sum(volumes)
-    S = np.sum([np.log2(v) * v if v else 0 for v in volumes])
-    #S += np.log2(len(boxes))
-    return -S
-
 def box_tree_entropy(T):
-    return entropy(get_leafs(T))
+    leafs = get_leafs(T)
+    return entropy([box.volume() for box in leafs])
+
+def random_choice(boxes):
+    idx = random.randint(0, len(boxes)-1)
+    return boxes[idx]
 
 def generate_boxes(b0, N):
     boxes = [NBox(b0)]
@@ -166,18 +234,22 @@ def tree_profile(dim2val, T):
         box = stack.pop()
         if box.contains_profile(dim2val):
             if not T[box]: # found a leaf
-                yield box.profile(dim2val)
+                yield box
             for child in T[box]:
                 stack.append(child)
 
-def profile_sample(dim2val, T):
+def profile_sample(dim2val, T, return_box=False):
     if not isinstance(dim2val, dict):
         # if dim2val not dict, assume dim=idx
         dim2val = {dim: val for dim, val in enumerate(dim2val)}
     #boxes = profile(dim2val, [box.dim2ij for box in boxes])
     boxes = list(tree_profile(dim2val, T))
-    box = np.random.choice(boxes)
-    return NBox(box).sample_point()    
+    idx = random.randint(0, len(boxes)-1)
+    box = boxes[idx]
+    projected = box.profile(dim2val)
+    if return_box:
+        return box, NBox(projected).sample_point()
+    return box.profile(dim2val)
 
 def generate_points(boxes, num_leafs, points_per_box=1):
     return [b.sample_point() for b in boxes for _ in range(points_per_box)]

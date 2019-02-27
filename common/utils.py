@@ -30,6 +30,13 @@ def manhattan(X, Y):
 		dist += abs(x - y)
 	return dist
 
+def entropy(vals):
+    """
+    S = -sum(log2(vi/v)*vi/v)
+    """
+    V = sum(vals)
+    return -sum(np.log2(vi/V) * vi/V if vi else 0 for vi in vals)
+
 def print_dataframe(X, rownames=None, colnames=None, spacing=10, ignore0=True):
     if rownames is None:
         rownames = [str(i) for i in range(len(X))]
