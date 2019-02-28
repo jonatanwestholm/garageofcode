@@ -38,8 +38,7 @@ class SamplingBox(Box):
         return i + (j - i) * np.random.random([len(self)])
 
 class SamplingBoxTree(BoxTree):
-    def __init__(self, dim2ij, num_leafs):
-        super().__init__()
+    def initialize(self, dim2ij, num_leafs):
         self.add_node(SamplingBox(dim2ij))
         self.generate(num_leafs-1)
 
@@ -68,7 +67,7 @@ class SamplingBoxTree(BoxTree):
             c0 = c0[1]
             intensity = 1/(c0[1] - c0[0])/len(boxes)
             for idx, c1 in enumerate(to_states):
-                intersect = Box.intersection(c0, c1)
+                intersect = Box.intersection1d(c0, c1)
                 if intersect:
                     (i, j) = intersect
                     row[idx] += (j - i) * intensity

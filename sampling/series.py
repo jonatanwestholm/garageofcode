@@ -9,13 +9,13 @@ from scipy.stats import entropy
 from collections import defaultdict
 import matplotlib.pyplot as plt
 
-from sampling.box_sampling import SamplingBoxTree, draw_boxes
+from sampling.box import SamplingBoxTree, draw_boxes
 
 def white_noise(y, std):
     return y + np.random.normal()*std
 
 def adversarial_random(T, num_iter):
-    N = num_leafs(T)
+    N = T.num_leafs()
     save_dir = "/home/jdw/garageofcode/results/sampling/gif"
     fig, (ax_series, ax_boxes, ax_hist) = plt.subplots(nrows=3)
     #best_score, _ = series_entropy(T)
@@ -23,10 +23,10 @@ def adversarial_random(T, num_iter):
     #print("Init score: {0:.3f}".format(best_score))
     for i in range(num_iter):
         T_new = T.copy()
-        T_new = T_new.mutate_box_tree()
+        T_new.mutate()
         score_box = T_new.entropy()
         #score_box = 0
-        _, _, y = series_entropy(T_new)
+        #_, _, y = series_entropy(T_new)
         score_series, dist = series_entropy_markov(T_new)
         score = score_series - score_box
         #print(score)
@@ -38,11 +38,14 @@ def adversarial_random(T, num_iter):
             ax_series.clear()
             ax_boxes.clear()
             ax_hist.clear()
+
+            '''
             ax_series.plot(y, 'r')
             ax_series.set_title("Iteration: {0:d}\nEntropy: {1:.3f}".format(i, score))
             y_prev, y_post = y[:-1], y[1:]
-            draw_boxes(ax_boxes, get_leafs(T))
             ax_boxes.scatter(y_prev, y_post, s=0.3, c='r')
+            '''
+            draw_boxes(ax_boxes, T.get_leafs())
             ax_boxes.set_ylabel("y(t)")
             ax_boxes.set_xlabel("y(t-1)")
             #ax_boxes.axis("off")
@@ -52,6 +55,7 @@ def adversarial_random(T, num_iter):
             #counts = [np.log2(counts) for counts in box2count.values()]
             #ax_hist.hist(counts)
             #ax_hist.set_xlim([0, 12])
+
             ax_hist.hist(np.log2(dist))
             #ax_hist.set_xlim([-12, 0])
             ax_hist.set_xlabel("log2(stationary probability)")
@@ -73,7 +77,7 @@ def series_entropy(T):
             yt = np.random.normal()*0.01
         y.append(yt)
     #print(max(box2count.values()))
-    return entropy(box2count.values()), box2count, y
+    return entropy(list(box2count.values())), box2count, y
 
 def series_entropy_markov(T):
     stat_dist = T.stationary_distribution()
@@ -93,13 +97,14 @@ def main():
     else:
         space = [(0, 1), (0, 1)]
 
-    T = SamplingBoxTree(space, N)
-    boxes = get_leafs(T)
+    T = SamplingBoxTree()
+    T.initialize(space, N)
+    boxes = T.get_leafs()
 
     if residual:
-        transition = lambda yt_1: yt_1 + profile_sample([yt_1], T)
+        transition = lambda yt_1: yt_1 + T.profile_sample([yt_1])
     else:
-        transition = lambda yt_1: profile_sample([yt_1], T)
+        transition = lambda yt_1: T.profile_sample([yt_1])
 
     adversarial_random(T, num_iter)
 

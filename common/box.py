@@ -137,11 +137,14 @@ class Box(hashabledict):
             return ()
 
 class BoxTree(nx.DiGraph):
-    def num_leafs(self):
-        return len(self.get_leafs())
+    def copy(self):
+        return nx.DiGraph.copy(self)
 
     def get_leafs(self):
         return [v for v, d in self.out_degree() if d == 0]
+    
+    def num_leafs(self):
+        return len(self.get_leafs())
 
     def get_root(self):
         for node, deg in self.in_degree():
