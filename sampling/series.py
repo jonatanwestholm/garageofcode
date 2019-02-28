@@ -102,9 +102,9 @@ def main():
     boxes = T.get_leafs()
 
     if residual:
-        transition = lambda yt_1: yt_1 + T.profile_sample([yt_1])
+        transition = lambda yt_1: yt_1 + T.profile_sample(yt_1)
     else:
-        transition = lambda yt_1: T.profile_sample([yt_1])
+        transition = lambda yt_1: T.profile_sample(yt_1)
 
     adversarial_random(T, num_iter)
 

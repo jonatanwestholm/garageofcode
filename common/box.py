@@ -1,5 +1,6 @@
 import numpy as np
 from itertools import product
+from collections import Iterable
 import networkx as nx
 
 class hashabledict(dict):
@@ -35,18 +36,24 @@ class Box(hashabledict):
                 self.clear()
 
     def autodict(self, dim2val):
-        # if dim2val not dict, assume dim=idx
         if isinstance(dim2val, dict):
             return dim2val
-        else:
+        elif isinstance(dim2val, Iterable):
+            # if dim2val is sequence, assume dim=idx
             return {dim: val for dim, val in enumerate(dim2val)}
+        else:
+            # assume dim2val is numeric
+            return {0: dim2val}
 
     def is_ordered(self):
         """
         Checks if all interval edges are ordered
         from left to right
         """
-        for (i, j) in self.values():
+        for ij in self.values():
+            if not len(ij):
+                continue
+            i, j = ij
             if i > j:
                 return False
         else:
@@ -80,7 +87,8 @@ class Box(hashabledict):
         return vol
 
     def corners(self):
-        return product(*self.values())
+        _, values = zip(*sorted(self.items()))
+        return product(*values)
 
     def contains(self, dim2val):
         dim2val = self.autodict(dim2val)
