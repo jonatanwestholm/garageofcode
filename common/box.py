@@ -13,6 +13,15 @@ class hashabledict(dict):
         return self.__key() == other.__key()
 
 class Box(hashabledict):
+    """
+    Multi dimensional closedopen intervals
+    Dimensions can be any hashable
+
+    Possible future features:
+    - Accept single value as dim2val
+    - Support different kinds of intervals (open, closed, openclosed)
+    - Prevent mutating dict
+    """
     def __init__(self, dim2ij, force_order=False):
         dim2ij = self.autodict(dim2ij)
         for dim, ij in dim2ij.items():
@@ -58,6 +67,10 @@ class Box(hashabledict):
             self[dim] = (i1, j1)
 
     def volume(self):
+        """
+        Ignores order
+        Empty dimensions nullify volume
+        """
         vol = 1
         for dim, ij in self.items():
             if not len(ij):
@@ -78,7 +91,7 @@ class Box(hashabledict):
             if not len(ij):
                 return False
             i, j = ij
-            if val < i or j < val:
+            if val < i or j <= val:
                 return False
         return True
 
