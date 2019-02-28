@@ -47,21 +47,6 @@ def print_dataframe(X, rownames=None, colnames=None, spacing=10, ignore0=True):
     for row, rowname in zip(X, rownames):
         print(rowname.ljust(spacing) + "".join([str(val).rjust(spacing) if val else " "*spacing for val in row]))
 
-def remove_subtree(T, node): 
-    """
-    Assumes directed tree
-    Giving it an undirected tree will remove all nodes
-    """
-    remove_stack = [node]
-    num_removed = 1
-    while remove_stack:
-        n = remove_stack.pop()
-        for child in T[n]:
-            remove_stack.append(child)
-        T.remove_node(n)
-        num_removed += 1
-    return num_removed
-
 def power_set(a):
     """
     Takes lists only

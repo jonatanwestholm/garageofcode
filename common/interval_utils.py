@@ -23,11 +23,12 @@ def interval_overlap2(c0, c1):
         return True
     return False
 
-def interval_overlap(s0, s1):
-    i0, j0 = min(s0), max(s0)
-    i1, j1 = min(s1), max(s1)
-    if (i1 <= i0 <= j1) or (i1 <= j0 <= j1):
-        return True
-    if (i0 <= i1 <= j0) or (i0 <= j1 <= j0):
-        return True
-    return False
+def intersection(c0, c1):
+    i0, j0 = c0
+    i1, j1 = c1
+
+    i, j = max(i0, i1), min(j0, j1)
+    if i < j:
+        return (i, j)
+    else:
+        return ()

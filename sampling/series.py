@@ -4,14 +4,12 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 import time
 import numpy as np
-import random
+from copy import copy
+from scipy.stats import entropy
 from collections import defaultdict
 import matplotlib.pyplot as plt
 
-from common.utils import entropy
-from sampling.box_sampling import NBox, profile_sample, draw_boxes
-from sampling.box_sampling import box_tree_entropy, mutate_box_tree, generate_box_tree
-from sampling.box_sampling import get_leafs, num_leafs, stationary_distribution
+from sampling.box_sampling import SamplingBoxTree, draw_boxes
 
 def white_noise(y, std):
     return y + np.random.normal()*std
@@ -24,8 +22,9 @@ def adversarial_random(T, num_iter):
     best_score = -100
     #print("Init score: {0:.3f}".format(best_score))
     for i in range(num_iter):
-        T_new = mutate_box_tree(T)
-        score_box = box_tree_entropy(T_new)
+        T_new = T.copy()
+        T_new = T_new.mutate_box_tree()
+        score_box = T_new.entropy()
         #score_box = 0
         _, _, y = series_entropy(T_new)
         score_series, dist = series_entropy_markov(T_new)
@@ -68,7 +67,7 @@ def series_entropy(T):
     y = []
     yt = 0
     for t in range(1024):
-        box, yt = profile_sample([yt], T, return_box=True)
+        yt, box = T.profile_sample([yt], return_box=True)
         box2count[box] += 1
         if yt < -1 or yt > 1:
             yt = np.random.normal()*0.01
@@ -77,7 +76,7 @@ def series_entropy(T):
     return entropy(box2count.values()), box2count, y
 
 def series_entropy_markov(T):
-    stat_dist = stationary_distribution(T)
+    stat_dist = T.stationary_distribution()
     #print(stat_dist)
     return entropy(stat_dist), stat_dist
 
@@ -94,7 +93,7 @@ def main():
     else:
         space = [(0, 1), (0, 1)]
 
-    T = generate_box_tree(space, N)
+    T = SamplingBoxTree(space, N)
     boxes = get_leafs(T)
 
     if residual:
