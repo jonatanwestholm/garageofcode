@@ -153,11 +153,11 @@ def draw_boxes(ax, boxes):
         ax.add_patch(patch)
 
 def hist_test():
-    np.random.seed(0)
     num_boxes = 100
     N_dim = 2
     b0 = np.array([[0, 1.0] for _ in range(N_dim)])
-    T = SamplingBoxTree(b0, num_boxes)
+    T = SamplingBoxTree()
+    T.initialize(b0, num_boxes)
     boxes = T.get_leafs()
 
     x_d = 0.4
@@ -181,13 +181,37 @@ def hist_test():
 
     plt.show()
 
+def draw_states():
+    num_boxes = 20
+    b0 = [(0, 1), (0, 1)]
+    T = SamplingBoxTree()
+    T.initialize(b0, num_boxes)
+    boxes = T.get_leafs()
+
+    fig, (ax_original, ax_states) = plt.subplots(nrows=2)
+
+    draw_boxes(ax_original, boxes)
+    draw_boxes(ax_states, boxes)
+
+    ends = set([box[0][1] for box in boxes])
+    for end in ends:
+        ax_states.plot([end, end], [0, 1], 'r')
+    ax_states.plot([0, 0], [0, 1], 'r')
+
+    #ax_original.axis("off")
+    #ax_states.axis("off")
+
+    ax_original.set_title("Equivalent intervals - states")
+
+    plt.show()
+
 def mutation_test():
     save_dir = "/home/jdw/garageofcode/results/sampling/gif"
-    np.random.seed(0)
     num_boxes = 100
     N_dim = 2
     b0 = np.array([[0, 1.0] for _ in range(N_dim)])
-    T = SamplingBoxTree(b0, num_boxes)
+    T = SamplingBoxTree()
+    T.initialize(b0, num_boxes)
 
     fig, ax = plt.subplots()
     num_iter = 0
@@ -205,5 +229,7 @@ def mutation_test():
         num_iter += 1
 
 if __name__ == '__main__':
+    #np.random.seed(0)
     #hist_test()
-    mutation_test()
+    #mutation_test()
+    draw_states()

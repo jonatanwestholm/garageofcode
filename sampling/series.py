@@ -26,7 +26,7 @@ def adversarial_random(T, num_iter):
         T_new.mutate()
         score_box = T_new.entropy()
         #score_box = 0
-        #_, _, y = series_entropy(T_new)
+        _, _, y = series_entropy(T_new)
         score_series, dist = series_entropy_markov(T_new)
         score = score_series - score_box
         #print(score)
@@ -40,11 +40,11 @@ def adversarial_random(T, num_iter):
             ax_hist.clear()
 
             '''
+            '''
             ax_series.plot(y, 'r')
             ax_series.set_title("Iteration: {0:d}\nEntropy: {1:.3f}".format(i, score))
             y_prev, y_post = y[:-1], y[1:]
             ax_boxes.scatter(y_prev, y_post, s=0.3, c='r')
-            '''
             draw_boxes(ax_boxes, T.get_leafs())
             ax_boxes.set_ylabel("y(t)")
             ax_boxes.set_xlabel("y(t-1)")
