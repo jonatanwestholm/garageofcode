@@ -43,6 +43,9 @@ class SamplingBoxTree(BoxTree):
         self.generate(num_leafs-1)
 
     def generate(self, num_leafs):
+        """
+        Adds leafs randomly to the tree
+        """
         leafs = self.get_leafs()
         for _ in range(num_leafs):
             box = leafs[np.random.choice(len(leafs))]
@@ -56,7 +59,7 @@ class SamplingBoxTree(BoxTree):
     def entropy(self):
         return entropy([box.volume() for box in self.get_leafs()])
 
-    def row_transition(self, from_state, to_states):
+    def markov_row_transition(self, from_state, to_states):
         row = np.zeros(len(to_states))
         mid = (from_state[0] + from_state[1]) / 2
         dim2val = {0: mid}
@@ -81,7 +84,7 @@ class SamplingBoxTree(BoxTree):
         bins = [min(map(get_start, boxes))] + bins
         bins = list(sorted(set(bins)))
         bins = [(b0, b1) for b0, b1 in zip(bins[:-1], bins[1:])]
-        P = [self.row_transition(b, bins) for b in bins]
+        P = [self.markov_row_transition(b, bins) for b in bins]
         return np.array(P)
 
     def stationary_distribution(self):

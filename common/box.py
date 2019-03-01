@@ -19,7 +19,6 @@ class Box(hashabledict):
     Dimensions can be any hashable
 
     Possible future features:
-    - Accept single value as dim2val
     - Support different kinds of intervals (open, closed, openclosed)
     - Prevent mutating dict
     """
@@ -91,6 +90,11 @@ class Box(hashabledict):
         return product(*values)
 
     def contains(self, dim2val):
+        """
+        Ignores missing dimensions in dim2val
+        We can see it as dim2val having infinite span in those dimensions
+        We can also see it as box being projected onto those dimensions
+        """
         dim2val = self.autodict(dim2val)
         for dim, val in dim2val.items():
             if dim not in self:
@@ -103,31 +107,20 @@ class Box(hashabledict):
                 return False
         return True
 
-    def contains_profile(self, dim2val):
-        """
-        contains when the value has infinite span in some 
-        dimensions
-        """
-        dim2val = self.autodict(dim2val)
-        for dim, val in dim2val.items():
-            i, j = self[dim]
-            if val < i or j <= val:
-                return False
-        return True
-
     def profile(self, dim2val):
         """
         Returns the expansion of the box in the 
-        dimensions missing from dim2val
+        dimensions missing from dim2val,
+        if box contains dim2val
         """
         dim2val = self.autodict(dim2val)
-        if not self.contains_profile(dim2val):
+        if not self.contains(dim2val):
             return {}
-        return {d: (i, j) for d, (i, j) in self.items() 
+        return {d: ij for d, ij in self.items() 
                 if d not in dim2val}
 
     def tuple_2(self):
-        return ((i, j) for d, (i, j) in sorted(self.items()))
+        return (ij for d, ij in sorted(self.items()))
 
     @staticmethod
     def intersection(b0, b1):
@@ -182,7 +175,7 @@ class BoxTree(nx.DiGraph):
         stack = [self.get_root()]
         while stack:
             box = stack.pop()
-            if box.contains_profile(dim2val):
+            if box.contains(dim2val):
                 if not self[box]: # found a leaf
                     yield box
                 for child in self[box]:
