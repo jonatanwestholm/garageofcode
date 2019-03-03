@@ -1,3 +1,8 @@
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+
 tape = {}
 head = 0
 state = "b"
@@ -13,8 +18,11 @@ def L():
 def P(sym):
     tape[head] = sym
 
-def read():
-    return tape.get(head, None)
+def read(tmp=None):
+    if tmp is None:
+        return tape.get(head, None)
+    else:
+        return tape.get(tmp, None)
 
 def error(val):
     print("\nError")
@@ -32,16 +40,45 @@ def debug(val):
 def print_full_tape():
     print(", ".join([str((i, sym)) for i, sym in sorted(tape.items())]))
 
-def print_tape(tape):
+def print_tape():
     print(", ".join([str(sym) for i, sym in sorted(tape.items()) if i % 2 == 0]))
 
+def draw_tape(ax):
+    max_len = 13
+    ax.clear()
+    for idx in range(max_len):
+        patch = Rectangle((idx, 0), 1, 1, fill=False)
+        ax.add_patch(patch)
+
+        sym = read(idx)
+        sym = sym if sym is not None else ""
+        if sym in [0, 1]:
+            col = "r"
+        else:
+            col = "b"
+        ax.text(idx + 0.3, 0.3, sym, color=col)
+
+    patch = Rectangle((head, 0), 1, 1, fill=False, color="g", linewidth=5)
+    ax.add_patch(patch)
+
+    ax.set_xlim([0, max_len])
+    ax.set_aspect("equal")
+    ax.axis("off")
+    plt.draw()
+    plt.pause(0.01)
+
 def main():
+    save_dir = "/home/jdw/garageofcode/results/turing/gif"
+    fig, ax = plt.subplots(figsize=(15, 1))
     idx = 0
     while not accumulating():
+        draw_tape(ax)
+        path = os.path.join(save_dir, "{0:04d}.png".format(idx))
+        plt.savefig(path)
         #print("idx:", idx)
         #debug(read())
         if idx == 1000:
-            print_tape(tape)
+            print_tape()
             break
         else:
             idx += 1
