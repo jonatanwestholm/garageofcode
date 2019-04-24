@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from itertools import product
+import csv
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -15,18 +16,36 @@ def get_mds(X, metric):
     M = [[metric(xi, xj) for xj in X] for xi in X]
     return mds.fit_transform(M), mds    
 
+def read_custom(N):
+    data_path = "/home/jdw/garageofcode/data/test.csv"
+    
+    i = 0
+    with open(data_path, 'r') as f:
+        reader = csv.reader(f)
+        next(reader)
+        for line in reader:
+            yield float(line[1])
+            i += 1
+            if i >= N:
+                break
+
+def load_data(N):
+    return list(read_custom(N))
+
+def sliding_windows(Y, dim):
+    X = []
+    for i in range(len(Y)-dim+1):
+        X.append(Y[i:i+dim])
+
+    return X    
+
 def random_data(N):
     Y = [0]
     for _ in range(N):
         y = np.random.normal()*0.1
         Y.append(y)
 
-    X = []
-    dim = 20
-    for i in range(N-dim+2):
-        X.append(Y[i:i+dim])
-
-    return X    
+    return Y[1:]
 
 def recurrent_data(N):
     Y = [0]
@@ -34,12 +53,7 @@ def recurrent_data(N):
         y = 0.9*Y[-1] + np.random.normal()*0.1
         Y.append(y)
 
-    X = []
-    dim = 20
-    for i in range(N-dim+2):
-        X.append(Y[i:i+dim])
-
-    return X
+    return Y[1:]
 
 def periodic_data(N):
     Y = [0]
@@ -48,16 +62,18 @@ def periodic_data(N):
         #y += np.sin(i / 17.1 * 2*np.pi)
         Y.append(y)
 
-    X = []
-    dim = 2
-    for i in range(N-dim+2):
-        X.append(Y[i:i+dim])
+    return Y[1:]
 
-    return X
-
-def metric(xi, xj):
+def euclidean(xi, xj):
     xi = np.array(xi)
     xj = np.array(xj)
+    return np.linalg.norm(xi - xj)
+
+def corr(xi, xj):
+    xi = np.array(xi)
+    xj = np.array(xj)
+    xi -= np.mean(xi)
+    xj -= np.mean(xj)
     return np.linalg.norm(xi - xj)
 
 def draw_graph(G):
@@ -78,7 +94,10 @@ def draw_graph(G):
 def graph_gif(X):
     fig, ax = plt.subplots()
 
+    metric = corr
     X_transformed, mds = get_mds(X, metric)
+
+    print("MDS complete")
 
     M = [(metric(xi, xj), xi_t, xj_t) for i, (xi, xi_t) in enumerate(zip(X, X_transformed)) 
                                   for xj, xj_t in zip(X[i+1:], X_transformed[i+1:])]
@@ -89,7 +108,7 @@ def graph_gif(X):
     ax.scatter(xcoords, ycoords)
 
     img_number = 0
-    for d, xi_t, xj_t in sorted(M):
+    for d, xi_t, xj_t in sorted(M, key=lambda x: x[0]):
         xi1, xi2 = xi_t
         xj1, xj2 = xj_t
         ax.plot([xi1, xj1], [xi2, xj2], color='b')
@@ -107,11 +126,13 @@ def graph_gif(X):
     plt.show()
 
 def main():
-    N = 100
+    N = 300
     #X = [tuple(np.random.random([20])) for _ in range(N)]
     #X = random_data(N)
-    X = recurrent_data(N)
+    #X = recurrent_data(N)
     #X = periodic_data(N)
+    X = load_data(N)
+    X = sliding_windows(X, 5)
 
     graph_gif(X)
 
