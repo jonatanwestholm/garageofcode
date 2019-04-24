@@ -9,6 +9,30 @@ import networkx as nx
 
 gif_dir = "/home/jdw/garageofcode/results/tda/gif"
 
+def recurrent_data(N):
+    Y = [0]
+    for _ in range(N):
+        y = -0.9*Y[-1] + np.random.normal()*0.1
+        Y.append(y)
+
+    X = []
+    for i in range(N):
+        X.append((Y[i], Y[i+1]))
+
+    return X
+
+def periodic_data(N):
+    Y = [0]
+    for i in range(N):
+        y = np.sin(i / 11.1 * 2*np.pi) + np.random.normal()*0.1
+        Y.append(y)
+
+    X = []
+    for i in range(N):
+        X.append((Y[i], Y[i+1]))
+
+    return X
+
 def metric(xi, xj):
     xi = np.array(xi)
     xj = np.array(xj)
@@ -57,8 +81,10 @@ def graph_gif(X):
     plt.show()
 
 def main():
-    N = 20
-    X = [tuple(np.random.random([2])) for _ in range(N)]
+    N = 100
+    #X = [tuple(np.random.random([2])) for _ in range(N)]
+    #X = recurrent_data(N)
+    X = periodic_data(N)
 
     graph_gif(X)
 

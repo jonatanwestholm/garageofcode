@@ -1,3 +1,5 @@
+from itertools import chain, combinations
+
 def permutations(iterable, r=None):
     """
     Investigating itertool's permutation to see how it works
@@ -66,7 +68,6 @@ def powerset__(iterable):
     """
     Plagiator's powerset
     """
-    from itertools import combinations
     n = len(iterable)
     for k in range(n+1):
         yield from combinations(iterable, k)
@@ -83,7 +84,14 @@ def powerset___(iterable):
             yield subset
             yield [s] + subset
 
+def powerset____(iterable):
+    """
+    Itertool's powerset recipe
+    """
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+
 if __name__ == '__main__':
     iterable = "ABCD"
-    for seq in powerset___(iterable):
+    for seq in powerset____(iterable):
         print("Sequence:", seq)
