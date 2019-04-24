@@ -6,8 +6,14 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
 import networkx as nx
+from sklearn.manifold import MDS
 
 gif_dir = "/home/jdw/garageofcode/results/tda/gif"
+
+def get_mds(X, metric):
+    mds = MDS(n_components=2, dissimilarity='precomputed')
+    M = [[metric(xi, xj) for xj in X] for xi in X]
+    return mds.fit_transform(M), mds    
 
 def recurrent_data(N):
     Y = [0]
@@ -25,11 +31,13 @@ def periodic_data(N):
     Y = [0]
     for i in range(N):
         y = np.sin(i / 11.1 * 2*np.pi) + np.random.normal()*0.1
+        #y += np.sin(i / 17.1 * 2*np.pi)
         Y.append(y)
 
     X = []
-    for i in range(N):
-        X.append((Y[i], Y[i+1]))
+    dim = 5
+    for i in range(N-dim+2):
+        X.append(Y[i:i+dim])
 
     return X
 
@@ -56,17 +64,20 @@ def draw_graph(G):
 def graph_gif(X):
     fig, ax = plt.subplots()
 
-    M = [(metric(xi, xj), xi, xj) for i, xi in enumerate(X) for xj in X[i+1:]]
+    X_transformed, mds = get_mds(X, metric)
+
+    M = [(metric(xi, xj), xi_t, xj_t) for i, (xi, xi_t) in enumerate(zip(X, X_transformed)) 
+                                  for xj, xj_t in zip(X[i+1:], X_transformed[i+1:])]
 
     plt.axis('off')
 
-    xcoords, ycoords = zip(*X)    
+    xcoords, ycoords = zip(*X_transformed)    
     ax.scatter(xcoords, ycoords)
 
     img_number = 0
-    for d, xi, xj in sorted(M):
-        xi1, xi2 = xi
-        xj1, xj2 = xj
+    for d, xi_t, xj_t in sorted(M):
+        xi1, xi2 = xi_t
+        xj1, xj2 = xj_t
         ax.plot([xi1, xj1], [xi2, xj2], color='b')
 
         ax.set_title("d={0:.3f}".format(d))
