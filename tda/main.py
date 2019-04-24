@@ -15,15 +15,29 @@ def get_mds(X, metric):
     M = [[metric(xi, xj) for xj in X] for xi in X]
     return mds.fit_transform(M), mds    
 
-def recurrent_data(N):
+def random_data(N):
     Y = [0]
     for _ in range(N):
-        y = -0.9*Y[-1] + np.random.normal()*0.1
+        y = np.random.normal()*0.1
         Y.append(y)
 
     X = []
-    for i in range(N):
-        X.append((Y[i], Y[i+1]))
+    dim = 20
+    for i in range(N-dim+2):
+        X.append(Y[i:i+dim])
+
+    return X    
+
+def recurrent_data(N):
+    Y = [0]
+    for _ in range(N):
+        y = 0.9*Y[-1] + np.random.normal()*0.1
+        Y.append(y)
+
+    X = []
+    dim = 20
+    for i in range(N-dim+2):
+        X.append(Y[i:i+dim])
 
     return X
 
@@ -35,7 +49,7 @@ def periodic_data(N):
         Y.append(y)
 
     X = []
-    dim = 5
+    dim = 2
     for i in range(N-dim+2):
         X.append(Y[i:i+dim])
 
@@ -88,14 +102,16 @@ def graph_gif(X):
         path = os.path.join(gif_dir, "{:03d}".format(img_number))
         plt.savefig(path)
         img_number += 1
+        break
 
     plt.show()
 
 def main():
     N = 100
-    #X = [tuple(np.random.random([2])) for _ in range(N)]
-    #X = recurrent_data(N)
-    X = periodic_data(N)
+    #X = [tuple(np.random.random([20])) for _ in range(N)]
+    #X = random_data(N)
+    X = recurrent_data(N)
+    #X = periodic_data(N)
 
     graph_gif(X)
 
