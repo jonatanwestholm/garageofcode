@@ -177,7 +177,7 @@ def graph_3d_spectra(star2spectrum):
     plt.axis('off')
 
     legends = []
-    for tp, group in groupby(sorted(star2spectrum), key=lambda star: star.metal):
+    for tp, group in groupby(sorted(star2spectrum), key=lambda star: star.type_short):
         legends.append(tp)
         X = [star2spectrum_t[star] for star in group]
         xcoords, ycoords, zcoords = zip(*X)    
