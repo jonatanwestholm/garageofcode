@@ -5,7 +5,7 @@ alphabet = ["A", "B", "C", "vC"]
 n_a = len(alphabet)
 
 p2decay = {"A": 0.01, "B": 0.01, "C": 0.01, "C0": 0.1}
-p2attach = {"A": 0.1, "B": 0.1, "C": 0.1}
+p2attach = {"A": 0.1, "B": 0.1, "C": 0.01}
 
 class Head:
     def __init__(self, N):
@@ -53,7 +53,7 @@ class Environment:
                             for p, intensity in p2decay_total.items() if intensity]
         p2attach_total = {p: p2attach[p] * self.p2num[p] for p in p2attach}
         time_to_next.extend([(np.random.exponential(1 / intensity), (p, "attach")) 
-                             for p, intensity in p2attach_total.items()])
+                             for p, intensity in p2attach_total.items() if intensity])
 
         t, (p, action) = min(time_to_next, key=lambda x: x[0])
         print("Action:", "{0:.3f}".format(t), p, action)
@@ -87,12 +87,14 @@ class Environment:
         self.t_history.append(self.t)
 
     def draw(self, ax):
-        print(self.p2num_history)
         ax.cla()
         for p, nums in sorted(self.p2num_history.items()):
             ax.plot(self.t_history, nums)
 
         ax.legend(list(sorted(self.p2num.keys())))
+        ax.set_xlabel("time")
+        ax.set_ylabel("number of proteins")
+        ax.set_title("Concentrations")
 
 def main():
     head = Head(10)
@@ -100,13 +102,13 @@ def main():
 
     fig, ax = plt.subplots()
 
-    for _ in range(100):
+    for _ in range(10000):
         protein = env.next()
         output = head.push(protein)
         env.push(output)
         env.draw(ax)
         plt.draw()
-        plt.pause(0.1)
+        plt.pause(0.01)
 
 if __name__ == '__main__':
     main()
