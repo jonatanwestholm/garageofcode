@@ -1,5 +1,11 @@
+import sys
+import os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
 import numpy as np
 import matplotlib.pyplot as plt
+
+from common.utils import flatten_simple
 
 alphabet = ["A", "B", "C", "vC"]
 n_a = len(alphabet)
@@ -10,8 +16,10 @@ p2attach = {"A": 0.1, "B": 0.1, "C": 0.01}
 
 class Head:
     def __init__(self, N):
-        self.N = N
-        self.tape = [alphabet[np.random.randint(n_a-1)] for _ in range(self.N)]
+        self.tape = [[alphabet[np.random.randint(n_a-1)]]*np.random.randint(10) 
+                     for _ in range(N)]
+        self.tape = flatten_simple(self.tape)
+        self.N = len(self.tape)
         self.head = 0
         self.mode = "reading"
 
@@ -23,18 +31,22 @@ class Head:
             if protein == "vC":
                 self.mode = "reading"
             return None
-        elif self.mode == "reading":
-            if protein == "A":
-                self.head = (self.head + 1) % self.N
+
+        if protein == "A":
+            self.head = (self.head + 1) % self.N
+            if self.mode == "reading":
                 return self.tape[self.head]
-            elif protein == "B":
-                self.head = (self.head - 1) % self.N
-                return self.tape[self.head]
-            elif protein == "C":
-                self.mode = "mute"
-                return None
             else:
                 return None
+        elif protein == "B":
+            self.head = (self.head - 1) % self.N
+            if self.mode == "reading":
+                return self.tape[self.head]
+            else:
+                return None
+        elif protein == "C":
+            self.mode = "mute"
+            return None
         else:
             return None
 
@@ -84,7 +96,7 @@ class Environment:
                              for p, intensity in p2attach_total.items() if intensity])
 
         t, (p, action) = min(time_to_next, key=lambda x: x[0])
-        print("Action:", "{0:.3f}".format(t), p, action)
+        #print("Action:", "{0:.3f}".format(t), p, action)
         self.t += t
         self.t_history.append(self.t)
         for prot in self.p2num:
@@ -131,14 +143,15 @@ def main():
 
     fig, (ax_env, ax_head) = plt.subplots(ncols=2)
 
-    for _ in range(10000):
+    for i in range(10000):
         protein = env.next()
         output = head.push(protein)
         env.push(output)
         env.draw(ax_env)
-        head.draw(ax_head)
-        plt.draw()
-        plt.pause(0.01)
+        if i % 10 == 0:
+            head.draw(ax_head)
+            plt.draw()
+            plt.pause(0.01)
 
 if __name__ == '__main__':
     main()
