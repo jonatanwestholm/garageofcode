@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 alphabet = ["A", "B", "C", "vC"]
 n_a = len(alphabet)
 
+p2num = {"A": 10, "B": 10, "C": 10, "C0": 1}
 p2decay = {"A": 0.01, "B": 0.01, "C": 0.01, "C0": 0.1}
 p2attach = {"A": 0.1, "B": 0.1, "C": 0.01}
 
@@ -37,10 +38,37 @@ class Head:
         else:
             return None
 
+    def draw(self, ax):
+        ax.cla()
+
+        margin = 4
+        upper = 0.5
+        lower = -0.5
+        ax.plot([-(margin + 1), margin + 1], [upper, upper], 'k')
+        ax.plot([-(margin + 1), margin + 1], [lower, lower], 'k')
+        for x in range(-margin, margin+2):
+            ax.plot([x-0.5, x-0.5], [lower, upper], 'k')
+            if x <= margin:
+                sym = self.tape[(self.head + x) % self.N]
+                ax.text(x, 0, sym, color='r')
+
+        if self.mode == "reading":
+            col = 'g'
+        else:
+            col = 'r'
+        ax.plot([-0.5, 0.5], [lower, lower], col, linewidth=3)
+        ax.plot([0.5, 0.5], [lower, upper], col, linewidth=3)
+        ax.plot([-0.5, 0.5], [upper, upper], col, linewidth=3)
+        ax.plot([-0.5, -0.5], [lower, upper], col, linewidth=3)
+
+        ax.set_ylim([lower-5, upper + 5])
+
+        ax.axis("off")
+
 class Environment:
     def __init__(self):
         self.t = 0
-        self.p2num = {"A": 10, "B": 10, "C": 10, "C0": 1}
+        self.p2num = p2num
         self.p2num_history = {p: [num] for p, num in self.p2num.items()}
         self.t_history = [self.t]
 
@@ -83,7 +111,8 @@ class Environment:
 
         for p in self.p2num:
             self.p2num_history[p].append(self.p2num[p])
-        self.p2num_history[protein][-1] += 1
+        self.p2num[protein] = self.p2num[protein] + 1
+        self.p2num_history[protein][-1] = self.p2num[protein]
         self.t_history.append(self.t)
 
     def draw(self, ax):
@@ -100,13 +129,14 @@ def main():
     head = Head(10)
     env = Environment()
 
-    fig, ax = plt.subplots()
+    fig, (ax_env, ax_head) = plt.subplots(ncols=2)
 
     for _ in range(10000):
         protein = env.next()
         output = head.push(protein)
         env.push(output)
-        env.draw(ax)
+        env.draw(ax_env)
+        head.draw(ax_head)
         plt.draw()
         plt.pause(0.01)
 
