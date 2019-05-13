@@ -15,6 +15,22 @@ def dbg(s, debug):
 def flatten_simple(lst):
     return [elem for sublist in lst for elem in sublist]
 
+def _flatten(l):
+    try: 
+        for elem in l: 
+            break 
+        else: 
+            yield [] 
+            return 
+    except TypeError: 
+        yield l 
+        return 
+    for elem in l: 
+        yield from _flatten(elem) 
+
+def flatten(l):
+    return list(_flatten(l))
+
 def transpose(l):
     return zip(*l)
 
