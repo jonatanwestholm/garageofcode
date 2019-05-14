@@ -6,6 +6,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
+from sklearn.manifold import MDS
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -13,19 +14,43 @@ from torch.utils import data as torch_data
 
 from nn.models import MLP
 
+def get_mds(X, metric, dim=2):
+    mds = MDS(n_components=dim, dissimilarity='precomputed')
+    M = [[metric(xi, xj) for xj in X] for xi in X]
+    return mds.fit_transform(M), mds  
+
+def euclidean(xi, xj):
+    xi = np.array(xi)
+    xj = np.array(xj)
+    return np.linalg.norm(xi - xj)
+
+def plot_mds(ax, X, mds=None):
+    ax.cla()
+    X_fit, mds = get_mds(X, euclidean)
+
+    X_fit -= X_fit[0, :]
+    X_fit /= np.linalg.norm(X_fit[-1, :])
+    X_fit /= np.sign(X_fit[-1, :])
+    x1, x2 = zip(*X_fit)
+
+    ax.plot(list(x1), list(x2), 'b')
+
 def fit(model, X, Y, learning_rate, batch_size, num_epochs):
     optimizer = torch.optim.SGD(model.parameters(), 
-                       lr=learning_rate, 
-                       momentum=0.9, 
+                       lr=learning_rate,
+                       momentum=0.9,
                        weight_decay=0.01)
 
-    fig, ax_loss = plt.subplots()
+    fig, (ax_mds, ax_loss) = plt.subplots(ncols=2)
 
     iterations = []
     losses = []
     corrects = []
+    t2params = []
 
-    trainloader = torch_data.DataLoader(list(zip(*(X, Y))), batch_size=64, shuffle=True)
+    trainloader = torch_data.DataLoader(list(zip(*(X, Y))), 
+                                        batch_size=batch_size, 
+                                        shuffle=True)
 
     i = 0
     for _ in range(num_epochs):
@@ -42,7 +67,7 @@ def fit(model, X, Y, learning_rate, batch_size, num_epochs):
             loss.backward()
             optimizer.step()
 
-            if i % 97 == 0:
+            if i % 997 == 0:
                 iterations.append(i)
                 losses.append(loss.item())
                 corrects.append(correct.item())
@@ -55,8 +80,17 @@ def fit(model, X, Y, learning_rate, batch_size, num_epochs):
 
                 ax_loss.legend(["Cross entropy loss", "Rate correct"])
 
+                params = []
+                for param in model.parameters():
+                    for elem in param.data.view(-1, 1):
+                        params.extend(elem.numpy())
+                t2params.append(params)
+                if len(t2params) > 2:
+                    plot_mds(ax_mds, t2params)
+
                 plt.draw()
                 plt.pause(0.05)
+    plt.show()
 
 def main():
     # ground truth
@@ -70,13 +104,13 @@ def main():
     Y = Y.float()
 
     # model
-    sizes = [2] + [20]*2 + [1]
+    sizes = [2] + [10]*1 + [1]
     model = MLP(sizes, activation=nn.ReLU(), out_activation=nn.Sigmoid())
 
     # fit
-    num_epochs = 10000
+    num_epochs = 500
     learning_rate = 0.005
-    batch_size = 50
+    batch_size = 64
     fit(model, X, Y, learning_rate, batch_size, num_epochs)
 
 if __name__ == '__main__':
