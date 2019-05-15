@@ -42,13 +42,13 @@ def plot_mds(ax, X, mds=None):
     ax.set_title("Parameter convergence")
     ax.legend(["Projection of path", "","Start", "End"])
 
-def fit(model, X, Y, learning_rate, batch_size, num_epochs):
+def fit(model, X, Y, learning_rate, batch_size, num_epochs, loss_fcn=F.mse_loss):
     optimizer = torch.optim.SGD(model.parameters(), 
                        lr=learning_rate,
                        momentum=0.9,
                        weight_decay=0.01)
 
-    fig, (ax_mds, ax_loss) = plt.subplots(ncols=2)
+    fig, (ax_weights, ax_mds, ax_loss) = plt.subplots(ncols=3)
 
     iterations = []
     losses = []
@@ -65,10 +65,10 @@ def fit(model, X, Y, learning_rate, batch_size, num_epochs):
             x, y = batch
             y_est = model.forward(x)
 
-            loss = F.binary_cross_entropy(y_est, y)
-            correct = (y_est-0.5) * (y-0.5) > 0
-            correct = correct.float()
-            correct = torch.mean(correct)
+            loss = loss_fcn(y_est, y)
+            #correct = (y_est-0.5) * (y-0.5) > 0
+            #correct = correct.float()
+            #correct = torch.mean(correct)
 
             optimizer.zero_grad()
             loss.backward()
@@ -76,16 +76,16 @@ def fit(model, X, Y, learning_rate, batch_size, num_epochs):
 
             if i % 97 == 0:
                 iterations.append(i)
-                losses.append(loss.item())
-                corrects.append(correct.item())
+                losses.append(np.sqrt(loss.item()))
+                #corrects.append(correct.item())
 
-                ax_loss.plot(iterations, losses, 'b')
-                ax_loss.plot(iterations, corrects, 'g')
+                ax_loss.semilogy(iterations, losses, 'b')
+                #ax_loss.plot(iterations, corrects, 'g')
                 ax_loss.set_title("Loss")
-                ax_loss.set_ylabel("Binary cross entropy")
+                ax_loss.set_ylabel("RMS")
                 ax_loss.set_xlabel("Iteration")
 
-                ax_loss.legend(["Cross entropy loss", "Rate correct"])
+                #ax_loss.legend(["Cross entropy loss", "Rate correct"])
 
                 params = []
                 for param in model.parameters():
@@ -96,11 +96,35 @@ def fit(model, X, Y, learning_rate, batch_size, num_epochs):
                     plot_mds(ax_mds, t2params[-50:])
                     #plot_mds(ax_mds, t2params)
 
+                #all_weights = np.array(t2params)
+                #ax_weights.plot(all_weights)
+                plot_fit(ax_weights, model, X, Y)
+
                 plt.draw()
                 plt.pause(0.05)
     plt.show()
 
-def main():
+def plot_fit(ax, model, X, Y):
+    ax.cla()
+
+    with torch.no_grad():
+        Y_est = model.forward(X)
+
+    y = Y.numpy()
+    y_est = Y_est.numpy()
+
+    errs = np.linalg.norm(y-y_est, axis=1)
+    y_est_norm = np.linalg.norm(y_est, axis=1)
+    y_est_norm = np.ravel(y_est_norm)
+
+    ax.scatter(y_est_norm, errs, color='b', alpha=0.1)
+    ax.set_yscale('log')
+
+    ax.set_title("Fit")
+    ax.set_xlabel("|Y_est|")
+    ax.set_ylabel("|Y_est - Y|")
+
+def tutorial():
     # ground truth
     f = lambda x: x[0]**2 + x[1]**2 <= 1
 
@@ -112,12 +136,53 @@ def main():
     Y = Y.float()
 
     # model
-    sizes = [2] + [30]*1 + [1]
+    sizes = [2] + [5]*2 + [1]
     model = MLP(sizes, activation=nn.ReLU(), out_activation=nn.Sigmoid())
 
     # fit
     num_epochs = 500
     learning_rate = 0.001
+    batch_size = 64
+    fit(model, X, Y, learning_rate, batch_size, num_epochs)
+
+def linsys(X, n):
+    A = X[:n**2].view(n, n).numpy()
+    b = X[n**2:].view(n, 1).numpy()
+    return np.linalg.lstsq(A, b)[0]
+
+def main():
+    # ground truth
+    f = linsys
+
+    # data
+    N = 10000
+    n = 3
+    num_output = n
+    num_input = n*num_output + num_output
+    scale = 1
+    X = scale*torch.rand(N, num_input) + scale/2
+    Y = torch.from_numpy(np.array([f(x, n) for x in X]))
+    Y = Y.float()
+
+    #print(Y.shape)
+    mask = np.linalg.norm(Y, axis=1) < 10
+    mask = np.ravel(mask)
+    mask = torch.from_numpy(mask)
+    #print(mask.shape)
+    X = torch.squeeze(X[mask, :])
+    Y = torch.squeeze(Y[mask, :])
+    #print(Y.shape)
+    #print(X)
+    #exit(0)
+
+
+    # model
+    sizes = [num_input] + [60]*3 + [num_output]
+    model = MLP(sizes, activation=nn.Tanh())
+
+    # fit
+    num_epochs = 5000
+    learning_rate = 0.0005
     batch_size = 64
     fit(model, X, Y, learning_rate, batch_size, num_epochs)
 

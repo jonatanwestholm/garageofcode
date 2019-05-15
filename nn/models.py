@@ -24,5 +24,5 @@ class MLP(nn.Module):
             x = self.h(x)
         x = self.module_list[-1](x)
         y = self.y(x)
-        y = y.view([-1,])
+        #y = y.view(list(y.shape) + [1])
         return y
