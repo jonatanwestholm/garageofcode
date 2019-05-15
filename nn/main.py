@@ -32,8 +32,15 @@ def plot_mds(ax, X, mds=None):
     X_fit /= np.linalg.norm(X_fit[-1, :])
     X_fit /= np.sign(X_fit[-1, :])
     x1, x2 = zip(*X_fit)
+    x1 = list(x1)
+    x2 = list(x2)
 
-    ax.plot(list(x1), list(x2), 'b')
+    ax.plot(x1, x2, color='b', alpha=0.2)
+    ax.scatter(x1, x2, color='b', alpha=0.2)
+    ax.scatter(x1[0], x2[0], color='g')
+    ax.scatter(x1[-1], x2[-1], color='r')
+    ax.set_title("Parameter convergence")
+    ax.legend(["Projection of path", "","Start", "End"])
 
 def fit(model, X, Y, learning_rate, batch_size, num_epochs):
     optimizer = torch.optim.SGD(model.parameters(), 
@@ -67,7 +74,7 @@ def fit(model, X, Y, learning_rate, batch_size, num_epochs):
             loss.backward()
             optimizer.step()
 
-            if i % 997 == 0:
+            if i % 97 == 0:
                 iterations.append(i)
                 losses.append(loss.item())
                 corrects.append(correct.item())
@@ -85,8 +92,9 @@ def fit(model, X, Y, learning_rate, batch_size, num_epochs):
                     for elem in param.data.view(-1, 1):
                         params.extend(elem.numpy())
                 t2params.append(params)
-                if len(t2params) > 2:
-                    plot_mds(ax_mds, t2params)
+                if len(t2params) > 2 and len(t2params) % 10 == 0:
+                    plot_mds(ax_mds, t2params[-50:])
+                    #plot_mds(ax_mds, t2params)
 
                 plt.draw()
                 plt.pause(0.05)
@@ -104,12 +112,12 @@ def main():
     Y = Y.float()
 
     # model
-    sizes = [2] + [10]*1 + [1]
+    sizes = [2] + [30]*1 + [1]
     model = MLP(sizes, activation=nn.ReLU(), out_activation=nn.Sigmoid())
 
     # fit
     num_epochs = 500
-    learning_rate = 0.005
+    learning_rate = 0.001
     batch_size = 64
     fit(model, X, Y, learning_rate, batch_size, num_epochs)
 
