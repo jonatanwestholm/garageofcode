@@ -96,13 +96,26 @@ def main():
         is_bounded(A)
     '''
 
-    points = np.random.random([10, 2]) - 0.5
+    points = np.random.random([10, 2])*10 - 5
 
-    candidates = np.choice(points, 4, replace=False)
+    c0 = np.random.choice(len(points), 3, replace=False)
+    c = [points[ch] for ch in c0]
 
-    for i in len(candidates):
-        pass
+    plane1 = make_plane([c[0], c[1]], c[2])
+    plane2 = make_plane([c[0], c[2]], c[1])
+    plane3 = make_plane([c[1], c[2]], c[0])
 
+    planes = np.array([plane1, plane2, plane3])
+
+    fig, ax = plt.subplots()
+
+    for x, y in product(np.linspace(-10, 10, 20), repeat=2):
+        col = 'r' if is_inside([x, y], planes) else 'b'
+        ax.scatter(x, y, color=col)
+
+    draw_planes(ax, planes)
+
+    plt.show()
 
 
     #planes = np.random.random([3, 3]) - 0.5
@@ -114,15 +127,6 @@ def main():
     #make_plane(points, ref)
 
     '''
-    fig, ax = plt.subplots()
-
-    for x, y in product(np.linspace(-10, 10, 20), repeat=2):
-        col = 'r' if is_inside([x, y], planes) else 'b'
-        ax.scatter(x, y, color=col)
-
-    draw_planes(ax, planes)
-
-    plt.show()
     '''
 
     #for _ in range(100):
