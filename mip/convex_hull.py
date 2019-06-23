@@ -21,10 +21,32 @@ def draw_planes(ax, planes):
         y_p = y + np.sign(b) * eps
         ax.plot(x_p, y_p, color='r')
 
+def in_hull(u, V):
+    """
+    Checks if u is in convex hull of V using linear programming.
+    V is a list of points
+    u is a point
+    """
+
+    solver = get_solver("CBC")
+    
+    X = [solver.NumVar(lb=0) for _ in range(len(V))]
+    
+    for V_i, u_i in zip(zip(*V), u):
+        solver.Add(solver.Dot(V_i, X) == u_i)
+
+    solver.Add(solver.Sum(X) == 1)
+
+    result = solver.Solve(time_limit=10)
+    result = status2str[result]
+    return result == "OPTIMAL"
+
+
 def is_inside(point, planes):
     A, d = planes[:, :-1], planes[:, -1]
     proj = np.matmul(A, point) + d
     return np.all(proj >= 0)
+
 
 def make_plane(points, ref):
     """
@@ -45,6 +67,7 @@ def make_plane(points, ref):
 
     plane = np.concatenate([normal.T[0], d])
     return plane
+
 
 def is_bounded(planes):
     R = 1000
@@ -85,6 +108,21 @@ def is_bounded(planes):
             print("Bounded")
     print()
 
+def volume(V, n_iter=100):
+    """
+    Monte Carlo estimate of volume of 
+    convex hull of V
+    """
+
+    dim = len(V[0])
+
+    num_in = 0
+    for _ in range(n_iter):
+        x = np.random.random(dim) - 0.5
+        num_in += in_hull(x, V)
+    return num_in / n_iter
+
+
 def main():
     '''
     for _ in range(1000):
@@ -96,6 +134,36 @@ def main():
         is_bounded(A)
     '''
 
+    #points = [[0, 0], [10, 0], [0, 10]]
+    avg = 0
+    dim = 3
+    num_points = 100
+    n_iter = 100
+    for _ in range(n_iter):
+        points = np.random.random([num_points, dim]) - 0.5
+        vol = volume(points, 100)
+        print("Volume:", vol)
+        avg += vol
+    avg = avg / n_iter
+    print("Dim={1:d}, Num_points={2:d}, Total avg: {0:.3f}" \
+          .format(avg, dim, num_points))
+
+    '''
+    fig, ax = plt.subplots()
+
+    for x, y in product(range(-10, 12), repeat=2):
+        col = 'r' if in_hull([x, y], points) else 'b'
+        ax.scatter(x, y, color=col)
+
+    x, y = zip(*points)
+    ax.scatter(x, y, color='g')
+
+    #ax.set_title("Convex hull for S = {(0, 0), (10, 0), (0, 10)}, in red")
+
+    plt.show()
+    '''
+
+    '''
     points = np.random.random([10, 2])*10 - 5
 
     c0 = np.random.choice(len(points), 3, replace=False)
@@ -116,7 +184,7 @@ def main():
     draw_planes(ax, planes)
 
     plt.show()
-
+    '''
 
     #planes = np.random.random([3, 3]) - 0.5
     #point = np.array([[0], [0]])
