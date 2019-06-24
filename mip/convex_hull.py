@@ -136,7 +136,7 @@ def main():
 
     #points = [[0, 0], [10, 0], [0, 10]]
     avg = 0
-    dim = 3
+    dim = 8
     num_points = 100
     n_iter = 100
     for _ in range(n_iter):
