@@ -18,6 +18,9 @@ def poles(k):
 
     return pol
 
+def get_ts(N, p=0, q=0):
+    return ArmaProcess(poles(p), poles(q)).generate_sample(N)
+
 def main():
     ar = poles(5)
     #coeffs = -coeffs[1:] # Y = 1/(1 - p(z^-1)) => Y = p(z^-1)Y

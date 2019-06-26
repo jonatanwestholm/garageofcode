@@ -1,9 +1,14 @@
+import sys
+import os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
 from itertools import product
 import numpy as np
 from scipy import linalg
 import matplotlib.pyplot as plt
 
 from solver import get_solver, status2str
+from sampling.timeseries import get_ts
 
 tol = 1e-4
 
@@ -20,6 +25,7 @@ def draw_planes(ax, planes):
         x_p = x + np.sign(a) * eps
         y_p = y + np.sign(b) * eps
         ax.plot(x_p, y_p, color='r')
+
 
 def in_hull(u, V):
     """
@@ -108,10 +114,11 @@ def is_bounded(planes):
             print("Bounded")
     print()
 
+
 def volume(V, n_iter=100):
     """
     Monte Carlo estimate of volume of 
-    convex hull of V
+    convex hull of V, intersected with the unit cube
     """
 
     dim = len(V[0])
@@ -121,6 +128,41 @@ def volume(V, n_iter=100):
         x = np.random.random(dim) - 0.5
         num_in += in_hull(x, V)
     return num_in / n_iter
+
+
+def k_fold_inclusion(V):
+    """
+    Checks if v_i in ConvHull(V-v_i) for v_i in V
+    """
+
+    if len(V) == 0: 
+        return 0
+
+    num_in = 0
+    for i, v_i in enumerate(V):
+        num_in += in_hull(v_i, [v for j, v in enumerate(V) if j != i])
+    return num_in / len(V)
+
+
+def get_time_correlated_points(dim, N):
+    X = get_ts(N+dim-1, p=dim)
+    return np.array([X[i:i+dim] for i in range(N)])
+
+
+def get_correlated_points(dim, N, alpha=1):
+    A = np.random.random([dim, dim])-0.5
+    Q, _ = np.linalg.qr(A)
+    D = np.diag(np.random.random([dim]))
+    B = np.matmul(np.matmul(Q.T, D), Q)
+    I = np.eye(dim)
+    V = (1 - alpha) * I + alpha * B
+    C = np.linalg.cholesky(V)
+    #for row in C:
+    #    print([float("{0:.3f}".format(c)) for c in row])
+
+    e = np.random.randn(dim, N)
+    X = np.dot(C, e).T
+    return X
 
 
 def main():
@@ -136,12 +178,13 @@ def main():
 
     #points = [[0, 0], [10, 0], [0, 10]]
     avg = 0
-    dim = 8
+    dim = 3
     num_points = 100
     n_iter = 100
     for _ in range(n_iter):
-        points = np.random.random([num_points, dim]) - 0.5
-        vol = volume(points, 100)
+        #points = np.random.random([num_points, dim]) - 0.5
+        points = get_correlated_points(dim, num_points)
+        vol = k_fold_inclusion(points)
         print("Volume:", vol)
         avg += vol
     avg = avg / n_iter
