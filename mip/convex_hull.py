@@ -122,12 +122,15 @@ def volume(V, n_iter=100):
     """
 
     dim = len(V[0])
+    included = []
 
     num_in = 0
     for _ in range(n_iter):
         x = np.random.random(dim) - 0.5
-        num_in += in_hull(x, V)
-    return num_in / n_iter
+        incl = in_hull(x, V)
+        num_in += incl
+        included.append(incl)
+    return num_in / n_iter, included
 
 
 def k_fold_inclusion(V):
@@ -138,10 +141,13 @@ def k_fold_inclusion(V):
     if len(V) == 0: 
         return 0
 
+    included = []
     num_in = 0
     for i, v_i in enumerate(V):
-        num_in += in_hull(v_i, [v for j, v in enumerate(V) if j != i])
-    return num_in / len(V)
+        incl = in_hull(v_i, [v for j, v in enumerate(V) if j != i])
+        num_in += incl
+        included.append(incl)
+    return num_in / len(V), included
 
 
 def get_time_correlated_points(dim, N):
@@ -149,19 +155,20 @@ def get_time_correlated_points(dim, N):
     return np.array([X[i:i+dim] for i in range(N)])
 
 
-def get_correlated_points(dim, N, alpha=1):
+def get_correlated_points(dim, N, alpha=0.1):
     A = np.random.random([dim, dim])-0.5
-    Q, _ = np.linalg.qr(A)
-    D = np.diag(np.random.random([dim]))
-    B = np.matmul(np.matmul(Q.T, D), Q)
-    I = np.eye(dim)
-    V = (1 - alpha) * I + alpha * B
-    C = np.linalg.cholesky(V)
+    #Q, _ = np.linalg.qr(A)
+    #D = np.diag(10 * np.random.random([dim]))
+    #B = np.matmul(np.matmul(Q.T, D), Q)
+    #I = np.eye(dim)
+    #V = (1 - alpha) * I + alpha * B
+    #C = np.linalg.cholesky(V)
     #for row in C:
     #    print([float("{0:.3f}".format(c)) for c in row])
 
-    e = np.random.randn(dim, N)
-    X = np.dot(C, e).T
+    #e = np.random.randn(dim, N)
+    e = np.random.random([dim, N]) - 0.5
+    X = np.dot(A, e).T
     return X
 
 
@@ -178,13 +185,19 @@ def main():
 
     #points = [[0, 0], [10, 0], [0, 10]]
     avg = 0
-    dim = 3
-    num_points = 100
+    dim = 10
+    num_points = 200
     n_iter = 100
     for _ in range(n_iter):
         #points = np.random.random([num_points, dim]) - 0.5
-        points = get_correlated_points(dim, num_points)
-        vol = k_fold_inclusion(points)
+        points = get_correlated_points(dim, num_points, alpha=1)
+        #x, y = zip(*points)
+        vol, included = k_fold_inclusion(points)
+        #col = ['b' if incl else 'r' for incl in included]
+        #plt.scatter(x, y, color=col)
+        #plt.title("K-fold inclusion: {0:.3f}".format(vol))
+        #plt.show()
+        #exit(0)
         print("Volume:", vol)
         avg += vol
     avg = avg / n_iter
