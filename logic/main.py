@@ -17,7 +17,6 @@ def search(tokens, target, unary_ops, merge_ops):
     """Searching to merge tokens to target with bfs
     """
 
-    #paths = []
     G = nx.DiGraph()
     heap = Heap()
     G.add_node(tuple(tokens), visited=False)
@@ -29,13 +28,11 @@ def search(tokens, target, unary_ops, merge_ops):
     while heap:
         depth, tokens = heap.pop()
         g_tokens = tuple(tokens)
-        #print(g_tokens)
         if G.nodes[g_tokens]["visited"]:
             continue
         G.nodes[g_tokens]["visited"] = True
         for child, op in generate_children(tokens, unary_ops, merge_ops):
             g_child = tuple(child)
-            #print("\t", g_child)
             if g_child not in G:
                 G.add_node(g_child, visited=False)
             G.add_edge(g_tokens, g_child, operation=op)
@@ -43,7 +40,6 @@ def search(tokens, target, unary_ops, merge_ops):
                 continue
             if not G.nodes[g_child]["visited"]:
                 heap.push((depth+1, child))
-            #print(len(heap), child)
 
     if g_target not in G:
         return [], G
@@ -122,8 +118,6 @@ def sqrt(a):
 def factorial(a):
     if a < 0:
         return None
-    #if a > np.log(MAX_CREDIBLE_INTERMEDIARY):
-    #    return None
     f = 1
     i = 0
     while i < a:
@@ -209,11 +203,10 @@ def main():
     print_cutoff = 25
 
     t0 = time.time()
-    for i in range(11):
+    for i in [37]:
         tokens = [i]*3
         paths, G = search(tokens, target, unary_ops, merge_ops)
         print(i, "searched nodes: {}".format(len(G)))
-        #print(path)
         if not paths:
             print(None)
             print()
@@ -224,7 +217,6 @@ def main():
                 print_expression(path, G)
                 filename = os.path.join(main_dir, "{}_{}.png".format(i, j))
                 to_png(filename, path, G)
-                #exit(0)
             num_solutions += 1
         if num_solutions > print_cutoff:
             print("{} more...".format(num_solutions - print_cutoff))
