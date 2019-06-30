@@ -15,15 +15,15 @@ def search(atoms, target, unitary_ops, merge_ops):
     """Searching to merge atoms to target with bfs
     """
 
-    paths = []
+    #paths = []
     G = nx.DiGraph()
     heap = Heap()
     G.add_node(tuple(atoms), visited=False)
     heap.push((0, atoms))
     root = atoms
-    if test_target(atoms, target):
-        paths.append(root)
-
+    g_root = tuple(root)
+    g_target = (target,)
+    
     while heap:
         depth, atoms = heap.pop()
         g_atoms = tuple(atoms)
@@ -38,15 +38,24 @@ def search(atoms, target, unitary_ops, merge_ops):
                 G.add_node(g_child, visited=False)
             G.add_edge(g_atoms, g_child, operation=op)
             if test_target(child, target):
-                # TODO: how to store new paths? dag_to_branching
-                paths.append(nx.shortest_path(G, tuple(root), g_child))
-                print("added")
                 continue
-            heap.push((depth+1, child))
+            if not G.nodes[g_child]["visited"]:
+                heap.push((depth+1, child))
             #print(len(heap), child)
 
-    return paths, G
+    if g_target not in G:
+        return [], G
+    return [nx.shortest_path(G, g_root, parent) + [g_target]
+                for parent in set(G.pred[g_target])], G
 
+
+    '''
+    # return all paths to target
+    try:
+        return nx.all_simple_paths(G, tuple(root), (target,)), G
+    except nx.exception.NodeNotFound:
+        return [], G
+    '''
 
 def test_target(atoms, target):
     if len(atoms) > 1:
@@ -153,19 +162,29 @@ def print_expression(path, G):
 
 
 def main():
-    target = 2
+    target = 6
     unitary_ops = [sqrt, factorial]
     merge_ops = [add, sub, mul, div, exp]
+    print_cutoff = 25
 
     t0 = time.time()
-    for i in [6]:
+    for i in range(21):
         atoms = [i]*3
-        atoms = [0, 8, 8]
         paths, G = search(atoms, target, unitary_ops, merge_ops)
         print(i, "searched nodes: {}".format(len(G)))
         #print(path)
+        if not paths:
+            print(None)
+            print()
+            continue
+        num_solutions = 0
         for path in paths:
-            print_expression(path, G)
+            if num_solutions < print_cutoff:
+                print_expression(path, G)
+            num_solutions += 1
+        if num_solutions > print_cutoff:
+            print("{} more...".format(num_solutions - print_cutoff))
+
         print()
     print("Total time: {0:.3f}".format(time.time() - t0))
 
