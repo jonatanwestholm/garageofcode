@@ -6,37 +6,39 @@ import time
 import math
 import numpy as np
 import networkx as nx
+import pydot
 
 from common.utils import Heap
 
-MAX_CREDIBLE_INTERMEDIARY = 1000
+MAX_CREDIBLE_INTERMEDIARY = 1e3
+main_dir = "/home/jdw/garageofcode/results/logic"
 
-def search(atoms, target, unitary_ops, merge_ops):
-    """Searching to merge atoms to target with bfs
+def search(tokens, target, unary_ops, merge_ops):
+    """Searching to merge tokens to target with bfs
     """
 
     #paths = []
     G = nx.DiGraph()
     heap = Heap()
-    G.add_node(tuple(atoms), visited=False)
-    heap.push((0, atoms))
-    root = atoms
+    G.add_node(tuple(tokens), visited=False)
+    heap.push((0, tokens))
+    root = tokens
     g_root = tuple(root)
     g_target = (target,)
     
     while heap:
-        depth, atoms = heap.pop()
-        g_atoms = tuple(atoms)
-        #print(g_atoms)
-        if G.nodes[g_atoms]["visited"]:
+        depth, tokens = heap.pop()
+        g_tokens = tuple(tokens)
+        #print(g_tokens)
+        if G.nodes[g_tokens]["visited"]:
             continue
-        G.nodes[g_atoms]["visited"] = True
-        for child, op in generate_children(atoms, unitary_ops, merge_ops):
+        G.nodes[g_tokens]["visited"] = True
+        for child, op in generate_children(tokens, unary_ops, merge_ops):
             g_child = tuple(child)
             #print("\t", g_child)
             if g_child not in G:
                 G.add_node(g_child, visited=False)
-            G.add_edge(g_atoms, g_child, operation=op)
+            G.add_edge(g_tokens, g_child, operation=op)
             if test_target(child, target):
                 continue
             if not G.nodes[g_child]["visited"]:
@@ -57,29 +59,29 @@ def search(atoms, target, unitary_ops, merge_ops):
         return [], G
     '''
 
-def test_target(atoms, target):
-    if len(atoms) > 1:
+def test_target(tokens, target):
+    if len(tokens) > 1:
         return False
-    return np.abs(atoms[0] - target) < 1e-6
+    return np.abs(tokens[0] - target) < 1e-6
 
 
-def generate_children(atoms, unitary_ops, merge_ops):
-    for op in unitary_ops:
-        for idx, atom in enumerate(atoms):
-            b = op(atom)
+def generate_children(tokens, unary_ops, merge_ops):
+    for op in unary_ops:
+        for idx, token in enumerate(tokens):
+            b = op(token)
             if not eligible_(b):
                 continue
-            c = list(atoms)
+            c = list(tokens)
             c[idx] = b
             c = tuple(c)
-            yield c, op.__name__ + '_' + str(idx) + '_unitary'
+            yield c, op.__name__ + '_' + str(idx) + '_unary'
 
     for op in merge_ops:
-        for idx, (a1, a2) in enumerate(zip(atoms[:-1], atoms[1:])):
+        for idx, (a1, a2) in enumerate(zip(tokens[:-1], tokens[1:])):
             b = op(a1, a2)
             if not eligible_(b):
                 continue
-            c = list(atoms)
+            c = list(tokens)
             c[idx:idx+2] = [b]
             c = tuple(c)
             yield c, op.__name__ + '_' + str(idx) + '_merge'
@@ -120,15 +122,19 @@ def sqrt(a):
 def factorial(a):
     if a < 0:
         return None
+    #if a > np.log(MAX_CREDIBLE_INTERMEDIARY):
+    #    return None
     f = 1
     i = 0
     while i < a:
         i += 1
         f *= i
+        if f > MAX_CREDIBLE_INTERMEDIARY:
+            return None
     return f
 
-def eligible(atoms):
-    return all([eligible_(a) for a in atoms])
+def eligible(tokens):
+    return all([eligible_(a) for a in tokens])
 
 def eligible_(a):
     if a is None:
@@ -148,29 +154,64 @@ def is_integer(a):
 
 def print_expression(path, G):
     s = ""
-    atoms = [str(a) for a in path[0]]
+    tokens = [str(a) for a in path[0]]
     for n0, n1 in zip(path[:-1], path[1:]):
         op_str = G[n0][n1]["operation"]
         op, idx, arity = op_str.split("_")
         idx = int(idx)
-        if arity == "unitary":
-            atoms[idx] = op + "(" + atoms[idx] + ")"
+        if arity == "unary":
+            tokens[idx] = op + "(" + tokens[idx] + ")"
         elif arity == "merge":
-            atoms[idx:idx+2] = [op + "(" + atoms[idx] + ", " + atoms[idx+1] + ")"]
+            tokens[idx:idx+2] = [op + "(" + tokens[idx] + ", " + tokens[idx+1] + ")"]
 
-    print(atoms[0])
+    print(tokens[0])
 
+def path_to_expression_graph(path, G):
+    C = nx.DiGraph() # computation graph
+    tokens = path[0]
+    g_tokens = []
+    for i, token in enumerate(tokens):
+        C.add_node(str(token) + "_%d" % i, text=str(token))
+        g_tokens.append(str(token) + "_%d" % i)
+    
+    for n0, n1 in zip(path[:-1], path[1:]):
+        op_str = G[n0][n1]["operation"]
+        op, idx, arity = op_str.split("_")
+        idx = int(idx)
+        if arity == "unary":
+            old_token = g_tokens[idx]
+            new_token = op + "(" + old_token + ")"
+            g_tokens[idx] = new_token
+            C.add_node(new_token, text=op)
+            C.add_edge(old_token, new_token)
+        elif arity == "merge":
+            old_token0 = g_tokens[idx]
+            old_token1 = g_tokens[idx+1]
+            new_token = op + "(" + old_token0 + ", " + old_token1 + ")"
+            g_tokens[idx:idx+2] = [new_token]
+            C.add_node(new_token, text=op)
+            C.add_edge(old_token0, new_token)
+            C.add_edge(old_token1, new_token)
+
+    return C
+
+def to_png(filename, path, G):
+    C = path_to_expression_graph(path, G)
+    f = os.path.join(main_dir, "tmp.dot")
+    nx.drawing.nx_pydot.write_dot(C, f)
+    (graph,) = pydot.graph_from_dot_file(f)
+    graph.write_png(filename)
 
 def main():
     target = 6
-    unitary_ops = [sqrt, factorial]
+    unary_ops = [sqrt, factorial]
     merge_ops = [add, sub, mul, div, exp]
     print_cutoff = 25
 
     t0 = time.time()
-    for i in range(21):
-        atoms = [i]*3
-        paths, G = search(atoms, target, unitary_ops, merge_ops)
+    for i in range(11):
+        tokens = [i]*3
+        paths, G = search(tokens, target, unary_ops, merge_ops)
         print(i, "searched nodes: {}".format(len(G)))
         #print(path)
         if not paths:
@@ -178,9 +219,12 @@ def main():
             print()
             continue
         num_solutions = 0
-        for path in paths:
+        for j, path in enumerate(paths):
             if num_solutions < print_cutoff:
                 print_expression(path, G)
+                filename = os.path.join(main_dir, "{}_{}.png".format(i, j))
+                to_png(filename, path, G)
+                #exit(0)
             num_solutions += 1
         if num_solutions > print_cutoff:
             print("{} more...".format(num_solutions - print_cutoff))
