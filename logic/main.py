@@ -10,7 +10,7 @@ import pydot
 
 from common.utils import Heap
 
-MAX_CREDIBLE_INTERMEDIARY = 1e3
+MAX_CREDIBLE_INTERMEDIATE = 1e3
 main_dir = "/home/jdw/garageofcode/results/logic"
 
 def search(tokens, target, unary_ops, merge_ops):
@@ -123,7 +123,7 @@ def factorial(a):
     while i < a:
         i += 1
         f *= i
-        if f > MAX_CREDIBLE_INTERMEDIARY:
+        if f > MAX_CREDIBLE_INTERMEDIATE:
             return None
     return f
 
@@ -133,7 +133,7 @@ def eligible(tokens):
 def eligible_(a):
     if a is None:
         return False
-    if a > MAX_CREDIBLE_INTERMEDIARY:
+    if np.abs(a) > MAX_CREDIBLE_INTERMEDIATE:
         return False
     if not is_integer(a):
         return False
@@ -199,11 +199,11 @@ def to_png(filename, path, G):
 def main():
     target = 6
     unary_ops = [sqrt, factorial]
-    merge_ops = [add, sub, mul, div, exp]
-    print_cutoff = 25
+    merge_ops = [add, sub, mul, div]
+    print_cutoff = 1
 
     t0 = time.time()
-    for i in [37]:
+    for i in range(10):
         tokens = [i]*3
         paths, G = search(tokens, target, unary_ops, merge_ops)
         print(i, "searched nodes: {}".format(len(G)))
