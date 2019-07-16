@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from mip.solver import get_solver, solution_value
-from common.utils import flatten_simple, shuffled, manhattan
+from common.utils import flatten_simple, shuffled, manhattan, get_fn
 from common.search import bfs, dfs, a_star
 from labyrinth.utils import connect_labyrinth, init_grid_graph
 from labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree, draw_obstruction_graph, draw_heuristics
@@ -242,7 +242,7 @@ def main_draw_search_tree(ax, L, T, start=None, end=None):
 
 
 algo2name = {bfs: "BFS", dfs: "DFS"}
-gif_dir = "/home/jdw/garageofcode/results/labyrinth/gif"
+gif_dir = get_fn("labyrinth/gif")
 
 fig, ax = plt.subplots(figsize=(5.7, 6.5))
 

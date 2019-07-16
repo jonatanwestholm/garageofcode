@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import random
 import heapq
@@ -89,6 +90,24 @@ def shuffled(iterable):
 	order = random.sample(range(N), N)
 	for i in order:
 		yield lst[i]
+
+
+def get_fn(subdir, filename="", main_dir=None):
+    if main_dir is None:
+        main_dir = os.environ.get("GARAGEOFCODE_RESULTS", ".")
+
+    dir_path = os.path.join(main_dir, subdir)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+        print("Made path:", os.path.exists(dir_path))
+    else:
+        print("Path {} already exists".format(dir_path))
+
+    if filename:
+        return os.path.join(dir_path, filename)
+    else:
+        return dir_path
+
 
 class Heap:
 	"""

@@ -8,10 +8,10 @@ import numpy as np
 import networkx as nx
 import pydot
 
-from common.utils import Heap
+from common.utils import Heap, get_fn
 
 MAX_CREDIBLE_INTERMEDIATE = 1e3
-main_dir = "/home/jdw/garageofcode/results/logic"
+main_dir = get_fn("logic", "")
 
 def search(tokens, target, unary_ops, merge_ops):
     """Searching to merge tokens to target with bfs

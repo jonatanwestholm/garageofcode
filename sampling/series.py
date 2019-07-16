@@ -9,6 +9,7 @@ from scipy.stats import entropy
 from collections import defaultdict
 import matplotlib.pyplot as plt
 
+from common.utils import get_fn
 from sampling.box import SamplingBoxTree, draw_boxes
 
 def white_noise(y, std):
@@ -16,7 +17,7 @@ def white_noise(y, std):
 
 def adversarial_random(T, num_iter):
     N = T.num_leafs()
-    save_dir = "/home/jdw/garageofcode/results/sampling/gif"
+    save_dir = get_fn("sampling/gif")
     fig, (ax_series, ax_boxes, ax_hist) = plt.subplots(nrows=3)
     #best_score, _ = series_entropy(T)
     best_score = -100

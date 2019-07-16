@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 from common.utils import flatten_simple as flatten
+from common.utils import get_fn
 from common.interval_utils import get_corners2, interval_overlap2
 from sat.assignment import interval_selection, interval_selection2
 

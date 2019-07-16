@@ -1,7 +1,12 @@
+import sys
 import os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+
+from common.utils import get_fn
 
 tape = {}
 head = 0
@@ -68,7 +73,7 @@ def draw_tape(ax):
     plt.pause(0.01)
 
 def main():
-    save_dir = "/home/jdw/garageofcode/results/turing/gif"
+    save_dir = get_fn("turing/gif")
     fig, ax = plt.subplots(figsize=(15, 1))
     idx = 0
     while not accumulating():

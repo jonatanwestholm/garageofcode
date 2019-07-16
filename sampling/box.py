@@ -14,6 +14,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
+from common.utils import get_fn
 from common.box import Box, BoxTree
 
 class SamplingBox(Box):
@@ -206,7 +207,7 @@ def draw_states():
     plt.show()
 
 def mutation_test():
-    save_dir = "/home/jdw/garageofcode/results/sampling/gif"
+    save_dir = get_fn("sampling/gif")
     num_boxes = 100
     N_dim = 2
     b0 = np.array([[0, 1.0] for _ in range(N_dim)])

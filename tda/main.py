@@ -1,4 +1,7 @@
+import sys
 import os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
 import numpy as np
 from itertools import product, groupby
 from collections import namedtuple
@@ -10,8 +13,9 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from sklearn.manifold import MDS
 
-main_dir = "/home/jdw/garageofcode"
-gif_dir = os.path.join(main_dir, "results/tda/gif")
+from common.utils import get_fn
+
+gif_dir = get_fn("tda/gif")
 
 SpectralType = namedtuple("SpectralType", ["metal", "type_short", "type_full"])
 

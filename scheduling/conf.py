@@ -1,6 +1,12 @@
+import sys
+import os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
 from datetime import timedelta
 
-fn = "/home/jdw/garageofcode/results/private_tutoring_scheduling/test_data.csv"
+from common.utils import get_fn
+
+fn = get_fn("private_tutoring_scheduling", "test_data.csv")
 
 date_format = "%Y-%m-%d"
 time_format = "%H:%M"
