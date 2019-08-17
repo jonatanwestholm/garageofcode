@@ -1,4 +1,6 @@
+import sys
 import os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 import numpy as np
 import pandas as pd
@@ -157,7 +159,7 @@ class Word2Vec:
         return vec_avg
 
 def main():
-    data_dir = "/home/jdw/projects/kaggle/data/word2vec_sample"
+    data_dir = "/home/jdw/garageofcode/data/kaggle/word2vec_sample"
     fn = os.path.join(data_dir, "pruned.word2vec.txt")
     #id2word, word2id, id2vec = get_word2vec(fn)
     w2v = Word2Vec(fn)
