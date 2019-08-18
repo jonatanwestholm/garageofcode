@@ -95,6 +95,10 @@ def shuffled(iterable):
 def get_fn(subdir, filename="", main_dir=None):
     if main_dir is None:
         main_dir = os.environ.get("GARAGEOFCODE_RESULTS", ".")
+    elif main_dir == "results":
+        main_dir = os.environ["GARAGEOFCODE_RESULTS"]
+    elif main_dir == "data":
+        main_dir = os.environ["GARAGEOFCODE_DATA"]
 
     dir_path = os.path.join(main_dir, subdir)
     if not os.path.exists(dir_path):
