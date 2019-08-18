@@ -164,9 +164,6 @@ def main():
     #id2word, word2id, id2vec = get_word2vec(fn)
     w2v = Word2Vec(fn)
 
-    #w2v.hyponym(["mother", "father", "brother", "sister"], output=True)
-    #w2v.relation("london", "england", output=True)
-    #w2v.nearest("big", output=True)
     w2v.reduce("london", ["england"], output=True)
 
     #print(id2word)
