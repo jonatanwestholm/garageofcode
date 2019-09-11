@@ -9,6 +9,8 @@ from matplotlib.collections import PatchCollection
 
 import pandas as pd
 
+from common.utils import get_fn
+
 def price_map(fn):
     df = pd.read_csv(fn)
     reasonable = df["price"].between(1, 200)
@@ -75,7 +77,7 @@ def date_price_map(listings_fn, availability_fn):
     id2lat = {id_num: lat for id_num, lat in zip(listings["id"], listings["latitude"])}
 
     fig, ax = plt.subplots()
-    aggregator = "mean"
+    aggregator = "min"
 
     for date_listings in date_groups:
         date = date_listings[0]
@@ -84,7 +86,7 @@ def date_price_map(listings_fn, availability_fn):
         date_listings["latitude"] = date_listings["listing_id"].map(id2lat)
         price_map_binned(date_listings, fig=fig, ax=ax, aggregator=aggregator)
         ax.set_title("{0:s} price, {1:s}".format(aggregator, date))
-        plt.pcolor(vmin=1, vmax=200)
+        #plt.pcolor()
         plt.draw()
         plt.pause(0.1)
         ax.cla()
@@ -113,13 +115,19 @@ def price_timeline(availability_fn):
 
 
 def main():
-    data_dir = "/home/jdw/projects/kaggle/data/berlin_airbnb/"
+    data_dir = get_fn(subdir="kaggle/berlin_airbnb", main_dir="data")
     listings_fn = os.path.join(data_dir, "listings.csv")
     availability_fn = os.path.join(data_dir, "calendar_summary.csv")
     #price_map_binned(listings_fn)
     #date_price_map(listings_fn, availability_fn)
     price_timeline(availability_fn)
 
+    '''
+    df = pd.read_csv(listings_fn)
+    plt.hist(df["price"], bins=np.logspace(0, 4, 50), log=True)
+    plt.xscale("log")
+    plt.show()
+    '''
 
 if __name__ == '__main__':
     main()

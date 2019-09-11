@@ -4,7 +4,9 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
+from tda.main import get_mds
 
 class Word2Vec:
     def __init__(self, fn):
@@ -158,13 +160,51 @@ class Word2Vec:
         vec_avg = np.mean(vecs, axis=0)
         return vec_avg
 
+def graph_mds(X, annotations=None):
+    """Make the best attempt att projecting
+    to a 2D plane
+    """
+    metric = np.dot
+    X_transformed, _ = get_mds(X, metric, dim=2)
+
+    xcoords, ycoords = zip(*X_transformed)
+
+    fig, ax = plt.subplots()
+
+    ax.scatter(xcoords, ycoords)
+
+    if annotations is not None:
+        for ann, x, y in zip(annotations, xcoords, ycoords):
+            ax.annotate(ann, (x, y))
+
+    plt.show()
+
+
 def main():
     data_dir = "/home/jdw/garageofcode/data/kaggle/word2vec_sample"
     fn = os.path.join(data_dir, "pruned.word2vec.txt")
     #id2word, word2id, id2vec = get_word2vec(fn)
     w2v = Word2Vec(fn)
 
-    w2v.reduce("london", ["england"], output=True)
+    #w2v.reduce("london", ["england"], output=True)
+
+    #N = 1000
+    #graph_mds(w2v.id2vec[:N], annotations=[w2v.id2word[i] for i in range(N)])
+    words = ["london", "england",
+             "berlin", "germany",
+             "rome", "italy",
+             "paris", "france",
+             "tokyo", "japan", 
+             "copenhagen", "denmark",
+             "moscow", "russia",
+             "madrid", "spain",
+             "istanbul", "turkey",
+             "oslo", "norway",
+             "vienna", "austria",
+             "budapest", "hungary"
+             ]
+    graph_mds([w2v.word2vec(word) for word in words], words)
+
 
     #print(id2word)
     #print(word2id)

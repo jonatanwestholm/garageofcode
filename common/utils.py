@@ -103,9 +103,10 @@ def get_fn(subdir, filename="", main_dir=None):
     dir_path = os.path.join(main_dir, subdir)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
-        print("Made path:", os.path.exists(dir_path))
+        #print("Made path:", os.path.exists(dir_path))
     else:
-        print("Path {} already exists".format(dir_path))
+        pass
+        #print("Path {} already exists".format(dir_path))
 
     if filename:
         return os.path.join(dir_path, filename)
