@@ -96,14 +96,44 @@
 ;(defun. f (x) (+ x 1))
 ;(write (f 1)) ;should return 2
 
-(eval. 
-    ((label defun. (lambda. (fname args expr) ()))
-     ((defun. f (x) (+ x 1))
-      (write (f 1)))
-    ) 
-    '())
+; (eval. 
+;     ((label. defun. (lambda. (fname args expr) ()))
+;      ((defun. f (x) (+ x 1))
+;       (write (f 1)))
+;     ) 
+;     '())
 
 
+(defun funcall. (fn args)
+    (cond ((null args) '())
+          ((atom args) (funcall fn args))
+          (t (cons (funcall. fn (car args)) 
+                   (funcall. fn (cdr args))))))
+
+(defun fx (x) (+ x 1))
+
+;(print
+;    (mapcar 'fx '(1 2 3 4 5)))
+
+(defun of (a i)
+    (cond ((null a) '())
+          ((atom a) '())
+          ((eq i 0) (car a))
+          (t (of (cdr a) (- i 1)))))
+
+;(print (of '(fx (x) (+ x 1)) 1))
+
+(defun metaof (a i)
+    (cond 
+        ((null a) '())
+        ((atom i) (of a i))
+        ((null (cdr i)) (of a (car i)))
+        ((eq (car i) 0) (metaof (car a) (cdr i))) 
+        (t (metaof (cdr a) 
+                   (cons (- (car i) 1) 
+                         (cdr i))))))
+
+(print (metaof '(fx (x) (+ x 1)) '(0)))
 
 #|
 (write 
