@@ -55,9 +55,9 @@ def negate_test():
     n = 3
     solver = SugarRush()
     X = [solver.var() for _ in range(n)]
-    bound_X = solver.atmost(X, bound=1)
-    #bound_X_neg = solver.negate(bound_X)
-    solver.add(bound_X)
+    bound_X = solver.atmost(X, bound=2)
+    bound_X_neg = solver.negate(bound_X)
+    solver.add(bound_X_neg)
     #enumeration_test(solver, X)
     enumeration_test(solver, list(sorted(solver.lits - set([0]))))
     
@@ -92,9 +92,9 @@ def main():
 
     #negate_test()
 
-    #disjunction_test()
+    disjunction_test()
 
-    parity_board()
+    #parity_board()
 
 if __name__ == '__main__':
     main()

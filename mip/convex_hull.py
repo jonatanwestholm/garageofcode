@@ -185,18 +185,18 @@ def main():
 
     #points = [[0, 0], [10, 0], [0, 10]]
     avg = 0
-    dim = 10
+    dim = 2
     num_points = 200
-    n_iter = 100
+    n_iter = 1
     for _ in range(n_iter):
-        #points = np.random.random([num_points, dim]) - 0.5
-        points = get_correlated_points(dim, num_points, alpha=1)
-        #x, y = zip(*points)
+        points = np.random.random([num_points, dim]) - 0.5
+        #points = get_correlated_points(dim, num_points, alpha=1)
+        x, y = zip(*points)
         vol, included = k_fold_inclusion(points)
-        #col = ['b' if incl else 'r' for incl in included]
-        #plt.scatter(x, y, color=col)
-        #plt.title("K-fold inclusion: {0:.3f}".format(vol))
-        #plt.show()
+        col = ['b' if incl else 'r' for incl in included]
+        plt.scatter(x, y, color=col)
+        plt.title("K-fold inclusion: {0:.3f}".format(vol))
+        plt.show()
         #exit(0)
         print("Volume:", vol)
         avg += vol
