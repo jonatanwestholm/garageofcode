@@ -10,8 +10,8 @@ HRS2SEC = 3600
 DAY2SEC = HRS2SEC * 24
 
 def dbg(s, debug):
-	if debug:
-		print(s)
+    if debug:
+        print(s)
 
 def flatten_simple(lst):
     return [elem for sublist in lst for elem in sublist]
@@ -36,16 +36,16 @@ def transpose(l):
     return zip(*l)
 
 def date_range(start_date, end_date):
-	t = copy(start_date)
-	while t <= end_date:
-		yield t
-		t += timedelta(days=1)
+    t = copy(start_date)
+    while t <= end_date:
+        yield t
+        t += timedelta(days=1)
 
 def manhattan(X, Y):
-	dist = 0
-	for x, y in zip(X, Y):
-		dist += abs(x - y)
-	return dist
+    dist = 0
+    for x, y in zip(X, Y):
+        dist += abs(x - y)
+    return dist
 
 def entropy(vals):
     """
@@ -77,19 +77,19 @@ def power_set(a):
             yield [s] + subset
 
 def shuffled(iterable): 
-	"""
-	Returns a generator for the elements of the
-	iterable in a random order
-	Warning: slow
-	"""
-	if type(iterable) is not type([]):
-		lst = list(iterable)
-	else:
-		lst = iterable
-	N = len(lst)
-	order = random.sample(range(N), N)
-	for i in order:
-		yield lst[i]
+    """
+    Returns a generator for the elements of the
+    iterable in a random order
+    Warning: slow
+    """
+    if type(iterable) is not type([]):
+        lst = list(iterable)
+    else:
+        lst = iterable
+    N = len(lst)
+    order = random.sample(range(N), N)
+    for i in order:
+        yield lst[i]
 
 
 def get_fn(subdir, filename="", main_dir=None):
@@ -115,52 +115,52 @@ def get_fn(subdir, filename="", main_dir=None):
 
 
 class Heap:
-	"""
-	A heap implemented the way I want it.
-	Calls to heapq lib is done behind the scenes.
-	Naturally handles keys
-	"""
-	def __init__(self, lst=None, key=None):
-		if lst is None:
-			lst = []
-		self.key = key
-		if self.key is None:
-			self.h = lst
-		else:
-			self.h = [(self.key(elem), elem) for elem in lst]
-		heapq.heapify(self.h)
+    """
+    A heap implemented the way I want it.
+    Calls to heapq lib is done behind the scenes.
+    Naturally handles keys
+    """
+    def __init__(self, lst=None, key=None):
+        if lst is None:
+            lst = []
+        self.key = key
+        if self.key is None:
+            self.h = lst
+        else:
+            self.h = [(self.key(elem), elem) for elem in lst]
+        heapq.heapify(self.h)
 
-	def pop(self):
-		return heapq.heappop(self.h)
+    def pop(self):
+        return heapq.heappop(self.h)
 
-	def push(self, elem):
-		if self.key is None:
-			return heapq.heappush(self.h, elem)
-		else:
-			return heapq.heappush(self.h, (self.key(elem), elem))
+    def push(self, elem):
+        if self.key is None:
+            return heapq.heappush(self.h, elem)
+        else:
+            return heapq.heappush(self.h, (self.key(elem), elem))
 
-	def __len__(self):
-		return len(self.h)
+    def __len__(self):
+        return len(self.h)
 
 def equivalence_partition(iterable, key):
-	classes = []
-	for item in iterable:
-		for c in classes:
-			c_item = next(iter(c))
-			if key(c_item) == key(item):
-				c.add(item)
-				break
-		else:
-			classes.append({item})
-	return classes
+    classes = []
+    for item in iterable:
+        for c in classes:
+            c_item = next(iter(c))
+            if key(c_item) == key(item):
+                c.add(item)
+                break
+        else:
+            classes.append({item})
+    return classes
 
 if __name__ == '__main__':
-	h = Heap([10, 20, 6], key=lambda x: x**2)
+    h = Heap([10, 20, 6], key=lambda x: x**2)
 
-	for i in range(5):
-		h.push(i)
+    for i in range(5):
+        h.push(i)
 
-	N = len(h)
-	for _ in range(N):
-		print(h.pop())
+    N = len(h)
+    for _ in range(N):
+        print(h.pop())
 
