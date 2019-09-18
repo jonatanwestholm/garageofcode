@@ -75,18 +75,27 @@ tile_dot2col = np.array([[0,1,2,3],
 
 def bind_to_structure(solver, X, Y):
     for loc, x_isolocs in groupby(X.items(), key=get_loc):
-        y_isolocs = [(c, var) for c, var in Y.items() if get_loc(c) == loc]
+        x_isolocs = [(c, var) for c, var in sorted(x_isolocs)]
+        y_isolocs = [(c, var) for c, var in sorted(Y.items()) if get_loc(c) == loc]
         bind_tile(solver, x_isolocs, y_isolocs)
+        #exit(0)
 
 
 def bind_tile(solver, tiles, dots):
     for (_, tile, turn), x in tiles:
         for (_, dot, y_col), y in dots:
             x_col = tile_dot2col[tile, (dot + turn) % 4]
+            #print(x_col)
             if x_col == y_col:
-                solver.Add(x == y)
+                solver.Add(x <= y)
             else:
-                solver.Add(x == 1 - y)
+                solver.Add(x + y <= 1)
+        #if num_bind != 0:
+        #print(num_bind)
+        #print()
+
+            #else:
+            #    solver.Add(x == 1 - y)
 
 
 def color_match_constraints(solver, G, Y):
@@ -126,8 +135,10 @@ def main():
     # Constraint: each tile must be placed in exactly one loc
     for _, isotile in groupby(X.items(), key=get_tile):
         key, isotile = zip(*isotile)
-        print(key)
+        #print(key)
         solver.Add(solver.Sum(isotile) == 1)
+    '''
+    '''
 
     # auxilliary variables
     Y = {(loc, dot, col): solver.IntVar(0, 1) 
@@ -146,11 +157,14 @@ def main():
         for _, isocols in groupby(isolocs, key=get_col):
             key, isocols = zip(*isocols)
             solver.Add(solver.Sum(isocols) == 1)
+    '''
+    '''
 
     bind_to_structure(solver, X, Y)
-    #color_match_constraints(solver, G, Y)
+    color_match_constraints(solver, G, Y)
+    #exit(0)
 
-    solver.Solve(time_limit=10)
+    solver.Solve(time_limit=100)
 
     # presentation
     X_solved = [(ij, solver.solution_value(x)) for ij, x in X.items()]
