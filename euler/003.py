@@ -1,5 +1,5 @@
 from math import sqrt, ceil
-from eulerutils import primes
+from eulerutils import get_primes
 
 n = 600851475143
 #n = 91
@@ -7,7 +7,7 @@ largest_p = 1
 factors = []
 
 while True:
-    for p in primes(n):
+    for p in get_primes(n):
         if n % p == 0:
             largest_p = p
             n = n / p

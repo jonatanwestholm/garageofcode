@@ -1,6 +1,6 @@
 from math import sqrt, ceil
 
-def primes(n, memo=None, i0=2):
+def get_primes(n, memo=None, i0=2):
     if memo is None:
         memo = []
     i = i0
@@ -21,7 +21,7 @@ def factorize(n, memo=None):
     p = 1
     n0 = n
     while True:
-        for p in primes(n, memo, p+1):
+        for p in get_primes(n, memo, p+1):
             while n % p == 0:
                 factors.append(p)
                 n = n / p

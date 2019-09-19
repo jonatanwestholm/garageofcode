@@ -3,7 +3,7 @@ The arithmetic sequence, 1487, 4817, 8147, in which each of the terms increases 
 is unusual in two ways: (i) each of the three terms are prime, and, 
 (ii) each of the 4-digit numbers are permutations of one another.
 
-There are no arithmetic sequences made up of three 1-, 2-, or 3-digit primes, 
+There are no arithmetic sequences made up of three 1-, 2-, or 3-digit get_primes, 
 exhibiting this property, but there is one other 4-digit increasing sequence.
 
 What 12-digit number do you form by concatenating the three terms in this sequence?
@@ -11,7 +11,7 @@ What 12-digit number do you form by concatenating the three terms in this sequen
 
 from itertools import groupby, combinations
 
-from eulerutils import primes
+from eulerutils import get_primes
 
 def sorted_digits(n):
     return int("".join(sorted(str(n))))
@@ -23,7 +23,7 @@ def find_triplet(numbers):
 
     return None
 
-ps = list(primes(10000))
+ps = list(get_primes(10000))
 ps = [p for p in ps if p >= 1000]
 ps = [(sorted_digits(p), p) for p in ps]
 
