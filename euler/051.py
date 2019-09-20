@@ -15,10 +15,6 @@ Find the smallest prime which, by replacing part of the number
 is part of an eight prime value family.
 """
 
-import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import numpy as np
 from itertools import combinations
 
