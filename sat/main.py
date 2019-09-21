@@ -88,11 +88,11 @@ def disjunction_test():
     '''
 
 def main():
-    #langford_test(20)
+    langford_test(20)
 
     #negate_test()
 
-    disjunction_test()
+    #disjunction_test()
 
     #parity_board()
 

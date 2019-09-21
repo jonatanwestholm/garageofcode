@@ -3,13 +3,13 @@ import numpy as np
 from solver import get_solver
 
 def get_data():
-    N = 10
+    N = 50
     M = 100
     A = np.random.normal(size=[N, M])
     return np.exp(A)
 
 def main():
-    min_strength = 0.5
+    min_strength = 2
 
     solver = get_solver("CBC")
 
@@ -23,7 +23,7 @@ def main():
     num_transmitters = solver.Sum(X)
     solver.SetObjective(num_transmitters, maximize=False)
 
-    solver.Solve(time_limit=100)
+    solver.Solve(time_limit=10)
 
     X_solved = [solver.solution_value(x) for x in X]
     print(X_solved)
