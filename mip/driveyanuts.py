@@ -226,7 +226,7 @@ def draw_solution(G, X, tile_dot2col):
 
         corners = node2corners[loc]
         for idx, corner in enumerate(corners):
-            col = tile_dot2col[tile, (idx - turn) % 4]
+            col = tile_dot2col[tile, (idx + turn) % 4]
             rgb = col2rgb[col]
             dot = Circle(corner, margin, facecolor=rgb)
             ax.add_patch(dot)
