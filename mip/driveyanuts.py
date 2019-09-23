@@ -80,7 +80,7 @@ def get_graph():
     for _, data in G.nodes(data=True):
         if data["level"] is not "top":
             continue
-        data["coord"] = 2.5 * data["coord"].astype(float)
+        data["coord"] = 2.05 * data["coord"].astype(float)
 
     G.add_edge("A", "C", sides=(2, 0))
     G.add_edge("B", "C", sides=(1, 3))
@@ -193,15 +193,16 @@ def draw_graph(ax, G):
         if not data["level"] == "top":
             continue
         x, y = data["coord"]
-        rect = Rectangle((y - 1, x - 1), 2, 2, facecolor='k', alpha=0.3)
+        rect = Rectangle((y - 1, x - 1), 2, 2, facecolor='k', alpha=0.8)
         ax.add_patch(rect)
         #patches.append(rect)
-        corners = [(y + 1, x - 1),
-                   (y + 1, x + 1),
-                   (y - 1, x + 1),
-                   (y - 1, x - 1)]
+        corners = [(y + 1 - margin, x - 1 + margin),
+                   (y + 1 - margin, x + 1 - margin),
+                   (y - 1 + margin, x + 1 - margin),
+                   (y - 1 + margin, x - 1 + margin)]
         node2corners[node] = corners
 
+    '''
     for u, v, level in G.edges(data="level"):
         if level is not "sub":
             continue
@@ -209,6 +210,7 @@ def draw_graph(ax, G):
         y0, x0 = node2corners[loc0][dot0]
         y1, x1 = node2corners[loc1][dot1]
         ax.plot([y0, y1], [x0, x1], color='k')
+    '''
 
     return node2corners
 
@@ -241,6 +243,7 @@ def draw_solution(G, X, tile_dot2col):
     ax.set_xlim([-10, 10])
     ax.set_ylim([-10, 10])
     ax.set_aspect("equal")
+    ax.axis("off")
     plt.show()
 
 
