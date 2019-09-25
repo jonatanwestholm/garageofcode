@@ -1,6 +1,8 @@
+'''
 import sys
 import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
+'''
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,8 +13,8 @@ from itertools import product
 from itertools import groupby as gb
 import networkx as nx
 
-from solver import get_solver
-from common.utils import Heap
+from garageofcode.mip.solver import get_solver
+from garageofcode.common.utils import Heap
 
 margin = 0.2
 
