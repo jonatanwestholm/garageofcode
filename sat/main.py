@@ -1,14 +1,9 @@
-import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 from pysat.card import EncType
 
-from common.utils import power_set
-
-from sat.solver import SugarRush
-from sat.langford import langford, print_langford_solution
-from sat.parity_board import parity_board
+from garageofcode.common.utils import power_set
+from garageofcode.sat.solver import SugarRush
+from garageofcode.sat.langford import langford, print_langford_solution
+from garageofcode.sat.parity_board import parity_board
 
 def power_set_literals(lits):
     for subset in power_set(lits):

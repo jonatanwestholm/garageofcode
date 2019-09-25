@@ -1,7 +1,4 @@
-import sys
 import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import numpy as np
 from itertools import product, groupby
 from collections import namedtuple
@@ -13,7 +10,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from sklearn.manifold import MDS
 
-from common.utils import get_fn
+from garageofcode.common.utils import get_fn
 
 gif_dir = get_fn("tda/gif")
 

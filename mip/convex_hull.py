@@ -1,14 +1,10 @@
-import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 from itertools import product
 import numpy as np
 from scipy import linalg
 import matplotlib.pyplot as plt
 
-from solver import get_solver, status2str
-from sampling.timeseries import get_ts
+from garageofcode.mip.solver import get_solver, status2str
+from garageofcode.sampling.timeseries import get_ts
 
 tol = 1e-4
 

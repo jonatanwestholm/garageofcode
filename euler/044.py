@@ -12,14 +12,10 @@ for which their sum and difference are pentagonal and D = |Pk − Pj| is minimis
 what is the value of D?
 """
 
-import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import numpy as np
 import matplotlib.pyplot as plt
 
-from common.utils import Heap
+from garageofcode.common.utils import Heap
 
 pents = [1]
 

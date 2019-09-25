@@ -1,7 +1,3 @@
-import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,7 +8,7 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils import data as torch_data
 
-from nn.models import MLP
+from garageofcode.nn.models import MLP
 
 def get_mds(X, metric, dim=2):
     mds = MDS(n_components=dim, dissimilarity='precomputed')

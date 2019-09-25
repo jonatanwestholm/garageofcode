@@ -1,10 +1,6 @@
-import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 from datetime import timedelta
 
-from common.utils import get_fn
+from garageofcode.common.utils import get_fn
 
 fn = get_fn("private_tutoring_scheduling", "test_data.csv")
 

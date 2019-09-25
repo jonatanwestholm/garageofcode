@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
+
 import pandas as pd
 
 data_dir = "/home/jdw/projects/kaggle/data/city_lines/"

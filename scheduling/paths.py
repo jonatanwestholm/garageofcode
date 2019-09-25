@@ -1,13 +1,9 @@
-import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-from common.utils import flatten
-from mip.solver import get_solver, solution_value, status2str
+from garageofcode.common.utils import flatten
+from garageofcode.mip.solver import get_solver, solution_value, status2str
 
 def main():
     """

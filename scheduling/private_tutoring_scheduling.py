@@ -1,7 +1,3 @@
-import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import numpy as np
 import random
 from collections import defaultdict, OrderedDict
@@ -10,11 +6,11 @@ from datetime import time as midnight_time
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-from common.utils import transpose, flatten_simple, equivalence_partition, date_range, DAY2SEC
-from mip.solver import get_solver, solution_value, status2str
-from mip.miputils import max_var, min_var
-from scheduling.read import read
-import scheduling.conf as conf
+from garageofcode.common.utils import transpose, flatten_simple, equivalence_partition, date_range, DAY2SEC
+from garageofcode.mip.solver import get_solver, solution_value, status2str
+from garageofcode.mip.miputils import max_var, min_var
+from garageofcode.scheduling.read import read
+import garageofcode.scheduling.conf as conf
 
 def constraint_take_times(solver, students, student_time2take, take_times):
     for student in students:

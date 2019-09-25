@@ -1,12 +1,9 @@
-import sys
 import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from common.utils import get_fn
+from garageofcode.common.utils import get_fn
 
 def popularity_plot(df):
     popular = df[df["likes"] > 0]

@@ -1,7 +1,4 @@
-import sys
 import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import time
 import random
 import numpy as np
@@ -9,12 +6,12 @@ import copy
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from mip.solver import get_solver, solution_value
-from common.utils import flatten_simple, shuffled, manhattan, get_fn
-from common.search import bfs, dfs, a_star
-from labyrinth.utils import connect_labyrinth, init_grid_graph
-from labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree, draw_obstruction_graph, draw_heuristics
-from labyrinth.search import anti_obstruction
+from garageofcode.mip.solver import get_solver, solution_value
+from garageofcode.common.utils import flatten_simple, shuffled, manhattan, get_fn
+from garageofcode.common.search import bfs, dfs, a_star
+from garageofcode.labyrinth.utils import connect_labyrinth, init_grid_graph
+from garageofcode.labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree, draw_obstruction_graph, draw_heuristics
+from garageofcode.labyrinth.search import anti_obstruction
 
 def node_expansion_buster(L, n, m):
     for i in range(n):

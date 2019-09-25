@@ -1,16 +1,12 @@
-import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import numpy as np
 import time
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-from common.utils import flatten_simple as flatten
-from common.utils import get_fn
-from common.interval_utils import get_corners2, interval_overlap2
-from sat.assignment import interval_selection, interval_selection2
+from garageofcode.common.utils import flatten_simple as flatten
+from garageofcode.common.utils import get_fn
+from garageofcode.common.interval_utils import get_corners2, interval_overlap2
+from garageofcode.sat.assignment import interval_selection, interval_selection2
 
 def read_infile(fn):
     mat = []

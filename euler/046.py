@@ -15,11 +15,7 @@ What is the smallest odd composite that cannot be written as
 the sum of a prime and twice a square?
 """
 
-import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
-from common.utils import Heap
+from garageofcode.common.utils import Heap
 
 primes = [2]
 

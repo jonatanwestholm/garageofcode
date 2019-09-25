@@ -1,12 +1,9 @@
-import sys
 import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from tda.main import get_mds
+from garageofcode.tda.main import get_mds
 
 class Word2Vec:
     def __init__(self, fn):

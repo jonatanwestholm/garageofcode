@@ -1,7 +1,4 @@
-import sys
 import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import time
 from copy import copy
 import numpy as np
@@ -14,8 +11,8 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-from common.utils import get_fn
-from common.box import Box, BoxTree
+from garageofcode.common.utils import get_fn
+from garageofcode.common.box import Box, BoxTree
 
 class SamplingBox(Box):
     def split(self):

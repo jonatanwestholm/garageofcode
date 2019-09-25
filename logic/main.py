@@ -1,14 +1,11 @@
-import sys
 import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import time
 import math
 import numpy as np
 import networkx as nx
 import pydot
 
-from common.utils import Heap, get_fn
+from garageofcode.common.utils import Heap, get_fn
 
 MAX_CREDIBLE_INTERMEDIATE = 1e3
 main_dir = get_fn("logic", "")

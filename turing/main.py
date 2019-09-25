@@ -1,12 +1,9 @@
-import sys
 import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-from common.utils import get_fn
+from garageofcode.common.utils import get_fn
 
 tape = {}
 head = 0

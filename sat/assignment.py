@@ -1,7 +1,3 @@
-import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import numpy as np
 from itertools import product
 
@@ -10,9 +6,9 @@ from pysat.examples.lsu import LSU
 from pysat.examples.rc2 import RC2, RC2Stratified
 from pysat.formula import WCNF
 
-from common.interval_utils import interval_overlap
-from common.interval_utils import interval_overlap2, interval_contains2
-from sat.solver import SugarRush
+from garageofcode.common.interval_utils import interval_overlap
+from garageofcode.common.interval_utils import interval_overlap2, interval_contains2
+from garageofcode.sat.solver import SugarRush
 
 def interval_selection2(mat, feasible):
     N, M = mat.shape

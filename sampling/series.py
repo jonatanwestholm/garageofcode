@@ -1,7 +1,4 @@
-import sys
 import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import time
 import numpy as np
 from copy import copy
@@ -9,8 +6,8 @@ from scipy.stats import entropy
 from collections import defaultdict
 import matplotlib.pyplot as plt
 
-from common.utils import get_fn
-from sampling.box import SamplingBoxTree, draw_boxes
+from garageofcode.common.utils import get_fn
+from garageofcode.sampling.box import SamplingBoxTree, draw_boxes
 
 def white_noise(y, std):
     return y + np.random.normal()*std

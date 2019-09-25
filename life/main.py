@@ -1,11 +1,7 @@
-import sys
-import os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import numpy as np
 import matplotlib.pyplot as plt
 
-from common.utils import flatten_simple
+from garageofcode.common.utils import flatten_simple
 
 alphabet = ["A", "B", "C", "vC"]
 n_a = len(alphabet)

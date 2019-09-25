@@ -1,7 +1,4 @@
 import os
-import sys
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
@@ -9,7 +6,7 @@ from matplotlib.collections import PatchCollection
 
 import pandas as pd
 
-from common.utils import get_fn
+from garageofcode.common.utils import get_fn
 
 def price_map(fn):
     df = pd.read_csv(fn)
