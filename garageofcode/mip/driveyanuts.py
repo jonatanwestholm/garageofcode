@@ -125,19 +125,17 @@ def bind_to_structure(solver, X, Y, tile_dot2col):
         x_isolocs = [(c, var) for c, var in sorted(x_isolocs)]
         y_isolocs = [(c, var) for c, var in sorted(Y.items()) if get_loc(c) == loc]
         bind_tile(solver, x_isolocs, y_isolocs, tile_dot2col)
-        #exit(0)
 
 
 def bind_tile(solver, tiles, dots, tile_dot2col):
     for (_, tile, turn), x in tiles:
         for (_, dot, y_col), y in dots:
             x_col = tile_dot2col[tile, (dot + turn) % 4]
-            #print(x_col)
             if x_col == y_col:
                 solver.Add(x <= y)
             else:
                 solver.Add(x + y <= 1)
-                
+
 
 def color_match_constraints(solver, G, Y):
     for u, v, level in G.edges(data="level"):
@@ -154,30 +152,6 @@ def color_match_constraints(solver, G, Y):
 
 
 def draw_graph(ax, G):
-    '''
-    side2vec = np.array([[-1, 0],
-                         [0, 1],
-                         [1, 0],
-                         [0, -1]])*2.5
-    start = next(iter(G))
-    G.nodes[start]["coord"] = np.array([0, 0])
-
-    h = Heap([start])
-    while h:
-        node = h.pop()
-        coord = G.nodes[node]["coord"]
-        for neigh in G[node]:
-            if "coord" in G.nodes[neigh]:
-                continue
-            print(G.edges[node, neigh]["sides"])
-            print(G.edges[neigh, node]["sides"])
-            print()
-            (side, _) = G.edges[node, neigh]["sides"]
-            vec = side2vec[side]
-            G.nodes[neigh]["coord"] = coord + vec
-            h.push(neigh)
-    '''
-
     node2corners = {}
     for node, data in G.nodes(data=True):
         if not data["level"] == "top":
@@ -185,22 +159,11 @@ def draw_graph(ax, G):
         x, y = data["coord"]
         rect = Rectangle((y - 1, x - 1), 2, 2, facecolor='k', alpha=0.8)
         ax.add_patch(rect)
-        #patches.append(rect)
         corners = [(y + 1 - margin, x - 1 + margin),
                    (y + 1 - margin, x + 1 - margin),
                    (y - 1 + margin, x + 1 - margin),
                    (y - 1 + margin, x - 1 + margin)]
         node2corners[node] = corners
-
-    '''
-    for u, v, level in G.edges(data="level"):
-        if level is not "sub":
-            continue
-        (loc0, dot0), (loc1, dot1) = u, v
-        y0, x0 = node2corners[loc0][dot0]
-        y1, x1 = node2corners[loc1][dot1]
-        ax.plot([y0, y1], [x0, x1], color='k')
-    '''
 
     return node2corners
 
@@ -214,8 +177,6 @@ def draw_solution(G, X, tile_dot2col):
         if not x:
             continue
 
-        print("Drawing {}, {}, {}".format(loc, tile, turn))
-
         corners = node2corners[loc]
         for idx, corner in enumerate(corners):
             col = tile_dot2col[tile, (idx + turn) % 4]
@@ -226,10 +187,7 @@ def draw_solution(G, X, tile_dot2col):
     for node, data in G.nodes(data=True):
         if data["level"] is not "top":
             continue
-        print("Node:", node, " coord:", data["coord"])
 
-    #p = PatchCollection(patches)
-    #ax.add_collection(p)
     ax.set_xlim([-10, 10])
     ax.set_ylim([-10, 10])
     ax.set_aspect("equal")
@@ -261,16 +219,12 @@ def main():
     # Constraint: exactly one tile with one turn per location
     for _, isolocs in groupby(X.items(), key=get_loc):
         key, isolocs = zip(*isolocs)
-        #print(key)
         solver.Add(solver.Sum(isolocs) == 1)
 
     # Constraint: each tile must be placed in exactly one loc
     for _, isotile in groupby(X.items(), key=get_tile):
         key, isotile = zip(*isotile)
-        #print(key)
         solver.Add(solver.Sum(isotile) == 1)
-    '''
-    '''
 
     # auxilliary variables
     Y = {(loc, dot, col): solver.IntVar(0, 1) 
@@ -289,12 +243,9 @@ def main():
         for _, isocols in groupby(isolocs, key=get_col):
             key, isocols = zip(*isocols)
             solver.Add(solver.Sum(isocols) == 1)
-    '''
-    '''
 
     bind_to_structure(solver, X, Y, tile_dot2col)
     color_match_constraints(solver, G, Y)
-    #exit(0)
 
     status = solver.Solve(time_limit=100)
     if status >= 2:
@@ -302,21 +253,7 @@ def main():
 
     # presentation
     X_solved = [(ij, solver.solution_value(x)) for ij, x in X.items()]
-
     draw_solution(G, X_solved, tile_dot2col)
-    #print(sum([val for _, val in X_solved]))
-    #print(X_solved)
-    '''
-    N = 8
-    img = np.zeros([N, N])
-    for (i, j, k), x in X_solved:
-        i = locs.index(i)
-        if x:
-            img[i, j] = 1
-
-    plt.imshow(img)
-    plt.show()
-    '''
 
 if __name__ == '__main__':
     main()
