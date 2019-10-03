@@ -137,13 +137,7 @@ def bind_tile(solver, tiles, dots, tile_dot2col):
                 solver.Add(x <= y)
             else:
                 solver.Add(x + y <= 1)
-        #if num_bind != 0:
-        #print(num_bind)
-        #print()
-
-            #else:
-            #    solver.Add(x == 1 - y)
-
+                
 
 def color_match_constraints(solver, G, Y):
     for u, v, level in G.edges(data="level"):
