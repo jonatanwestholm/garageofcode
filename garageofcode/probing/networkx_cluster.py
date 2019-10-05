@@ -126,26 +126,7 @@ def find_quadrangles_v001(G):
                 num_quadrangles += len(adj_u & adj[w])
     
     return num_quadrangles       
-
-
-def get_random_graph(n, rate):
-    G = nx.Graph()
-
-    for i in range(n):
-        G.add_node(i)
-
-    for i in range(n):
-        if 0: # faster for large, sparse graphs
-            num_larger = n - 1 - i
-            for j in np.random.choice(range(i + 1, n), min(int(n * rate), num_larger), replace=False):
-                if i != j:
-                    G.add_edge(i, j)
-        else:
-            for j in range(i+1, n):
-                if np.random.random() < rate:
-                    G.add_edge(i, j)
-
-    return G
+    
 
 def networkx_find_triangles(G):
     num_triangles = 0

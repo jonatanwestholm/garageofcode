@@ -37,6 +37,6 @@ def print_row(p_doc, f2res):
     row_format = row_format + "{:>15s}"
 
     f2t, f2r = zip(*[(1000*t, r) for f_doc, (t, r) in f2res.items()])
-    all_equal = "OK" if all([f2r[0] == r for r in f2r]) else "NOT"
+    all_equal = "ok" if all([f2r[0] == r for r in f2r]) else "not"
     print(row_format.format(p_doc, *f2t, *f2r, all_equal), end="\r")
     
