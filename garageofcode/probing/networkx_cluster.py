@@ -163,8 +163,8 @@ def test_triangle_speed():
     t0 = time.time()
     params = {"n=1e2, m=1e3": [get_random_graph(100, 0.1)],
               "n=1e3, m=1e4": [get_random_graph(1000, 0.01)],
-              "n=1e3, m=1e5": [get_random_graph(1000, 0.1)],}
-              #"n=1e4, m=1e5": [get_random_graph(10000, 0.01)],}
+              "n=1e3, m=1e5": [get_random_graph(1000, 0.1)],
+              "n=1e4, m=1e5": [get_random_graph(10000, 0.01)],}
     t1 = time.time()
     #print("graph generation time: {0:.3f}".format(t1 - t0))
 
