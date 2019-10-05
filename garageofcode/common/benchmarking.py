@@ -15,10 +15,11 @@ def run(funcs, params):
             res[p_doc][f_doc] = (t1-t0, r)
 
 
-    header_format = " " * 15 + "{:>15s}" * len(f_docs)
-    print(header_format.format(*f_docs))
-    row_format = "{:<15s}" + "{:>15.1f}" * len(f_docs)
+    header_format = " " * 15 + "{:>15s}" * len(f_docs) * 2 + "{:>15}".format("all equal")
+    print(header_format.format(*f_docs, *f_docs))
+    row_format = "{:<15s}" + "{:>15.1f}" * len(f_docs) + "{:>15.1f}" * len(f_docs) + "{:>15}"
     for p_doc, f2res in res.items():
-        f2t = [1000*t for f_doc, (t, r) in f2res.items()]
-        print(row_format.format(p_doc, *f2t))
+        f2t, f2r = zip(*[(1000*t, r) for f_doc, (t, r) in f2res.items()])
+        all_equal = "OK" if all([f2r[0] == r for r in f2r]) else "NOT"
+        print(row_format.format(p_doc, *f2t, *f2r, all_equal))
     
