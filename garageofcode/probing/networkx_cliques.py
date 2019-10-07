@@ -25,13 +25,16 @@ def test_complete_graph():
         print(clique)
     print("Total time:", time.time() - t0)
 
-def get_asymmetric_adj(G):
+def get_asymmetric_adj(G, comparison):
     node2deg = {u: len(G[u]) for u in G}
     node2deg = {u: (deg, i) for i, (u, deg) in enumerate(sorted(node2deg.items(), key=lambda x: x[1]))}
     adj = {} # adj[u] neighbours of u with higher degree
     for u in node2deg:
         d = node2deg[u]
-        adj[u] = {v for v in G[u] if node2deg[v] > d}
+        if comparison == "<":
+            adj[u] = {v for v in G[u] if d < node2deg[v]}
+        elif comparison == ">":
+            adj[u] = {v for v in G[u] if d > node2deg[v]}
     return adj
 
 def find_cliques_v001(G):
@@ -39,23 +42,63 @@ def find_cliques_v001(G):
         return iter([])
 
     adj = {u: {v for v in G[u] if v != u} for u in G}
-    asym_adj = get_asymmetric_adj(G)
+    higher_degree_adj = get_asymmetric_adj(G, comparison="<")
+    Q = []
+
+    def get_cliques(cand, hdeg_adj_v):
+        for u in cand & hdeg_adj_v:
+            Q.append(u)
+            cand_u = cand & adj[u]
+            if not cand_u:
+                yield Q[:]
+            else:
+                for clique in get_cliques(cand_u, higher_degree_adj[u]):
+                    yield clique
+            Q.pop()
+
+    return get_cliques(set(G), set(G))
+
+def find_cliques_v002(G):
+    if len(G) == 0:
+        return iter([])
+
+    adj = {u: {v for v in G[u] if v != u} for u in G}
+
+    higher_degree_adj = get_asymmetric_adj(G, comparison="<")
+    #lower_degree_adj  = get_asymmetric_adj(G, comparison=">")
     Q = []
 
     # Possible optimization: use the same thing as nx, 
     # if may be possible to know that some nodes will not
     # be part of a maximal clique. 
 
-    def get_cliques(cand, asym_adj_v):
-        for u in cand & asym_adj_v:
+    def get_cliques(cand, hdeg_adj_v):
+        if not cand & hdeg_adj_v:
+            return
+        pivot = max(cand & hdeg_adj_v, key=lambda u: len(cand & adj[u]))
+        #node2cover = {u: cand & adj[u] for u in cand}
+        for u in cand & hdeg_adj_v - higher_degree_adj[pivot]:
+            # check if there is a node that dominates u
+            # w dominates u if deg[w] < deg[u] and
+            # adj[u] & cand <= adj[w] & cand
+            #for w in cand & hdeg_adj_v & lower_degree_adj[u]:
+            #    if not (node2cover[u] - node2cover[w]):
+            #        dominated = True
+            #        break
+            #else:
+            #    dominated = False
+            #if dominated:
+            #    continue
             Q.append(u)
             cand_u = cand & adj[u]
             if not cand_u:
                 yield Q[:]
             else:
-                for clique in get_cliques(cand_u, asym_adj[u]):
+                for clique in get_cliques(cand_u, higher_degree_adj[u]):
                     yield clique
             Q.pop()
+
+    #print("\t\tbranchings:", len(branchings))
 
     return get_cliques(set(G), set(G))
 
@@ -69,12 +112,14 @@ def test_clique_speed():
     nx_recursive = len_iterator(find_cliques_recursive)
     nx_all       = len_iterator(enumerate_all_cliques)
     custom       = len_iterator(find_cliques_v001)
+    custom2      = len_iterator(find_cliques_v002)
 
     funcs = {
              #"nx all": nx_all,
              "nx iterative": nx_iterative,
              #"nx recursive": nx_recursive,
-             "custom": custom}
+             "custom v001": custom,
+             "custom v002:": custom2}
 
     t0 = time.time()
     params = {# custom algo is 30% faster for large random graphs
