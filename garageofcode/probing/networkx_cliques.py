@@ -5,25 +5,12 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from networkx.algorithms.clique import find_cliques, find_cliques_recursive
 from networkx.algorithms.clique import enumerate_all_cliques
-from networkx.generators.classic import full_rary_tree
+from networkx.generators.classic import full_rary_tree, complete_graph, star_graph
 from networkx.generators.community import connected_caveman_graph, windmill_graph
 from networkx.generators.harary_graph import hnm_harary_graph
 
 from garageofcode.probing.utils import get_random_graph
 import garageofcode.common.benchmarking as benchmarking
-
-def test_complete_graph():
-    G = nx.Graph()
-
-    n = 10
-    for i in range(n):
-        for j in range(i+1, n):
-            G.add_edge(i, j)
-
-    t0 = time.time()
-    for clique in find_cliques_recursive(G):
-        print(clique)
-    print("Total time:", time.time() - t0)
 
 def get_asymmetric_adj(G, comparison):
     node2deg = {u: len(G[u]) for u in G}
@@ -58,7 +45,7 @@ def find_cliques_v001(G):
 
     return get_cliques(set(G), set(G))
 
-def find_cliques_v002(G):
+def find_cliques_v002(G, dbg=False):
     if len(G) == 0:
         return iter([])
 
@@ -68,24 +55,19 @@ def find_cliques_v002(G):
     lower_degree_adj  = get_asymmetric_adj(G, comparison=">")
     Q = []
 
-    # Possible optimization: use the same thing as nx, 
-    # if may be possible to know that some nodes will not
-    # be part of a maximal clique. 
-
     def get_cliques(cand, cand_and_hdeg_adj_v):
-        q = max(cand_and_hdeg_adj_v, key=lambda q: len(cand_and_hdeg_adj_v & higher_degree_adj[q]))
-        for u in cand_and_hdeg_adj_v - higher_degree_adj[q]:
-            # check if there is a node that dominates u
-            # w dominates u if deg[w] < deg[u] and
-            # adj[u] & cand <= adj[w] & cand
-            #for w in cand & hdeg_adj_v & lower_degree_adj[u]:
-            #    if not (node2cover[u] - node2cover[w]):
-            #        dominated = True
-            #        break
-            #else:
-            #    dominated = False
-            #if dominated:
-            #    continue
+        # remove nodes that are connected to all remaining
+        # only improves result for graphs with isolated cliques
+        if len(cand_and_hdeg_adj_v) > 1:
+            for u in cand_and_hdeg_adj_v - set([]):
+                if len(cand_and_hdeg_adj_v) < 2:
+                    break
+                if len(cand - adj[u]) <= 1:
+                    # is adjacent to all remaining
+                    cand.remove(u)
+                    cand_and_hdeg_adj_v.remove(u)
+
+        for u in cand_and_hdeg_adj_v: # - higher_degree_adj[q]:
             Q.append(u)
             cand_u = cand & adj[u]
             if not cand_u:
@@ -102,7 +84,7 @@ def find_cliques_v002(G):
     return get_cliques(set(G), set(G))
 
 def test_clique_speed():
-    np.random.seed(0)
+    np.random.seed(2)
 
     def len_iterator(func):
         return lambda G: sum(1 for _ in func(G))
@@ -122,16 +104,18 @@ def test_clique_speed():
 
     t0 = time.time()
     params = {# custom algo is 30% faster for large random graphs
-              "n=1e1, m=1e1": [get_random_graph(10, 0.1)],
+              #"star(3)": [star_graph(4)],
+              "n=1e1, m=1e1": [get_random_graph(5, 0.3)],
               "n=1e2, m=1e2": [get_random_graph(100, 0.01)],
               "n=1e2, m=1e3": [get_random_graph(100, 0.1)],
               "n=1e3, m=1e3": [get_random_graph(1000, 0.001)],
               "n=1e3, m=1e4": [get_random_graph(1000, 0.01)],
               "n=1e3, m=1e5": [get_random_graph(1000, 0.1)],
-              "n=1e3, m=2e5": [get_random_graph(1000, 0.2)],
+              #"n=1e3, m=2e5": [get_random_graph(1000, 0.2)],
               "caveman(100,10)": [connected_caveman_graph(100, 10)],
               "windmill(10, 10)": [windmill_graph(10, 10)],
               "nary_tree(3, 10000)": [full_rary_tree(2, 1000)],
+              "complete(20)": [complete_graph(20)],
               # custom algo is 20 times slower (!!) for harary_graphs
               # what makes these graphs special?
               # possibly: all nodes have (almost) the same degree, 
@@ -147,23 +131,15 @@ def test_clique_speed():
 if __name__ == '__main__':
     if 1:
         test_clique_speed()
-    elif 0:
-        G = get_random_graph(10, 0.4)
-        node2deg = {u: len(G[u]) for u in G}
-        for k, v in node2deg.items():
-            print(k, v)
-
-        for clique in find_cliques(G):
+    elif 1:
+        np.random.seed(2)
+        G = get_random_graph(5, 0.3)
+        for clique in find_cliques_v002(G, dbg=True):
             print(clique)
 
-        print()
 
-        for clique in find_cliques_v001(G):
-            print(clique)
-
-        nx.draw_networkx(G)
-        plt.show()
     else:
-        G = hnm_harary_graph(10, 40)        
+        np.random.seed(2)
+        G = get_random_graph(5, 0.3)
         nx.draw_networkx(G)
         plt.show()
