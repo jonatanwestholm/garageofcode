@@ -97,10 +97,11 @@ def test_clique_speed():
 
     funcs = {
              #"nx all": nx_all,
-             "nx iterative": nx_iterative,
+             "networkx": nx_iterative,
              #"nx recursive": nx_recursive,
-             "custom v001": custom,
-             "custom v002:": custom2}
+             "v001": custom,
+             #"custom v002:": custom2
+             }
 
     t0 = time.time()
     params = {# custom algo is 30% faster for large random graphs
@@ -111,7 +112,7 @@ def test_clique_speed():
               "n=1e3, m=1e3": [get_random_graph(1000, 0.001)],
               "n=1e3, m=1e4": [get_random_graph(1000, 0.01)],
               "n=1e3, m=1e5": [get_random_graph(1000, 0.1)],
-              #"n=1e3, m=2e5": [get_random_graph(1000, 0.2)],
+              "n=1e3, m=2e5": [get_random_graph(1000, 0.2)],
               "caveman(100,10)": [connected_caveman_graph(100, 10)],
               "windmill(10, 10)": [windmill_graph(10, 10)],
               "nary_tree(3, 10000)": [full_rary_tree(2, 1000)],
