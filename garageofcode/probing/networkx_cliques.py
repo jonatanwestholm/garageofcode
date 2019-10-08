@@ -65,19 +65,16 @@ def find_cliques_v002(G):
     adj = {u: {v for v in G[u] if v != u} for u in G}
 
     higher_degree_adj = get_asymmetric_adj(G, comparison="<")
-    #lower_degree_adj  = get_asymmetric_adj(G, comparison=">")
+    lower_degree_adj  = get_asymmetric_adj(G, comparison=">")
     Q = []
 
     # Possible optimization: use the same thing as nx, 
     # if may be possible to know that some nodes will not
     # be part of a maximal clique. 
 
-    def get_cliques(cand, hdeg_adj_v):
-        if not cand & hdeg_adj_v:
-            return
-        pivot = max(cand & hdeg_adj_v, key=lambda u: len(cand & adj[u]))
-        #node2cover = {u: cand & adj[u] for u in cand}
-        for u in cand & hdeg_adj_v - higher_degree_adj[pivot]:
+    def get_cliques(cand, cand_and_hdeg_adj_v):
+        q = max(cand_and_hdeg_adj_v, key=lambda q: len(cand_and_hdeg_adj_v & higher_degree_adj[q]))
+        for u in cand_and_hdeg_adj_v - higher_degree_adj[q]:
             # check if there is a node that dominates u
             # w dominates u if deg[w] < deg[u] and
             # adj[u] & cand <= adj[w] & cand
@@ -94,9 +91,11 @@ def find_cliques_v002(G):
             if not cand_u:
                 yield Q[:]
             else:
-                for clique in get_cliques(cand_u, higher_degree_adj[u]):
-                    yield clique
-            Q.pop()
+                cand_and_hdeg_adj_u = cand_u & higher_degree_adj[u]
+                if cand_and_hdeg_adj_u:
+                    for clique in get_cliques(cand_u, cand_and_hdeg_adj_u):
+                        yield clique
+            Q.pop()            
 
     #print("\t\tbranchings:", len(branchings))
 
@@ -129,6 +128,7 @@ def test_clique_speed():
               "n=1e3, m=1e3": [get_random_graph(1000, 0.001)],
               "n=1e3, m=1e4": [get_random_graph(1000, 0.01)],
               "n=1e3, m=1e5": [get_random_graph(1000, 0.1)],
+              "n=1e3, m=2e5": [get_random_graph(1000, 0.2)],
               "caveman(100,10)": [connected_caveman_graph(100, 10)],
               "windmill(10, 10)": [windmill_graph(10, 10)],
               "nary_tree(3, 10000)": [full_rary_tree(2, 1000)],
@@ -138,7 +138,6 @@ def test_clique_speed():
               #     no gain in sorting them
               #"harary(1e4, 1e5)": [hnm_harary_graph(10000, 100000)],
               #"n=1e3, m=1.5e5": [get_random_graph(1000, 0.15)],
-              #"n=1e3, m=2e5": [get_random_graph(1000, 0.2)],
               }
     t1 = time.time()
     #print("graph generation time: {0:.3f}".format(t1 - t0))
