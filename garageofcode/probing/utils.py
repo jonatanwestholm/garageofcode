@@ -12,12 +12,13 @@ def get_random_graph(n, rate, directed=False):
         G.add_node(i)
 
     for i in range(n):
-        if directed:
-            lb = 0
-        else:
-            lb = i + 1
-        for j in range(lb, n):
+        for j in range(i+1, n):
             if np.random.random() < rate:
-                G.add_edge(i, j)
-
+                if directed:
+                    if np.random.random() < 0.5:
+                        G.add_edge(i, j)
+                    else:
+                        G.add_edge(j, i)
+                else:
+                    G.add_edge(i, j)
     return G
