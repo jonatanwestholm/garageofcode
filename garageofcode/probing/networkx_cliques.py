@@ -83,6 +83,49 @@ def find_cliques_v002(G, dbg=False):
 
     return get_cliques(set(G), set(G))
 
+
+def find_cliques_v003(G):
+    if len(G) == 0:
+        return iter([])
+
+    adj = {u: {v for v in G[u] if v != u} for u in G}
+    #print(adj)
+    #node2deg = {u: len(G[u]) for u in G}
+    #node2deg = {u: (deg, i) for i, (u, deg) in enumerate(sorted(node2deg.items(), key=lambda x: x[1]))}
+    higher_degree_adj = get_asymmetric_adj(G, comparison="<")
+    lower_degree_adj = get_asymmetric_adj(G, comparison=">")
+    Q = []
+    found_cliques = set([])
+
+    def get_cliques(cand, hdeg_adj_v):
+        cand_and_hdeg_adj_u = cand & hdeg_adj_v
+        q = max(cand, key=lambda q: len(cand_and_hdeg_adj_u & adj[q]))
+        adj_q = adj[q]
+        for u in cand_and_hdeg_adj_u - adj_q:
+            if 0:
+                print()
+                print("Q:", Q)
+                print("u:", u)
+                print("q:", q)
+                print("adj_q:", adj_q)
+            Q.append(u)
+            cand_u = cand & adj[u]
+            if not cand_u:
+                sq = tuple(sorted(Q[:]))
+                if sq not in found_cliques:
+                    found_cliques.add(sq)
+                    yield Q[:]
+            else:
+                #if (lower_degree_adj[u] & adj_q):
+                #    print("adding:", lower_degree_adj[u] & adj_q)
+                hdeg_adj_u = higher_degree_adj[u] | (lower_degree_adj[u] & adj_q)
+                for clique in get_cliques(cand_u, hdeg_adj_u):
+                    yield clique
+            Q.pop()
+
+    return get_cliques(set(G), set(G))
+
+
 def test_clique_speed():
     np.random.seed(2)
 
@@ -92,30 +135,32 @@ def test_clique_speed():
     nx_iterative = len_iterator(find_cliques)
     nx_recursive = len_iterator(find_cliques_recursive)
     nx_all       = len_iterator(enumerate_all_cliques)
-    custom       = len_iterator(find_cliques_v001)
+    custom1      = len_iterator(find_cliques_v001)
     custom2      = len_iterator(find_cliques_v002)
+    custom3      = len_iterator(find_cliques_v003)
 
     funcs = {
              #"nx all": nx_all,
              "networkx": nx_iterative,
              #"nx recursive": nx_recursive,
-             "v001": custom,
-             #"custom v002:": custom2
+             #"v001": custom1,
+             #"v002:": custom2,
+             "v003": custom3,
              }
 
     t0 = time.time()
     params = {# custom algo is 30% faster for large random graphs
               #"star(3)": [star_graph(4)],
-              "n=1e1, m=1e1": [get_random_graph(5, 0.3)],
+              "n=1e1, m=1e1": [get_random_graph(10, 0.5)],
               "n=1e2, m=1e2": [get_random_graph(100, 0.01)],
               "n=1e2, m=1e3": [get_random_graph(100, 0.1)],
               "n=1e3, m=1e3": [get_random_graph(1000, 0.001)],
               "n=1e3, m=1e4": [get_random_graph(1000, 0.01)],
               "n=1e3, m=1e5": [get_random_graph(1000, 0.1)],
-              "n=1e3, m=2e5": [get_random_graph(1000, 0.2)],
+              #"n=1e3, m=2e5": [get_random_graph(1000, 0.2)],
               "caveman(100,10)": [connected_caveman_graph(100, 10)],
               "windmill(10, 10)": [windmill_graph(10, 10)],
-              "nary_tree(3, 10000)": [full_rary_tree(2, 1000)],
+              "nary_tree(3, 1000)": [full_rary_tree(2, 1000)],
               "complete(20)": [complete_graph(20)],
               # custom algo is 20 times slower (!!) for harary_graphs
               # what makes these graphs special?
@@ -132,15 +177,11 @@ def test_clique_speed():
 if __name__ == '__main__':
     if 1:
         test_clique_speed()
-    elif 1:
-        np.random.seed(2)
-        G = get_random_graph(5, 0.3)
-        for clique in find_cliques_v002(G, dbg=True):
-            print(clique)
-
-
     else:
         np.random.seed(2)
-        G = get_random_graph(5, 0.3)
+        G = get_random_graph(10, 0.5)
+        for clique in find_cliques_v003(G):
+            print(clique)
+
         nx.draw_networkx(G)
         plt.show()
