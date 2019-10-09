@@ -165,7 +165,7 @@ def test_clique_speed():
               # custom algo is 20 times slower (!!) for harary_graphs
               # what makes these graphs special?
               # possibly: all nodes have (almost) the same degree, 
-              #     no gain in sorting them
+              #     no gain in sorting them 
               #"harary(1e4, 1e5)": [hnm_harary_graph(10000, 100000)],
               #"n=1e3, m=1.5e5": [get_random_graph(1000, 0.15)],
               }
