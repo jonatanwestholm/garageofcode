@@ -1,4 +1,3 @@
-import time
 import numpy as np
 
 import networkx as nx
@@ -49,7 +48,6 @@ def test_scc_speed():
              "v001": custom1,
              }
 
-    t0 = time.time()
     params = {
               #"star(3)": [star_graph(4)],
               "n=1e1, m=1e1": [get_random_graph(10, 0.1, directed=True)],
@@ -64,8 +62,6 @@ def test_scc_speed():
               #"nary_tree(3, 1000)": [full_rary_tree(2, 1000)],
               #"complete(20)": [complete_graph(20)],
               }
-    t1 = time.time()
-    #print("graph generation time: {0:.3f}".format(t1 - t0))
 
     benchmarking.run(funcs, params)
 
