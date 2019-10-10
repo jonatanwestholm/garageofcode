@@ -8,48 +8,29 @@ from garageofcode.common import benchmarking
 from garageofcode.probing.utils import get_random_graph
 
 def is_strongly_connected_v001(G):
-    marcos = set([])
-    count = 0
-    for u in set(G):
-        if u in marcos:
-            continue
-        count += 1
-        if is_marco_polo(G, u):
-            marcos.update(backsearch(G, u))
-        else:
-            return False
-    print()
-    print("num marco_polo searches:", count)
-    print()
-    return True
+    N = len(G)
+    u = next(iter(G))
+    #return len(reachable_from(G, u)) == N and \
+    #       len(reachable_from(G._pred, u)) == N
+    #G_reverse = G.reverse()
+    return len(nx.descendants(G, u) | {u}) == N and \
+           len(nx.ancestors(G, u) | {u}) == N
 
-def backsearch(G, u):
+
+def reachable_from(G, u):
     visited = set([u])
-    unvisited = set(G) - visited
     stack = [u]
-    while stack:
-        node = stack.pop()
-        for v in G._pred[node]:
-            if not v in visited:
-                visited.add(v)
-                unvisited.remove(v)
-                stack.append(v)
-                if not unvisited:
-                    return visited
-    return visited
-
-def is_marco_polo(G, u):
-    unvisited = set(G)
-    stack = [u]
+    unvisited = len(G) - 1
     while stack:
         node = stack.pop()
         for v in G[node]:
-            if v in unvisited:
-                unvisited.remove(v)
+            if not v in visited:
+                visited.add(v)
                 stack.append(v)
+                unvisited -= 1
                 if not unvisited:
-                    return True
-    return False
+                    return visited
+    return visited
 
 
 def test_scc_speed():
