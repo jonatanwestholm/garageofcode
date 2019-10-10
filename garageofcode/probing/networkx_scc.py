@@ -2,7 +2,7 @@ import time
 import numpy as np
 
 import networkx as nx
-from networkx.algorithms.components.strongly_connected import is_strongly_connected
+from networkx import is_strongly_connected, is_strongly_connected_dev
 
 from garageofcode.common import benchmarking
 from garageofcode.probing.utils import get_random_graph
@@ -39,11 +39,13 @@ def test_scc_speed():
     def len_iterator(func):
         return lambda G: sum(1 for _ in func(G))
 
-    nx_iterative = is_strongly_connected
+    nx_master    = is_strongly_connected
+    nx_dev       = is_strongly_connected_dev
     custom1      = is_strongly_connected_v001
 
     funcs = {
-             "networkx": nx_iterative,
+             "networkx": nx_master,
+             "networkx dev": nx_dev,
              "v001": custom1,
              }
 
@@ -56,7 +58,7 @@ def test_scc_speed():
               "n=1e3, m=1.4e3": [get_random_graph(1000, 0.0014, directed=True)],
               "n=1e3, m=1e3": [get_random_graph(1000, 0.0026, directed=True)],
               "n=1e3, m=1e5": [get_random_graph(1000, 0.1, directed=True)],
-              "n=1e4, m=2e6": [get_random_graph(10000, 0.2, directed=True)],
+              #"n=1e4, m=2e6": [get_random_graph(10000, 0.2, directed=True)],
               #"caveman(100,10)": [connected_caveman_graph(100, 10)],
               #"windmill(10, 10)": [windmill_graph(10, 10)],
               #"nary_tree(3, 1000)": [full_rary_tree(2, 1000)],
