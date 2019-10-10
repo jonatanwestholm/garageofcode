@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import networkx as nx
+from networkx.utils import arbitrary_element
 from networkx.algorithms.cycles import simple_cycles
 
 from garageofcode.common import benchmarking
@@ -89,10 +90,36 @@ def simple_cycles_v001(G):
                     if len(scc) > 1)
 
 
-def scc_centrality(subG, scc, u):
-    H = subG.subgraph([v for v in scc if v != u])
-    scc_lens = [len(scc) for scc in nx.strongly_connected_components(H)]
-    return np.mean(np.log(scc_lens))
+def maximal_strongly_connected_components(G):
+    """
+    Slower than Tarjan's. Nevermind. 
+    """
+    while len(G):
+        u = arbitrary_element(G)
+        decendants = _reachable_from(G, u)
+        ancestors = _reachable_from(G._pred, u)
+        scc = decendants & ancestors
+        yield scc
+        if len(scc) > 1:
+            print(scc)
+        G = G.subgraph(set(G) - scc)
+
+
+def _reachable_from(G, u):
+    visited = set([u])
+    stack = [u]
+    unvisited = len(G) - 1
+    while stack:
+        node = stack.pop()
+        for v in G[node]:
+            if not v in visited:
+                visited.add(v)
+                stack.append(v)
+                unvisited -= 1
+                if not unvisited:
+                    return visited
+    return visited
+
 
 def test_cycle_speed():
     np.random.seed(0)
