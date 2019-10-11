@@ -7,7 +7,7 @@ def run(funcs, params, **kwargs):
     f_docs = [f_doc for f_doc, _ in funcs.items()]
     width = max(map(len, p_docs))
 
-    header_format = " " * width + "".join(["{" + ":>{}s".format(width) + "}"] * len(f_docs)) * 2
+    header_format = "{0:<{1}}".format("time / ms", width) + "".join(["{" + ":>{}s".format(width) + "}"] * len(f_docs)) * 2
     header_format = header_format + "{0:>{1}}".format("all equal", width)
     print(header_format.format(*f_docs, *f_docs))
     #row_format = "{:<15s}" + "{:>15}" * len(f_docs) + "{:>15}" * len(f_docs) + "{:>15}"
