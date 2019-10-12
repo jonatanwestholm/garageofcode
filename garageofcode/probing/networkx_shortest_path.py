@@ -14,16 +14,16 @@ from garageofcode.probing.utils import get_random_graph
 def test_sp_speed():
     np.random.seed(0)
 
-    def total_length_all_paths(func, dev):
+    def total_length_all_paths(func):
         return lambda G: sum(sum(sum(d for v, d in u2sp.items())
-                                            for u, u2sp in func(G, dev=dev)) 
+                                            for u, u2sp in func(G)) 
                                                 for _ in range(1000))
 
-    sp = total_length_all_paths(all_pairs_shortest_path_length, dev=False)
-    sp_dev = total_length_all_paths(all_pairs_shortest_path_length, dev=True)
+    #sp = total_length_all_paths(all_pairs_shortest_path_length)
+    sp_dev = total_length_all_paths(all_pairs_shortest_path_length)
 
     funcs = {
-             "current": sp,
+             #"current": sp,
              "optimized": sp_dev,
              }
 
