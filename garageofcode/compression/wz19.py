@@ -1,45 +1,75 @@
 import os
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict, deque
 
 import numpy as np
 import matplotlib.pyplot as plt
-#import networkx as nx
 
 splitter = " "
+alphabet = "abcdefghijklmnopqrstuvwxyzåäö"
+alphabet = alphabet + alphabet.upper()
 
 def encode(reader):
+    def get_next(reader):
+        nonlocal backstep
+        nonlocal queue
+        nonlocal nextqueue
+        while True:
+            if backstep:
+                try:
+                    yield queue.popleft()
+                except IndexError:
+                    backstep = False
+                    queue = nextqueue
+                    nextqueue = deque()
+            else:
+                try:
+                    yield next(reader)
+                except StopIteration:
+                    break
+
     G = defaultdict(dict)  # phrase tree
     seq = 0  # sequence id
     top = 0  # highest id in use
+    queue = deque()
+    nextqueue = deque()
+    backstep = False
+    match = []
     depth = 0  # for statistics
     depths = Counter()  # for statistics
-    for idx, a in enumerate(reader.read()):
-        seq_old = seq
+    for a in get_next(iter(reader.read())):
+        if not backstep:
+            if a in alphabet:
+                queue.append(a)
+            else:
+                queue.clear()
+        else:
+            nextqueue.append(a)
+
         try:
             seq = G[seq][a]
-            depth += 1
+            match.append(a)
+            if not backstep:
+                depth += 1
         except KeyError:
             yield seq, a
             top += 1
             G[seq][a] = top  # extend tree
             seq = 0  # restart at root
+            backstep = True  # go back in search to latest non-alphabetic
+            if 0:
+                print("match:", "".join(match))
+                print("queue:", "".join(queue))
+                print()
+            match = []
             depths[depth] += 1
             depth = 0
-    if seq:
-        yield seq_old, a
 
-    if 0:
-        print("Stats")
-        num_entries = sum(map(len, G.values()))
-        avg_depth = (idx + 1) / num_entries
-        print("avg_depth: {0:.2f}".format(avg_depth))
-        comp_size = num_entries * (np.log10(num_entries) + 2)
-        comp_size = int(comp_size)
-        print("Estimated:", comp_size)
-        d, freq = zip(*sorted(depths.items()))
-        plt.bar(d, freq)
-        plt.show()
-        print()
+    num_entries = sum(map(len, G.values()))
+    #d, freqs = zip(*sorted(depths.items()))
+    msg_length = sum([d_num * freq for d_num, freq in depths.items()])
+    avg_depth = msg_length / num_entries
+    print("avg_depth: {0:.2f}".format(avg_depth))
+
 
 def decode(reader):
     S = {}  # child -> (parent, symbol) mapping in phrase tree
@@ -84,6 +114,7 @@ def climb_to_root(S, seq):
 
 def main():
     fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
+    #fn = "veryshort.txt"
     #fn = "short.txt"
     fn_compressed = fn.split(".")[0] + ".wzip"
     fn_reconstructed = fn.split(".")[0] + "_rec.txt"
@@ -95,6 +126,8 @@ def main():
     
     print("Before ", os.stat(fn).st_size)
     print("After  ", os.stat(fn_compressed).st_size)
+
+    exit(0)
 
     with open(fn_compressed, "r") as r:
         with open(fn_reconstructed, "w") as f:
