@@ -31,6 +31,7 @@ def encode(reader):
     if 0:
         print("Stats")
         num_entries = sum(map(len, G.values()))
+        #print(num_entries)
         avg_depth = (idx + 1) / num_entries
         print("avg_depth: {0:.2f}".format(avg_depth))
         comp_size = num_entries * (np.log10(num_entries) + 2)
@@ -83,8 +84,10 @@ def climb_to_root(S, seq):
         yield a
 
 def main():
-    fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
+    #fn = "/home/jdw/garageofcode/data/compression/nilsholg2.txt"
+    #fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
     #fn = "short.txt"
+    fn = "veryshort.txt"
     fn_compressed = fn.split(".")[0] + ".wzip"
     fn_reconstructed = fn.split(".")[0] + "_rec.txt"
     # encoding step
