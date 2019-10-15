@@ -16,106 +16,70 @@ enc_alphabet = "0123456789"
 b = len(enc_alphabet)
 
 def encode(reader):
-    def get_next(reader):
-        nonlocal backstep
-        nonlocal queue
-        nonlocal nextqueue
-        while True:
-            if backstep:
-                try:
-                    yield queue.popleft()
-                except IndexError:
-                    backstep = False
-                    queue = nextqueue
-                    nextqueue = deque()
-            else:
-                try:
-                    yield next(reader)
-                except StopIteration:
-                    break
-
     G = defaultdict(dict)  # phrase tree
     seq = 0  # sequence id.
     top = 0  # highest id in use
-    queue = deque()  # symbols since last non-alphabetic
-    nextqueue = deque()
-    backstep = False
     match = []
     seq_old = seq
-    for idx, a in enumerate(get_next(iter(reader.read()))):
+    s = list(iter(reader.read()))
+    N = len(s)
+    idx = 0
+    while idx < N:
+        a = s[idx]
         seq_old = seq
-        if backstep:
-            nextqueue.append(a)
-        else:
-            if a in alphabet:
-                queue.append(a)
-            else:
-                queue.clear()
 
         try:
             seq = G[seq][a]
-            if not backstep:
-                match.append(a)
+            match.append(a)
         except KeyError:
-            if matches(G, queue) and not backstep:
-                m = strip(match)
-                if not len(m) + len(queue) - 1 == len(match):
-                    print("queue", queue)
-                    print("m", m)
-                    print("match", match)
-                    print()
-                emit = matches(G, m)
+            emit, rev = backstep(G, match)
+            #print(emit)
+            if emit:
                 yield emit, None
+                idx -= rev
             else:
-                #print(match)
-                emit, b = traverse(G, match)
-                if b is None:
-                    yield emit, a
-                else:
-                    yield emit, b
-                '''
-                '''
-                #yield seq, a
+                yield seq, a
             top += 1
-            G[seq][a] = top #alph(top)  # extend tree
-            backstep = True  # go back in search to latest non-alphabetic
-            if 0: #idx >= 5000000 and idx < 5000500:
-                print("match:", "".join(match))
-                print("queue:", "".join(queue))
-                print("seq, a:", seq, a)
-                print()
-                #if idx > 100:
-                #    break
+            G[seq][a] = top  #alph(top)  # extend tree
             seq = 0  # restart at root
+            seq_old = 0
             match = []
+
+        idx += 1
+
     if seq_old:
         yield seq_old, a
 
-    if 0:
-        num_entries = sum(map(len, G.values()))
-        #print(num_entries)
-        #d, freqs = zip(*sorted(depths.items()))
-        msg_length = sum([d_num * freq for d_num, freq in depths.items()])
-        avg_depth = msg_length / num_entries
-        print("avg_depth: {0:.2f}".format(avg_depth))
-        print(G)
+    print("G encode:", G)
 
 
-def matches(G, queue):
+def backstep(G, match):
+    if all([ch in alphabet for ch in match]):
+        return False, None
+
+    match = "".join(match)
+    m = match.rstrip(alphabet)
+    q = match[len(m):]
+    if not matches(G, q):
+        return False, None
+    rev = len(match) - len(m) + 1 # plus one, I think
+    emit, r = traverse(G, m)
+    assert r is None
+    return emit, rev
+
+
+def matches(G, s):
     """
-    If the sequence in 'queue' correspond to a
-    node in 'G', return the sequence id, 
-    otherwise return False
+    Check if these is a node in G
+    that corresponds to sequence s
     """
-    if not queue:
-        return False
     seq = 0
-    for a in queue:
+    for a in s:
         try:
             seq = G[seq][a]
         except KeyError:
             return False
-    return seq
+    return True
 
 
 def traverse(G, s):
@@ -132,21 +96,6 @@ def traverse(G, s):
     return seq, None
 
 
-def test_matches():
-    G = defaultdict(dict)
-    G[0]["a"] = 1
-    G[0]["b"] = 2
-    G[1]["a"] = 3
-
-    print("matches(G, ['a', 'a']):", matches(G, ["a", "a"]))
-    print("matches(G, ['b']):", matches(G, ["b"]))
-    print("matches(G, ['a']):", matches(G, ["a"]))
-    print("matches(G, []):", matches(G, []))
-    print("matches(G, ['a', 'a', 'a']):", matches(G, ["a", "a", "a"]))
-    print("matches(G, ['a', 'b']):", matches(G, ["a", "b"]))
-    print("matches(G, ['c']):", matches(G, ["c"]))
-
-
 def alph(seq):
     """
     Convert an int in base-10 to
@@ -161,65 +110,48 @@ def alph(seq):
     return "".join(reversed(s))
 
 
-def strip(match):
-    """
-    If string contains nonalphabetic symbols, 
-    strip the final run of alphabetic symbols.
-    >>> "abcde fg" -> "abcde "
-
-    If no nonalphabetics, return all
-    >>> "abc" -> "abc"
-    """
-    has_nonalph = any([ch not in alphabet for ch in match])
-    if not has_nonalph:
-        return match
-    else:
-        m = match[:]
-        while True:
-            ch = m[-1]
-            if ch not in alphabet:
-                break
-            else:
-                m.pop()
-        return m
-
-def test_strip():
-    strings = ["", "abcde fg", "abcde", "abcde.''\n fg.''\n rt"]
-    for s in strings:
-        print("strip({})".format(s), strip([ch for ch in s]))
-
 def decode(reader):
     G = defaultdict(dict)
     S = {}  # child -> (parent, symbol) mapping in phrase tree
     top = 0
-    old_match = []
     reader = iter(reader.read())
+    old_match = ""
     while True:
         try:
             seq, spl = get_id(reader)
         except StopIteration:
             break
+        
+        match = "".join(climb_to_root(S, seq))
+        yield from match
+        
         if old_match:
-            new_match = list(climb_to_root(S, seq))
-            fill_seq, a = traverse(G, old_match + new_match)
+            print("matching old")
+            print("old_match:", [ch for ch in old_match])
+            print("match:", [ch for ch in match])
+            fill_seq, b = traverse(G, old_match + match)
+            print("fill_seq:", fill_seq)
+            print("b:", b)
+            print("G before:", G)
             top += 1
-            S[top] = (fill_seq, a)
-            G[fill_seq][a] = top
-            old_match = []
+            S[top] = (fill_seq, b)
+            G[fill_seq][b] = top
+            old_match = ""
+            print("G after:", G)
+            print()
 
         if spl == splitter:
             a = next(reader)
             #print("a", a)
-            yield from climb_to_root(S, seq)
             yield a
             top += 1
             S[top] = (seq, a)
             G[seq][a] = top
         elif spl == ref_splitter:
-            old_match = list(climb_to_root(S, seq))
-            yield from old_match
+            old_match = match
 
-    print("G:", G)
+    #print("S decode:", S)
+
 
 def get_id(reader):
     id_num = []
@@ -230,6 +162,7 @@ def get_id(reader):
             return int("".join(id_num)), a
         else:
             id_num.append(a)
+
 
 def climb_to_root(S, seq):
     """
@@ -245,6 +178,7 @@ def climb_to_root(S, seq):
     #print("".join(reversed(stack)))
     for a in reversed(stack):
         yield a
+
 
 def main():
     #fn = "/home/jdw/garageofcode/data/compression/nilsholg2.txt"
