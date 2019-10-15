@@ -14,17 +14,21 @@ from garageofcode.probing.utils import get_random_graph
 def test_sp_speed():
     np.random.seed(0)
 
-    def total_length_all_paths(func):
+    def total_length_all_paths(func, dev):
         return lambda G: sum(sum(sum(d for v, d in u2sp.items())
-                                            for u, u2sp in func(G)) 
-                                                for _ in range(1000))
+                                            for u, u2sp in func(G, dev=dev)) 
+                                                for _ in range(1))
 
-    #sp = total_length_all_paths(all_pairs_shortest_path_length)
-    sp_dev = total_length_all_paths(all_pairs_shortest_path_length)
+    sp = total_length_all_paths(all_pairs_shortest_path_length, "current")
+    sp_set = total_length_all_paths(all_pairs_shortest_path_length, "set")
+    sp_check = total_length_all_paths(all_pairs_shortest_path_length, "set+check")
+    sp_opt = total_length_all_paths(all_pairs_shortest_path_length, "queue")
 
     funcs = {
-             #"current": sp,
-             "optimized": sp_dev,
+             "current": sp,
+             "set": sp_set,
+             #"set+check": sp_check,
+             "pull request": sp_opt,
              }
 
     params = {
@@ -32,17 +36,19 @@ def test_sp_speed():
               "n=1e1, m=1e1": [get_random_graph(10, 0.2, directed=True)],
               "n=1e1, m=3e1": [get_random_graph(10, 0.6, directed=True)],
               "n=1e2, m=1e2": [get_random_graph(100, 0.02, directed=True)],
-              #"n=1e3, m=1.4e3": [get_random_graph(1000, 0.0014, directed=True)],
-              #"n=1e3, m=1e3": [get_random_graph(1000, 0.002, directed=True)],
+              "n=1e3, m=1.4e3": [get_random_graph(1000, 0.0014, directed=True)],
+              "n=1e3, m=1e3": [get_random_graph(1000, 0.002, directed=True)],
+              "n=1e3, m=1e4": [get_random_graph(1000, 0.02, directed=True)],
               #"n=1e3, m=1e5": [get_random_graph(1000, 0.2, directed=True)],
               #"n=1e4, m=1e6": [get_random_graph(10000, 0.02, directed=True)],
               #"n=1e4, m=1e7": [get_random_graph(10000, 0.2, directed=True)],
-              #"caveman(100,10)": [nx.DiGraph(connected_caveman_graph(100, 10))],
-              #"windmill(10, 10)": [nx.DiGraph(windmill_graph(10, 10))],
-              #"nary_tree(3, 1000)": [nx.DiGraph(full_rary_tree(2, 1000))],
-              #"complete(100)": [nx.DiGraph(complete_graph(100))],
-              #"mlp(10, 10)": [mlp_graph(10, 10)],
-              #"amnesia(100, 100)": [amnesia_graph(100, 100)],
+              "caveman(100,10)": [nx.DiGraph(connected_caveman_graph(100, 10))],
+              "windmill(10, 10)": [nx.DiGraph(windmill_graph(10, 10))],
+              "nary_tree(3, 1000)": [nx.DiGraph(full_rary_tree(2, 1000))],
+              "complete(100)": [nx.DiGraph(complete_graph(100))],
+              "mlp(10, 10)": [mlp_graph(10, 10)],
+              "mlp(10, 100)": [mlp_graph(10, 100)],
+              "amnesia(100, 100)": [amnesia_graph(100, 100)],
               }
 
     # the atlas graphs are not large enough to be interesting benchmarks
@@ -54,7 +60,7 @@ def test_sp_speed():
     atlas = {"atlas{}".format(i): [G] for i, G in enumerate(atlas_graphs)}
     params.update(atlas)
 
-    benchmarking.run(funcs, params, decimals=2)
+    benchmarking.run(funcs, params, validate=False, decimals=2)
 
 
 def rename_nodes(G):
