@@ -17,6 +17,7 @@ b = len(enc_alphabet)
 
 def encode(reader):
     G = defaultdict(dict)  # phrase tree
+    S = {}
     seq = 0  # sequence id.
     top = 0  # highest id in use
     match = []
@@ -24,6 +25,7 @@ def encode(reader):
     s = list(iter(reader.read()))
     N = len(s)
     idx = 0
+    debug([ch for ch in s], dbg=False)
     while idx < N:
         a = s[idx]
         seq_old = seq
@@ -32,40 +34,47 @@ def encode(reader):
             seq = G[seq][a]
             match.append(a)
         except KeyError:
-            emit, rev = backstep(G, match)
+            emit, b, rewind = backstep(G, match)
             #print(emit)
             if emit:
-                yield emit, None
-                idx -= rev
+                #print("match:", "".join(match))
+                #print()
+                #print("emit:", )
+                yield emit, b, ref_splitter
+                idx -= rewind
             else:
-                yield seq, a
+                yield seq, a, splitter
             top += 1
             G[seq][a] = top  #alph(top)  # extend tree
+            S[top] = (seq, a)
             seq = 0  # restart at root
             seq_old = 0
             match = []
 
         idx += 1
 
-    if seq_old:
-        yield seq_old, a
+    if seq:
+        yield seq_old, a, splitter
 
-    print("G encode:", G)
+    debug("G encode:", G)
+    debug("S encode:", S)
 
 
 def backstep(G, match):
     if all([ch in alphabet for ch in match]):
-        return False, None
+        return False, None, None
 
     match = "".join(match)
     m = match.rstrip(alphabet)
     q = match[len(m):]
     if not matches(G, q):
-        return False, None
-    rev = len(match) - len(m) + 1 # plus one, I think
-    emit, r = traverse(G, m)
+        return False, None, None
+    rewind = len(match) - len(m) + 1 # plus one, I think
+    emit, r = traverse(G, m[:-1])
     assert r is None
-    return emit, rev
+    a = m[-1]
+    #print("emit:", m[:-1], "+", [ch for ch in m[-1:]])
+    return emit, a, rewind
 
 
 def matches(G, s):
@@ -110,6 +119,12 @@ def alph(seq):
     return "".join(reversed(s))
 
 
+default_dbg = False
+def debug(*s, dbg=False):
+    if default_dbg or dbg:
+        print(*s)
+
+
 def decode(reader):
     G = defaultdict(dict)
     S = {}  # child -> (parent, symbol) mapping in phrase tree
@@ -124,33 +139,41 @@ def decode(reader):
         
         match = "".join(climb_to_root(S, seq))
         yield from match
-        
+
         if old_match:
-            print("matching old")
-            print("old_match:", [ch for ch in old_match])
-            print("match:", [ch for ch in match])
-            fill_seq, b = traverse(G, old_match + match)
-            print("fill_seq:", fill_seq)
-            print("b:", b)
-            print("G before:", G)
-            top += 1
-            S[top] = (fill_seq, b)
-            G[fill_seq][b] = top
-            old_match = ""
-            print("G after:", G)
-            print()
+            debug("old_match", [ch for ch in old_match])
+            debug("match", [ch for ch in match])
+            full_match = old_match + match
+            fill_seq, b = traverse(G, full_match)
+            '''
+            if b is None:
+                print("seq:", seq)
+                print("old_match", old_match)
+                print("match", match)
+                print("G:", G)
+                print("S:", S)
+            '''
+            #assert b is not None
+            if b is not None:
+                debug("extending:")
+                top += 1
+                debug("fill_seq:", fill_seq, ", b:", b, ", top:", top)
+                S[top] = (fill_seq, b)
+                G[fill_seq][b] = top
+                old_match = ""
+
+        a = next(reader)
+        yield a
 
         if spl == splitter:
-            a = next(reader)
-            #print("a", a)
-            yield a
             top += 1
             S[top] = (seq, a)
             G[seq][a] = top
         elif spl == ref_splitter:
-            old_match = match
+            old_match = match + a
 
-    #print("S decode:", S)
+    debug("G:", G)
+    debug("S:", S)
 
 
 def get_id(reader):
@@ -183,6 +206,7 @@ def climb_to_root(S, seq):
 def main():
     #fn = "/home/jdw/garageofcode/data/compression/nilsholg2.txt"
     #fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
+    #fn = "/home/jdw/garageofcode/data/compression/medium.txt"
     #fn = "short.txt"
     fn = "veryshort.txt"
     fn_compressed = fn.split(".")[0] + ".wzip"
@@ -190,16 +214,16 @@ def main():
     # encoding step
     with open(fn, "r") as r:
         with open(fn_compressed, "w") as f:
-            for seq, a in encode(r):
-                if a is None:
-                    f.write("{}{}".format(seq, ref_splitter))
-                else:
-                    f.write("{}{}{}".format(seq, splitter, a))
+            for seq, a, spl in encode(r):
+                #if a is None:
+                #    f.write("{}{}".format(seq, ref_splitter))
+                #else:
+                f.write("{}{}{}".format(seq, spl, a))
     
     print("Before ", os.stat(fn).st_size)
     print("After  ", os.stat(fn_compressed).st_size)
 
-    #exit(0)
+    #  exit()
 
     with open(fn_compressed, "r") as r:
         with open(fn_reconstructed, "w") as f:
@@ -209,6 +233,7 @@ def main():
                 #else:
                 f.write(a)
 
+    #exit()
     res = os.system("diff {} {}".format(fn, fn_reconstructed))
     if res:
         print("Reconstruction: failed")
