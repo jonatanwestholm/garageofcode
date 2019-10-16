@@ -55,6 +55,11 @@ def encode(reader):
 
     if seq:
         yield seq_old, a, splitter
+        # just for debugging
+        top += 1
+        G[seq_old][a] = top  #alph(top)  # extend tree
+        S[top] = (seq_old, a)
+
 
     debug("G encode:", G)
     debug("S encode:", S)
@@ -137,8 +142,16 @@ def decode(reader):
         except StopIteration:
             break
         
-        match = "".join(climb_to_root(S, seq))
-        yield from match
+        match = [ch for ch in climb_to_root(S, seq)]
+        if len(match):
+            try:
+                match = "".join(match)
+            except TypeError as e:
+                print(match)
+                raise e
+            yield from match
+        else:
+            match = ""
 
         if old_match:
             debug("old_match", [ch for ch in old_match])
@@ -146,21 +159,20 @@ def decode(reader):
             full_match = old_match + match
             fill_seq, b = traverse(G, full_match)
             '''
+            '''
             if b is None:
                 print("seq:", seq)
-                print("old_match", old_match)
-                print("match", match)
-                print("G:", G)
-                print("S:", S)
-            '''
-            #assert b is not None
-            if b is not None:
-                debug("extending:")
-                top += 1
-                debug("fill_seq:", fill_seq, ", b:", b, ", top:", top)
-                S[top] = (fill_seq, b)
-                G[fill_seq][b] = top
-                old_match = ""
+                print("old_match:", [ch for ch in old_match])
+                print("match:", [ch for ch in match])
+                #print("G:", G)
+                #print("S:", S)
+                exit(0)
+            debug("extending:")
+            top += 1
+            debug("fill_seq:", fill_seq, ", b:", b, ", top:", top)
+            S[top] = (fill_seq, b)
+            G[fill_seq][b] = top
+            old_match = ""
 
         a = next(reader)
         yield a
@@ -172,8 +184,8 @@ def decode(reader):
         elif spl == ref_splitter:
             old_match = match + a
 
-    debug("G:", G)
-    debug("S:", S)
+    debug("G decode:", G)
+    debug("S decode:", S)
 
 
 def get_id(reader):
@@ -205,10 +217,10 @@ def climb_to_root(S, seq):
 
 def main():
     #fn = "/home/jdw/garageofcode/data/compression/nilsholg2.txt"
-    #fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
+    fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
     #fn = "/home/jdw/garageofcode/data/compression/medium.txt"
     #fn = "short.txt"
-    fn = "veryshort.txt"
+    #fn = "veryshort.txt"
     fn_compressed = fn.split(".")[0] + ".wzip"
     fn_reconstructed = fn.split(".")[0] + "_rec.txt"
     # encoding step
