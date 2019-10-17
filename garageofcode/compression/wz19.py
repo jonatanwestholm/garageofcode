@@ -25,7 +25,7 @@ class WZ_Model:
         self.s = []
         self.rewind = 0
         self.top = 0
-        self.symbol_set = symbol_set
+        self.symbol_set = set([]) #symbol_set
         self.prime_with_symbol_set()
 
     def prime_with_symbol_set(self):
@@ -49,8 +49,11 @@ class WZ_Model:
         self.rewind = 0
 
         s = list(self.climb_to_root(seq))
+        #print("match:", "".join(s))
         if splitter == ref_splitter:
             self.rewind = self.get_rewind("".join(s))
+        #print("rewind:", self.rewind)
+        #print()
         self.s.extend(s)
         self.s.append(a)
 
@@ -68,7 +71,7 @@ class WZ_Model:
             return 0
 
         m = s.rstrip(alphabet)
-        return len(s) - len(m) - 1
+        return len(s) - len(m) + 1
 
     def can_be_stripped(self, seq):
         s = "".join(self.climb_to_root(seq))
