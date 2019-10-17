@@ -15,6 +15,9 @@ enc_alphabet = "0123456789" + enc_alphabet
 #enc_alphabet = "0123456789"
 b = len(enc_alphabet)
 
+root = "0"
+symbol_set = set([])
+
 class WZ_Model:
     def __init__(self):
         self.S = {}
@@ -22,6 +25,15 @@ class WZ_Model:
         self.s = []
         self.rewind = 0
         self.top = 0
+        self.symbol_set = symbol_set
+        self.prime_with_symbol_set()
+
+    def prime_with_symbol_set(self):
+        for a in self.symbol_set:
+            self.update(root, a, sym_splitter)
+
+    def get_s(self):
+        return self.s[len(self.symbol_set):]
 
     def get(self, seq, a):
         return self.G[seq][a]
@@ -46,7 +58,7 @@ class WZ_Model:
 
     def climb_to_root(self, seq):
         stack = []
-        while seq != "0":
+        while seq != root:
             seq, a = self.S[seq]
             stack.append(a)
         return reversed(stack)
@@ -60,18 +72,17 @@ class WZ_Model:
 
     def can_be_stripped(self, seq):
         s = "".join(self.climb_to_root(seq))
-        #if seq == "5":
-        #    print("5 seq:", [ch for ch in s])
         rewind = self.get_rewind(s)
-        #if seq == "5":
-        #    print("rewind:", rewind)
         return rewind
 
 def encode(reader):
-    model = WZ_Model()
-    seq = "0"
-    seq_old = "0"
+    global symbol_set
+
+    seq = root
+    seq_old = root
     s = reader.read()
+    symbol_set = set(s)
+    model = WZ_Model()
     N = len(s)
     idx = 0
 
@@ -88,13 +99,15 @@ def encode(reader):
                 idx -= rewind
             else:
                 splitter = sym_splitter
-            yield model.update(seq, a, splitter)
-            seq = "0"
+            yield seq, a, splitter
+            model.update(seq, a, splitter)
+            seq = root
 
         idx += 1
 
-    if seq != "0":
-        yield model.update(seq_old, a, sym_splitter)
+    if seq != root:
+        yield seq_old, a, sym_splitter
+        model.update(seq_old, a, sym_splitter)
 
     #print("end of encoding")
     #print("G encode:", model.G)
@@ -110,15 +123,10 @@ def decode(reader):
             seq, splitter = get_id(reader)
         except StopIteration:
             break
-
-        #yield from model.climb_to_root(seq)
-
         a = next(reader)
-        #yield a
-
         model.update(seq, a, splitter)
 
-    yield from model.s
+    yield from model.get_s()
     #print("G decode:", model.G)
     #print("S encode:", model.S)
     #print(model.s)
@@ -134,34 +142,6 @@ def get_id(reader):
         else:
             id_num.append(a)
 
-'''
-def matches(G, s):
-    """
-    Check if these is a node in G
-    that corresponds to sequence s
-    """
-    seq = 0
-    for a in s:
-        try:
-            seq = G[seq][a]
-        except KeyError:
-            return False
-    return True
-
-
-def traverse(G, s):
-    """
-    Get the sequence id that corresponds to
-    the longest match for s in G
-    """
-    seq = 0
-    for a in s:
-        try:
-            seq = G[seq][a]
-        except KeyError:
-            return seq, a
-    return seq, None
-'''
 
 def alph(seq):
     """
@@ -170,7 +150,7 @@ def alph(seq):
     Assumes 0 is the 0
     """
     if not seq:
-        return "0"
+        return root
     s = []
     quot = seq
     while quot:
