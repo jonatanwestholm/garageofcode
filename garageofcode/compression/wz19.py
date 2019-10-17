@@ -32,7 +32,7 @@ class WZ_Model:
         self.S[top] = (seq, a)
         self.G[seq][a] = top
         
-        for _ in range(self.rewind - 1):
+        for _ in range(self.rewind):
             self.s.pop() # remove last elements
         self.rewind = 0
 
@@ -56,7 +56,7 @@ class WZ_Model:
             return 0
 
         m = s.rstrip(alphabet)
-        return len(s) - len(m)
+        return len(s) - len(m) - 1
 
     def can_be_stripped(self, seq):
         s = "".join(self.climb_to_root(seq))
@@ -83,9 +83,9 @@ def encode(reader):
             seq = model.get(seq, a)
         except KeyError:
             rewind = model.can_be_stripped(seq)
-            if rewind:
+            if rewind > 0:
                 splitter = ref_splitter
-                idx -= rewind - 1
+                idx -= rewind
             else:
                 splitter = sym_splitter
             yield model.update(seq, a, splitter)
