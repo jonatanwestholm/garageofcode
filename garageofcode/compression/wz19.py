@@ -4,7 +4,7 @@ from collections import Counter, defaultdict, deque
 import numpy as np
 import matplotlib.pyplot as plt
 
-splitter = " "
+sym_splitter = " "
 ref_splitter = "_"
 alphabet = "abcdefghijklmnopqrstuvwxyzåäö"
 alphabet = alphabet + alphabet.upper()
@@ -15,71 +15,91 @@ alphabet = alphabet + alphabet.upper()
 enc_alphabet = "0123456789"
 b = len(enc_alphabet)
 
+class WZ_Model:
+    def __init__(self):
+        self.S = {}
+        self.G = defaultdict(dict)
+        self.s = []
+        self.rewind = 0
+        self.top = 0
+
+    def get(self, seq, a):
+        return self.G[seq][a]
+
+    def update(self, seq, a, splitter):
+        self.top += 1
+        self.S[self.top] = (seq, a)
+        self.G[seq][a] = self.top
+        
+        for _ in range(self.rewind):
+            self.s.pop() # remove last elements
+        self.rewind = 0
+
+        s = list(self.climb_to_root(seq))
+        if splitter == ref_splitter:
+            self.rewind = self.get_rewind(s)
+        self.s.extend(s)
+
+        return seq, a, splitter
+
+    def climb_to_root(self, seq):
+        stack = []
+        while seq:
+            seq, a = self.S[seq]
+            stack.append(a)
+        return reversed(stack)
+
+    def get_rewind(self, s):
+        if all([ch in alphabet for ch in match]):
+            return 0
+
+        m = s.rstrip(alphabet)
+        return len(s) - len(m)
+
 def encode(reader):
-    G = defaultdict(dict)  # phrase tree
-    S = {}
-    seq = 0  # sequence id.
-    top = 0  # highest id in use
-    match = []
-    seq_old = seq
-    s = list(iter(reader.read()))
-    N = len(s)
-    idx = 0
-    debug([ch for ch in s], dbg=False)
-    while idx < N:
-        a = s[idx]
+    model = WZ_Model()
+    seq = 0
+    seq_old = 0
+
+    for a in iter(reader.read()):
         seq_old = seq
 
         try:
-            seq = G[seq][a]
-            match.append(a)
+            seq = model.get(seq, a)
         except KeyError:
-            emit, b, rewind = backstep(G, match)
-            #print(emit)
-            if emit:
-                #print("match:", "".join(match))
-                #print()
-                #print("emit:", )
-                yield emit, b, ref_splitter
-                idx -= rewind
-            else:
-                yield seq, a, splitter
-            top += 1
-            G[seq][a] = top  #alph(top)  # extend tree
-            S[top] = (seq, a)
-            seq = 0  # restart at root
-            seq_old = 0
-            match = []
-
-        idx += 1
+            yield model.update(seq, a, sym_splitter)
+            seq = 0
 
     if seq:
-        yield seq_old, a, splitter
-        # just for debugging
-        top += 1
-        G[seq_old][a] = top  #alph(top)  # extend tree
-        S[top] = (seq_old, a)
+        yield model.update(seq_old, a, sym_splitter)
+
+def decode(reader):
+    model = WZ_Model()
+    reader = iter(reader.read())
+
+    while True:
+        try:
+            seq, splitter = get_id(reader)
+        except StopIteration:
+            break
+
+        yield from model.climb_to_root(seq)
+
+        a = next(reader)
+        yield a
+
+        model.update(seq, a, splitter)
 
 
-    debug("G encode:", G)
-    debug("S encode:", S)
-
-
-def backstep(G, match):
-    if all([ch in alphabet for ch in match]):
-        return False, None, None
-
-    match = "".join(match)
-    m = match.rstrip(alphabet)
-    q = match[len(m):]
-    if not matches(G, q):
-        return False, None, None
-    rewind = len(match) - len(m) + 1 # plus one, I think
-    emit, r = traverse(G, m[:-1])
-    assert r is None
-    a = m[-1]
-    #print("emit:", m[:-1], "+", [ch for ch in m[-1:]])
-    return emit, a, rewind
+def get_id(reader):
+    id_num = []
+    while True:
+        a = next(reader)
+        #print("digit", a)
+        if a not in "0123456789":
+            return int("".join(id_num)), a
+        else:
+            id_num.append(a)
 
 
 def matches(G, s):
@@ -130,94 +150,9 @@ def debug(*s, dbg=False):
         print(*s)
 
 
-def decode(reader):
-    G = defaultdict(dict)
-    S = {}  # child -> (parent, symbol) mapping in phrase tree
-    top = 0
-    reader = iter(reader.read())
-    old_match = ""
-    while True:
-        try:
-            seq, spl = get_id(reader)
-        except StopIteration:
-            break
-        
-        match = [ch for ch in climb_to_root(S, seq)]
-        if len(match):
-            try:
-                match = "".join(match)
-            except TypeError as e:
-                print(match)
-                raise e
-            yield from match
-        else:
-            match = ""
-
-        if old_match:
-            debug("old_match", [ch for ch in old_match])
-            debug("match", [ch for ch in match])
-            full_match = old_match + match
-            fill_seq, b = traverse(G, full_match)
-            '''
-            '''
-            if b is None:
-                print("seq:", seq)
-                print("old_match:", [ch for ch in old_match])
-                print("match:", [ch for ch in match])
-                #print("G:", G)
-                #print("S:", S)
-                exit(0)
-            debug("extending:")
-            top += 1
-            debug("fill_seq:", fill_seq, ", b:", b, ", top:", top)
-            S[top] = (fill_seq, b)
-            G[fill_seq][b] = top
-            old_match = ""
-
-        a = next(reader)
-        yield a
-
-        if spl == splitter:
-            top += 1
-            S[top] = (seq, a)
-            G[seq][a] = top
-        elif spl == ref_splitter:
-            old_match = match + a
-
-    debug("G decode:", G)
-    debug("S decode:", S)
-
-
-def get_id(reader):
-    id_num = []
-    while True:
-        a = next(reader)
-        #print("digit", a)
-        if a not in "0123456789":
-            return int("".join(id_num)), a
-        else:
-            id_num.append(a)
-
-
-def climb_to_root(S, seq):
-    """
-    The annoying thing about this function is 
-    that it must go all the way to the root
-    before starting to yield anything.
-    Can that be avoided?
-    """
-    stack = []
-    while seq:
-        seq, a = S[seq]
-        stack.append(a)
-    #print("".join(reversed(stack)))
-    for a in reversed(stack):
-        yield a
-
-
 def main():
-    #fn = "/home/jdw/garageofcode/data/compression/nilsholg2.txt"
-    fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
+    fn = "/home/jdw/garageofcode/data/compression/nilsholg2.txt"
+    #fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
     #fn = "/home/jdw/garageofcode/data/compression/medium.txt"
     #fn = "short.txt"
     #fn = "veryshort.txt"
