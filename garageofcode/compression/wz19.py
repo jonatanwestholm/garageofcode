@@ -32,14 +32,15 @@ class WZ_Model:
         self.S[top] = (seq, a)
         self.G[seq][a] = top
         
-        for _ in range(self.rewind):
+        for _ in range(self.rewind - 1):
             self.s.pop() # remove last elements
         self.rewind = 0
 
         s = list(self.climb_to_root(seq))
         if splitter == ref_splitter:
-            self.rewind = self.get_rewind(s)
+            self.rewind = self.get_rewind("".join(s))
         self.s.extend(s)
+        self.s.append(a)
 
         return seq, a, splitter
 
@@ -51,28 +52,54 @@ class WZ_Model:
         return reversed(stack)
 
     def get_rewind(self, s):
-        if all([ch in alphabet for ch in match]):
+        if all([ch in alphabet for ch in s]):
             return 0
 
         m = s.rstrip(alphabet)
         return len(s) - len(m)
 
+    def can_be_stripped(self, seq):
+        s = "".join(self.climb_to_root(seq))
+        #if seq == "5":
+        #    print("5 seq:", [ch for ch in s])
+        rewind = self.get_rewind(s)
+        #if seq == "5":
+        #    print("rewind:", rewind)
+        return rewind
+
 def encode(reader):
     model = WZ_Model()
     seq = "0"
     seq_old = "0"
+    s = reader.read()
+    N = len(s)
+    idx = 0
 
-    for a in iter(reader.read()):
+    while idx < N:
+        a = s[idx]
         seq_old = seq
 
         try:
             seq = model.get(seq, a)
         except KeyError:
-            yield model.update(seq, a, sym_splitter)
+            rewind = model.can_be_stripped(seq)
+            if rewind:
+                splitter = ref_splitter
+                idx -= rewind - 1
+            else:
+                splitter = sym_splitter
+            yield model.update(seq, a, splitter)
             seq = "0"
+
+        idx += 1
 
     if seq != "0":
         yield model.update(seq_old, a, sym_splitter)
+
+    #print("end of encoding")
+    #print("G encode:", model.G)
+    #print("S encode:", model.S)
+    #print(model.s)
 
 def decode(reader):
     model = WZ_Model()
@@ -84,12 +111,17 @@ def decode(reader):
         except StopIteration:
             break
 
-        yield from model.climb_to_root(seq)
+        #yield from model.climb_to_root(seq)
 
         a = next(reader)
-        yield a
+        #yield a
 
         model.update(seq, a, splitter)
+
+    yield from model.s
+    #print("G decode:", model.G)
+    #print("S encode:", model.S)
+    #print(model.s)
 
 
 def get_id(reader):
@@ -102,7 +134,7 @@ def get_id(reader):
         else:
             id_num.append(a)
 
-
+'''
 def matches(G, s):
     """
     Check if these is a node in G
@@ -129,7 +161,7 @@ def traverse(G, s):
         except KeyError:
             return seq, a
     return seq, None
-
+'''
 
 def alph(seq):
     """
@@ -160,10 +192,10 @@ def debug(*s, dbg=False):
 
 def main():
     #fn = "/home/jdw/garageofcode/data/compression/nilsholg2.txt"
-    #fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
+    fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
     #fn = "/home/jdw/garageofcode/data/compression/medium.txt"
     #fn = "short.txt"
-    fn = "veryshort.txt"
+    #fn = "veryshort.txt"
     fn_compressed = fn.split(".")[0] + ".wzip"
     fn_reconstructed = fn.split(".")[0] + "_rec.txt"
     # encoding step
