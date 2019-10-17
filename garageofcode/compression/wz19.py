@@ -9,10 +9,10 @@ ref_splitter = "_"
 alphabet = "abcdefghijklmnopqrstuvwxyzåäö"
 alphabet = alphabet + alphabet.upper()
 
-#enc_alphabet = "abcdefghijklmnopqrstuvwxyz"
-#enc_alphabet = enc_alphabet + enc_alphabet.upper()
-#enc_alphabet = "0123456789,;.:-_!%&/()?" + enc_alphabet
-enc_alphabet = "0123456789"
+enc_alphabet = "abcdefghijklmnopqrstuvwxyz"
+enc_alphabet = enc_alphabet + enc_alphabet.upper()
+enc_alphabet = "0123456789" + enc_alphabet
+#enc_alphabet = "0123456789"
 b = len(enc_alphabet)
 
 class WZ_Model:
@@ -28,8 +28,9 @@ class WZ_Model:
 
     def update(self, seq, a, splitter):
         self.top += 1
-        self.S[self.top] = (seq, a)
-        self.G[seq][a] = self.top
+        top = alph(self.top)
+        self.S[top] = (seq, a)
+        self.G[seq][a] = top
         
         for _ in range(self.rewind):
             self.s.pop() # remove last elements
@@ -44,7 +45,7 @@ class WZ_Model:
 
     def climb_to_root(self, seq):
         stack = []
-        while seq:
+        while seq != "0":
             seq, a = self.S[seq]
             stack.append(a)
         return reversed(stack)
@@ -58,8 +59,8 @@ class WZ_Model:
 
 def encode(reader):
     model = WZ_Model()
-    seq = 0
-    seq_old = 0
+    seq = "0"
+    seq_old = "0"
 
     for a in iter(reader.read()):
         seq_old = seq
@@ -68,9 +69,9 @@ def encode(reader):
             seq = model.get(seq, a)
         except KeyError:
             yield model.update(seq, a, sym_splitter)
-            seq = 0
+            seq = "0"
 
-    if seq:
+    if seq != "0":
         yield model.update(seq_old, a, sym_splitter)
 
 def decode(reader):
@@ -96,8 +97,8 @@ def get_id(reader):
     while True:
         a = next(reader)
         #print("digit", a)
-        if a not in "0123456789":
-            return int("".join(id_num)), a
+        if a not in enc_alphabet:
+            return "".join(id_num), a
         else:
             id_num.append(a)
 
@@ -134,14 +135,21 @@ def alph(seq):
     """
     Convert an int in base-10 to
     base-whatever length the alphabet is
-    Don't send in 0
+    Assumes 0 is the 0
     """
+    if not seq:
+        return "0"
     s = []
     quot = seq
     while quot:
         quot, rest = quot // b, quot % b
         s.append(enc_alphabet[rest])
     return "".join(reversed(s))
+
+
+def test_alph():
+    for seq in range(11):
+        print("alph({}): {}".format(seq, alph(seq)))
 
 
 default_dbg = False
@@ -151,11 +159,11 @@ def debug(*s, dbg=False):
 
 
 def main():
-    fn = "/home/jdw/garageofcode/data/compression/nilsholg2.txt"
+    #fn = "/home/jdw/garageofcode/data/compression/nilsholg2.txt"
     #fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
     #fn = "/home/jdw/garageofcode/data/compression/medium.txt"
     #fn = "short.txt"
-    #fn = "veryshort.txt"
+    fn = "veryshort.txt"
     fn_compressed = fn.split(".")[0] + ".wzip"
     fn_reconstructed = fn.split(".")[0] + "_rec.txt"
     # encoding step
@@ -190,5 +198,4 @@ def main():
 if __name__ == '__main__':
     main()
 
-    #test_matches()
-    #test_strip()
+    #test_alph()
