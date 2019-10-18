@@ -25,7 +25,7 @@ class WZ_Model:
         self.s = []
         self.rewind = 0
         self.top = 0
-        self.symbol_set = symbol_set
+        self.symbol_set = set([]) #symbol_set
         self.prime_with_symbol_set()
 
     def prime_with_symbol_set(self):
@@ -38,8 +38,6 @@ class WZ_Model:
     def get(self, seq, a):
         return self.G[seq][a]
 
-    '''
-    '''
     def update(self, seq, a, splitter):
         self.top += 1
         top = alph(self.top)
@@ -60,30 +58,6 @@ class WZ_Model:
         self.s.append(a)
 
         return seq, a, splitter
-
-    def update_double(self, seq0, seq1, splitter):
-        a = next(self.climb_to_root(seq1))
-
-        self.top += 1
-        top = alph(self.top)
-        self.S[top] = (seq0, a)
-        self.G[seq0][a] = top
-        
-        '''
-        for _ in range(self.rewind):
-            self.s.pop() # remove last elements
-        self.rewind = 0
-
-        #print("match:", "".join(s))
-        if splitter == ref_splitter:
-            self.rewind = self.get_rewind("".join(s))
-        #print("rewind:", self.rewind)
-        #print()
-        '''
-        s = self.climb_to_root(top)
-        self.s.extend(s)
-
-        #return seq, a, splitter
 
     def climb_to_root(self, seq):
         stack = []
@@ -113,12 +87,7 @@ def encode(reader):
     symbol_set = set(s)
     model = WZ_Model()
     N = len(s)
-    if not N:
-        return
     idx = 0
-    prev_seq = model.get(seq, s[0])
-    prev_splitter = sym_splitter
-    idx += 1
 
     while idx < N:
         a = s[idx]
@@ -127,51 +96,43 @@ def encode(reader):
         try:
             seq = model.get(seq, a)
         except KeyError:
-            '''
             rewind = model.can_be_stripped(seq)
             if rewind > 0:
                 splitter = ref_splitter
                 idx -= rewind
             else:
                 splitter = sym_splitter
-            '''
-            yield prev_seq, prev_splitter
-            splitter = sym_splitter
-            model.update_double(prev_seq, seq, prev_splitter)
-            prev_seq = seq
-            prev_splitter = splitter
+            yield seq, a, splitter
+            model.update(seq, a, splitter)
             seq = root
 
         idx += 1
 
     if seq != root:
-        yield prev_seq, prev_splitter
-        model.update_double(prev_seq, seq, prev_splitter)
+        yield seq_old, a, sym_splitter
+        model.update(seq_old, a, sym_splitter)
 
-    print("end of encoding")
-    print("G encode:", model.G)
-    print("S encode:", model.S)
-    print(model.s)
+    #print("end of encoding")
+    #print("G encode:", model.G)
+    #print("S encode:", model.S)
+    #print(model.s)
 
 def decode(reader):
     model = WZ_Model()
     reader = iter(reader.read())
-    prev_seq, prev_splitter = get_id(reader)
 
     while True:
         try:
             seq, splitter = get_id(reader)
         except StopIteration:
             break
-
-        model.update_double(prev_seq, seq, prev_splitter)
-        prev_seq = seq
-        prev_splitter = splitter
+        a = next(reader)
+        model.update(seq, a, splitter)
 
     yield from model.get_s()
-    print("G decode:", model.G)
-    print("S encode:", model.S)
-    print(model.s)
+    #print("G decode:", model.G)
+    #print("S encode:", model.S)
+    #print(model.s)
 
 
 def get_id(reader):
@@ -214,20 +175,20 @@ def debug(*s, dbg=False):
 
 def main():
     #fn = "/home/jdw/garageofcode/data/compression/nilsholg2.txt"
-    #fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
+    fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
     #fn = "/home/jdw/garageofcode/data/compression/medium.txt"
     #fn = "short.txt"
-    fn = "veryshort.txt"
+    #fn = "veryshort.txt"
     fn_compressed = fn.split(".")[0] + ".wzip"
     fn_reconstructed = fn.split(".")[0] + "_rec.txt"
     # encoding step
     with open(fn, "r") as r:
         with open(fn_compressed, "w") as f:
-            for seq, spl in encode(r):
+            for seq, a, spl in encode(r):
                 #if a is None:
                 #    f.write("{}{}".format(seq, ref_splitter))
                 #else:
-                f.write("{}{}".format(seq, spl))
+                f.write("{}{}{}".format(seq, spl, a))
     
     print("Before ", os.stat(fn).st_size)
     print("After  ", os.stat(fn_compressed).st_size)
