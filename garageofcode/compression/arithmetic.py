@@ -90,13 +90,19 @@ if __name__ == '__main__':
     fn = "random_1000.txt"
     fn_compressed = fn.split(".")[0] + ".azip"
     fn_reconstructed = fn.split(".")[0] + "_rec.txt"
-    write_random_sequence(fn, freqs, 100000)
+    #write_random_sequence(fn, freqs, 3)
 
     with open(fn, "r") as r:
         reader = iter(r.read())
         with open(fn_compressed, "w") as f:
-            for lb in encode(reader, predictor):
-                f.write("{}\n".format(lb))
+            for seq in encode(reader, predictor):
+                f.write("{}\n".format(seq))
+
+    with open(fn_compressed, "r") as r:
+        reader = iter(r.read())
+        with open(fn_reconstructed, "w") as f:
+            for a in decode(reader, predictor):
+                f.write("{}".format(a))
 
     '''
     with open(fn, "r") as r:
