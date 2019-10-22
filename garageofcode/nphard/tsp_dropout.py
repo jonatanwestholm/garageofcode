@@ -44,43 +44,5 @@ def main():
         plt.show()
 
 
-    '''
-    sample = partial(np.random.choice, size=k, replace=False)
-    c = Counter(chain.from_iterable(tsp([points[i] 
-                            for i in sample(n)]) for _ in range(num_iter)))
-
-
-    for (u, v), num in c.items():
-        u = points[u][1]
-        v = points[v][1]
-        x, y = zip(*[u, v])
-        plt.plot(x, y, linewidth=num, color='b')
-    plt.show()
-    '''
-
-    '''
-    #  solution synthesis
-    #  this is super stupid
-    G = nx.Graph()
-    for i in range(n):
-        G.add_node(i)
-    def unsaturated(u):
-        return len(G[u]) <= 1
-    for (u, v), _ in c.most_common():
-        if unsaturated(u) and unsaturated(v):
-            try:
-                nx.shortest_path_length(G, u, v)
-            except nx.exception.NetworkXNoPath:
-                G.add_edge(u, v)
-
-    for u, v in G.edges():
-        u = points[u][1]
-        v = points[v][1]
-        x, y = zip(*[u, v])
-        plt.plot(x, y, color='b')
-    plt.show()
-    '''
-
-
 if __name__ == '__main__':
     main()
