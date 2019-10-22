@@ -89,9 +89,9 @@ def smallest_unique_set_exhaustive(S, subset=None):
 
 def main():
     #S = [[1, 2], [1, 2, 3], [1, 3], [2, 3], [3, 4]]
-    n = 10000  # number of documents
+    n = 100000  # number of documents
     k = 500  # document length
-    b = 1000  # words in dict
+    b = 10000  # words in dict
     S = [si for si in get_data(n, k, b)]
     S, subset = S[:-1], S[-1]
     #print(subset)
