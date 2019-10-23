@@ -14,17 +14,8 @@ def get_data(n, r):
 
     return np.random.random([n, 2]) * r
 
-def flatten(s):
-    return [elem for sublist in s for elem in sublist]
 
 def main():
-    #  how to join solutions afterwards? 
-    #  -take out most commonly used edges, just throw them together?
-    #  need not run so far, just check if popular edges 
-    #    overlap with exact edges
-    #  and if they are more robust to pertubations of the problem
-    #  how can we qualify pertubations of the problem?
-
     np.random.seed(0)
     #  problem parameters
     n = 7
