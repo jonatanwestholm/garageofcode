@@ -9,10 +9,13 @@ ref_splitter = "_"
 alphabet = "abcdefghijklmnopqrstuvwxyzåäö"
 alphabet = alphabet + alphabet.upper()
 
-enc_alphabet = "abcdefghijklmnopqrstuvwxyz"
-enc_alphabet = enc_alphabet + enc_alphabet.upper()
-enc_alphabet = "0123456789" + enc_alphabet
-#enc_alphabet = "0123456789"
+if 1:
+    enc_alphabet = "abcdefghijklmnopqrstuvwxyz"
+    enc_alphabet = enc_alphabet + enc_alphabet.upper()
+    enc_alphabet = enc_alphabet + ".:,;!%&/()=@${[]}^~'*<>|-`\\"
+    enc_alphabet = "0123456789" + enc_alphabet
+else:
+    enc_alphabet = "0123456789"
 b = len(enc_alphabet)
 
 root = "0"
@@ -181,17 +184,21 @@ def main():
     #fn = "veryshort.txt"
     fn_compressed = fn.split(".")[0] + ".wzip"
     fn_reconstructed = fn.split(".")[0] + "_rec.txt"
+    fn_zip = fn.split(".")[0] + ".zip"
     # encoding step
     with open(fn, "r") as r:
         with open(fn_compressed, "w") as f:
-            for seq, a, spl in encode(r):
+            for idx, (seq, a, spl) in enumerate(encode(r)):
                 #if a is None:
                 #    f.write("{}{}".format(seq, ref_splitter))
                 #else:
                 f.write("{}{}{}".format(seq, spl, a))
     
+    num_seqs = idx
     print("Before ", os.stat(fn).st_size)
     print("After  ", os.stat(fn_compressed).st_size)
+    #print("After (with LZW opt)  ", os.stat(fn_compressed).st_size - num_seqs)
+    #print(".zip ", os.stat(fn_zip).st_size)
 
     #  exit()
 
