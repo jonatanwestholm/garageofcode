@@ -16,8 +16,8 @@ def test_sp_speed():
 
     def total_length_all_paths(func, dev):
         return lambda G: sum(sum(sum(d for v, d in u2sp.items())
-                                            for u, u2sp in func(G, dev=dev)) 
-                                                for _ in range(1000))
+                                            for u, u2sp in func(G)) 
+                                                for _ in range(1))
 
     sp = total_length_all_paths(all_pairs_shortest_path_length, "current")
     sp_set = total_length_all_paths(all_pairs_shortest_path_length, "set")
@@ -26,9 +26,9 @@ def test_sp_speed():
 
     funcs = {
              #"current": sp,
-             "set": sp_set,
+             #"set": sp_set,
              "set+found": sp_check,
-             "pull request": sp_opt,
+             #"pull request": sp_opt,
              }
 
     params = {
@@ -51,14 +51,14 @@ def test_sp_speed():
               "amnesia(100, 100)": [amnesia_graph(100, 100)],
               }
 
-    
+    '''
     params = {
               "n=1e1, m=1e1": [get_random_graph(10, 0.2, directed=True)],
               "n=1e1, m=3e1": [get_random_graph(10, 0.6, directed=True)],
               "n=1e2, m=1e2": [get_random_graph(100, 0.02, directed=True)],
               #"n=1e3, m=1e3": [get_random_graph(1000, 0.002, directed=True)],
               }
-    
+    '''
 
     # the atlas graphs are not large enough to be interesting benchmarks
     num_atlas = 0
