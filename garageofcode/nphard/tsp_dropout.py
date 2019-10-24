@@ -52,6 +52,18 @@ def swap(G, u0, u1, u2):
         swap(G, u0, u1, u2)
 
 
+def greedy_init(G, D):
+    node = next(iter(G))
+    path = [node]
+    remaining = set(G) - {node}
+    while remaining:
+        nearest = min(remaining, key=lambda j: D[node][j])
+        path.append(nearest)
+        remaining.remove(nearest)
+        node = nearest
+    return path
+
+
 def tsp(points):
     global N
     N = len(points)
@@ -61,9 +73,12 @@ def tsp(points):
     G = {} # directed graph that stores the path
     for i in range(N):
         G[i] = (i+1) % N
+    path = greedy_init(G, D)
+    for i, j in zip(path, path[1:] + [path[0]]):
+        G[i] = j
 
     score = get_score(G, D)
-    for i in range(100000):
+    for i in range(10000):
         if i % 2000 == 0:
             print("{0:.1f}".format(score))
         u = np.random.choice(N, size=3, replace=False)
