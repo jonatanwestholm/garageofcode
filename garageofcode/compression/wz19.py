@@ -52,11 +52,8 @@ class WZ_Model:
         self.rewind = 0
 
         s = list(self.climb_to_root(seq))
-        #print("match:", "".join(s))
         if splitter == ref_splitter:
             self.rewind = self.get_rewind("".join(s))
-        #print("rewind:", self.rewind)
-        #print()
         self.s.extend(s)
         self.s.append(a)
 
@@ -81,6 +78,32 @@ class WZ_Model:
         rewind = self.get_rewind(s)
         return rewind
 
+    def longest_match(self, s):
+        """Finds the longest match in the phrase tree
+        of a string
+        """
+        match = []
+        seq = root
+        for a in s:
+            try:
+                seq = self.G[seq][a]
+            except KeyError:
+                break
+            match.append(a)
+        return "".join(match)
+
+    def get_seq(self, s):
+        """
+        Get the phrase tree sequence ID that corresponds
+        to a certain string
+        Raises a KeyError if s is not in phrase tree
+        """
+        seq = root
+        for a in s:
+            seq = self.G[seq][a]
+        return seq
+
+
 def encode(reader):
     global symbol_set
 
@@ -91,6 +114,7 @@ def encode(reader):
     model = WZ_Model()
     N = len(s)
     idx = 0
+    match = []
 
     while idx < N:
         a = s[idx]
@@ -98,23 +122,30 @@ def encode(reader):
 
         try:
             seq = model.get(seq, a)
+            match.append(a)
         except KeyError:
             rewind = model.can_be_stripped(seq)
             if rewind > 0:
                 splitter = ref_splitter
                 idx -= rewind
+                #print("match:", match)
+                #print("match[:-rewind]:", match[:-rewind])
+                seq_len = len(model.get_seq(match[:-rewind]))
             else:
                 splitter = sym_splitter
-            yield seq, a, splitter
+                seq_len = len(seq)
+            yield seq, a, splitter, seq_len
             model.update(seq, a, splitter)
             seq = root
+            match = []
 
         idx += 1
 
     if seq != root:
-        yield seq_old, a, sym_splitter
+        yield seq_old, a, sym_splitter, len(seq_old)
         model.update(seq_old, a, sym_splitter)
 
+    #poll_phrase_tree(model)
     #print("end of encoding")
     #print("G encode:", model.G)
     #print("S encode:", model.S)
@@ -124,6 +155,8 @@ def decode(reader):
     model = WZ_Model()
     reader = iter(reader.read())
 
+    queue = deque(maxlen=100)
+
     while True:
         try:
             seq, splitter = get_id(reader)
@@ -131,8 +164,13 @@ def decode(reader):
             break
         a = next(reader)
         model.update(seq, a, splitter)
+        match = "".join(model.climb_to_root(seq)) + a
+        queue.append(match)
 
     yield from model.get_s()
+
+    #for m in queue:
+    #    print(m)
     #print("G decode:", model.G)
     #print("S encode:", model.S)
     #print(model.s)
@@ -176,9 +214,24 @@ def debug(*s, dbg=False):
         print(*s)
 
 
+def poll_phrase_tree(model):
+    strings = ["Nils", "Holgersson", "Akka",
+               "Yksi", "Kaksi", "Kolme",
+               "Neljä", "Viisi", "Kuusi",
+               "vildgåsflock"]
+
+    for s in strings:
+        match = model.longest_match(s)
+        print()
+        print("s:", s)
+        print("m:", match)
+
+
 def main():
+    fn = "/home/jdw/garageofcode/data/compression/big.txt"
+    #fn = "/home/jdw/garageofcode/data/compression/words.txt"
     #fn = "/home/jdw/garageofcode/data/compression/nilsholg2.txt"
-    fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
+    #fn = "/home/jdw/garageofcode/data/compression/nilsholg.txt"
     #fn = "/home/jdw/garageofcode/data/compression/medium.txt"
     #fn = "short.txt"
     #fn = "veryshort.txt"
@@ -186,19 +239,19 @@ def main():
     fn_reconstructed = fn.split(".")[0] + "_rec.txt"
     fn_zip = fn.split(".")[0] + ".zip"
     # encoding step
+    reduced_len = 0
     with open(fn, "r") as r:
         with open(fn_compressed, "w") as f:
-            for idx, (seq, a, spl) in enumerate(encode(r)):
-                #if a is None:
-                #    f.write("{}{}".format(seq, ref_splitter))
-                #else:
+            for idx, (seq, a, spl, seq_len) in enumerate(encode(r)):
                 f.write("{}{}{}".format(seq, spl, a))
+                reduced_len += (seq_len + 1)
     
     num_seqs = idx
     print("Before ", os.stat(fn).st_size)
     print("After  ", os.stat(fn_compressed).st_size)
-    #print("After (with LZW opt)  ", os.stat(fn_compressed).st_size - num_seqs)
-    #print(".zip ", os.stat(fn_zip).st_size)
+    print("LZW opt  ", os.stat(fn_compressed).st_size - num_seqs)
+    print("Impl. opt  ", reduced_len)
+    print(".zip ", os.stat(fn_zip).st_size)
 
     #  exit()
 
