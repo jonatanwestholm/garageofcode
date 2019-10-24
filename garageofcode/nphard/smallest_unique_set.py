@@ -23,6 +23,9 @@ def smallest_unique_set(S, subset=None):
 
     if subset is None:
         subset = set(chain.from_iterable(S))
+    else:
+        # filter elements
+        S = [Si & subset for Si in S]
     p = []
     while S:
         c = Counter(chain.from_iterable(S))
@@ -46,6 +49,9 @@ def smallest_unique_set_naive(S, subset=None):
 
     if subset is None:
         subset = set(chain.from_iterable(S))
+    else:
+        # filter elements
+        S = [Si & subset for Si in S]
     p = []
     while S:
         c = subset & set(chain.from_iterable(S))
