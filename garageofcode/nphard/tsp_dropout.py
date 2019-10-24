@@ -74,6 +74,7 @@ def tsp(points):
         else:
             #if np.random.rand() > 0: #10**((score - new_score) / 10 * np.log(i+1)):
             swap(G, *(reversed(u)))
+            
             #else:
             #    score = new_score
 
