@@ -9,67 +9,96 @@ import networkx as nx
 
 from garageofcode.mip.tsp import tsp as tsp_mip
 
+class TSPath:
+    def __init__(self, points=None, G=None):
+        if points is not None:
+            self.N = len(points)
+            self.points = points
+            #  distance matrix
+            self.D = np.array([[np.linalg.norm(x - y) 
+                            for y in points] for x in points])
+        if G is None:
+            self.G = {}  # single linked list
+            for i in range(self.N):
+                self.G[i] = (i+1) % self.N
+        else:
+            self.N = len(G)
+            self.G = G
+
+    def greedy_init(self):
+        node = next(iter(self.G))
+        path = [node]
+        remaining = set(self.G) - {node}
+        while remaining:
+            nearest = min(remaining, key=lambda j: self.D[node][j])
+            path.append(nearest)
+            remaining.remove(nearest)
+            node = nearest
+        return path
+
+    def get_path(self, i0=0):
+        i = i0
+        path = []
+        while True:
+            path.append(i)
+            i = self.G[i]
+            if i == i0:
+                return path
+
+    def get_pathlen(self, i0=0):
+        i = i0
+        pathlen = 0
+        while True:
+            pathlen += 1
+            i = self.G[i]
+            if i == i0:
+                return pathlen
+
+    def get_score(self, i0=0):
+        score = 0
+        path = self.get_path(i0)
+        for i, j in zip(path, path[1:] + [path[0]]):
+            score += self.D[i, j]
+        return score
+
+    def reverse_cycle(self, u0):
+        path = self.get_path(u0)
+        for i, j in zip(path, [path[-1]] + path[:-1]):
+            self.G[i] = j
+        if len(path) > 1:
+            return path[1]
+        else:
+            return path[0]
+
+    def triple_swap(self, u0, u1, u2):
+        G = self.G
+        G[u0], G[u1], G[u2] = G[u2], G[u0], G[u1]
+        if self.get_pathlen() < self.N:
+            # in case orientation was wrong
+            # it will only have to recurse once
+            self.triple_swap(u0, u1, u2)
+
+    def cross_swap(self, u0, u1):
+        G = self.G
+        G[u0], G[u1] = G[u1], G[u0]
+        u0 = self.reverse_cycle(u0)
+        #print("u0:", u0)
+        G[u0], G[u1] = G[u1], G[u0]  # ha-ha!
+        if self.get_pathlen() < self.N:
+            raise RuntimeError("dropped nodes!")
+
+    def improving_cross(self, u0, u1):
+        G = self.G
+        D = self.D
+        v0, v1 = G[u0], G[u1]
+        return D[u0, u1] + D[v0, v1] < D[u0, v0] + D[u1, v1]
+
+
 def get_data(n, r):
     """Return n points in [[0, r), [0, r)]
     """
-
     return np.random.random([n, 2]) * r
 
-
-def get_path(G, i0=0):
-    i = i0
-    path = []
-    while True:
-        path.append(i)
-        i = G[i]
-        if i == i0:
-            return path
-
-
-def get_pathlen(G):
-    i = 0
-    pathlen = 0
-    while True:
-        pathlen += 1
-        i = G[i]
-        if not i:
-            return pathlen
-
-
-def get_score(G, D):
-    score = 0
-    path = get_path(G)
-    for i, j in zip(path, path[1:] + [path[0]]):
-        score += D[i, j]
-    return score
-
-def reverse_cycle(G, u0):
-    path = get_path(G, u0)
-    for i, j in zip(path, [path[-1]] + path[:-1]):
-        G[i] = j
-    if len(path) > 1:
-        return path[1]
-    else:
-        return path[0]
-
-def triple_swap(G, u0, u1, u2):
-    G[u0], G[u1], G[u2] = G[u2], G[u0], G[u1]
-    if get_pathlen(G) < len(G):
-        # in case orientation was wrong
-        # it will only have to recurse once
-        triple_swap(G, u0, u1, u2)
-
-def cross_swap(G, u0, u1):
-    G[u0], G[u1] = G[u1], G[u0]
-    u0 = reverse_cycle(G, u0)
-    #print("u0:", u0)
-    G[u0], G[u1] = G[u1], G[u0]  # ha-ha!
-    if get_pathlen(G) < len(G):
-        print("dropped!")
-
-def improving_cross(G, D, u0, u1):
-    v0, v1 = G[u0], G[u1]
-    return D[u0, u1] + D[v0, v1] < D[u0, v0] + D[u1, v1]
 
 def test_cross_swap():
     G = {}
@@ -77,64 +106,46 @@ def test_cross_swap():
     G[1] = 2
     G[2] = 3
     G[3] = 0
-    print("G0:", G)
+    tspath = TSPath(G=G)
+    print("G0:", tspath.G)
 
-    cross_swap(G, 0, 2)
-    print("G1:", G)
-
-def greedy_init(G, D):
-    node = next(iter(G))
-    path = [node]
-    remaining = set(G) - {node}
-    while remaining:
-        nearest = min(remaining, key=lambda j: D[node][j])
-        path.append(nearest)
-        remaining.remove(nearest)
-        node = nearest
-    return path
-
+    tspath.cross_swap(0, 2)
+    print("G1:", tspath.G)
 
 def tsp(points):
     N = len(points)
-    # distance matrix
-    D = np.array([[np.linalg.norm(x - y) for y in points] for x in points])
+    tspath = TSPath(points)
+    tspath.greedy_init()
 
-    G = {} # directed graph that stores the path
-    for i in range(N):
-        G[i] = (i+1) % N
-    path = greedy_init(G, D)
-    for i, j in zip(path, path[1:] + [path[0]]):
-        G[i] = j
-
-    score = get_score(G, D)
-    for i in range(1000000):
+    score = tspath.get_score()
+    for i in range(100000):
         if i % 20000 == 0:
             print("{0:.1f}".format(score))
         r = np.random.rand() < 0.5
         if r:
             u = np.random.choice(N, size=2, replace=False)
-            if improving_cross(G, D, *u):
-                cross_swap(G, *u)
+            if tspath.improving_cross(*u):
+                tspath.cross_swap(*u)
         else:
             u = np.random.choice(N, size=3, replace=False)
-            triple_swap(G, *u)
-            new_score = get_score(G, D)
+            tspath.triple_swap(*u)
+            new_score = tspath.get_score()
             if new_score <= score:
                 score = new_score
             else:
                 #if np.random.rand() > 0: #10**((score - new_score) / 10 * np.log(i+1)):
-                triple_swap(G, *(reversed(u)))
+                tspath.triple_swap(*(reversed(u)))
             
             #else:
             #    score = new_score
 
-    return get_path(G)
+    return tspath.get_path()
 
 
 def main():
     np.random.seed(0)
     #  problem parameters
-    n = 100
+    n = 10
     k = 4
     r = 100
 
