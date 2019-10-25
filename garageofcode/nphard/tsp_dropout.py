@@ -1,4 +1,5 @@
 import time
+import random
 from collections import Counter
 from functools import partial
 from itertools import chain
@@ -160,6 +161,7 @@ class TSPath:
         """
         Simple, incremental recreate step
         """
+        random.shuffle(nodes)
         for v in nodes:
             self.insert(self.optimal_insert(v), v)
 
@@ -192,15 +194,15 @@ def tsp_local(points):
     tspath.greedy_init()
 
     score = tspath.get_score()
-    for i in range(100000):
-        if i % 20000 == 0:
+    for i in range(10001):
+        if i % 1000 == 0:
             print("{0:.1f}".format(score))
-        r = np.random.rand() < 0.5
-        if r:
+        r = np.random.rand()
+        if r < 0.33:
             u = np.random.choice(N, size=2, replace=False)
             if tspath.improving_cross(*u):
                 tspath.cross_swap(*u)
-        else:
+        elif r < 0.67:
             u = np.random.choice(N, size=3, replace=False)
             tspath.triple_swap(*u)
             new_score = tspath.get_score()
@@ -210,8 +212,34 @@ def tsp_local(points):
                 # metropolis-hastings
                 #if np.random.rand() > 0: #10**((score - new_score) / 10 * np.log(i+1)):
                 tspath.triple_swap(*(reversed(u)))
+        else:
+            R = 50  # radius for ruin
+
+            # ruin step
+            u = np.random.randint(N)
+            r = np.random.random() * R
+            nodes = filter(lambda v: tspath.D[v, u] < r, tspath.G)
+            prev_G = {u: tspath.G[u] for u in tspath.G}
+            singles = list(tspath.ruin(nodes))
+            
+            # recreate step
+            tspath.recreate(singles)
+
+            new_score = tspath.get_score()
+            if new_score <= score:
+                score = new_score
+            else:
+                # reverse changes
+                tspath.G = prev_G
+
+            if tspath.get_pathlen() < N:
+                print("i:", i)
+                print("u:", u)
+                print("G:", tspath.G)
+                raise RuntimeError("dropped nodes!")
 
     return tspath.get_path()
+
 
 def tsp_ruin_recreate(points):
     R = 20  # radius for ruin
@@ -221,28 +249,32 @@ def tsp_ruin_recreate(points):
     tspath.greedy_init()
 
     score = tspath.get_score()
-    for i in range(100000):
-        if i % 10000 == 0:
+    for i in range(10000):
+        if i % 1000 == 0:
             print("{0:.1f}".format(score))
+        
         # ruin step
         u = np.random.randint(N)
-        nodes = filter(lambda v: tspath.D[v, u] < R, tspath.G)
-        #nodes = [u]
-
-        #v = tspath.remove_head(u)
-        #tspath.insert(u, v)
+        r = np.random.random() * R
+        nodes = filter(lambda v: tspath.D[v, u] < r, tspath.G)
+        prev_G = {u: tspath.G[u] for u in tspath.G}
         singles = tspath.ruin(nodes)
-
+        
         # recreate step
         tspath.recreate(singles)
-        '''
-        '''
+
+        new_score = tspath.get_score()
+        if new_score <= score:
+            score = new_score
+        else:
+            # reverse changes
+            tspath.G = prev_G
+
         if tspath.get_pathlen() < N:
             print("i:", i)
             print("u:", u)
             print("G:", tspath.G)
             raise RuntimeError("dropped nodes!")
-        score = tspath.get_score()
 
     return tspath.get_path()
 
@@ -250,13 +282,14 @@ def tsp_ruin_recreate(points):
 def main():
     np.random.seed(0)
     #  problem parameters
-    n = 100
+    n = 1000
     k = 4
     r = 100
 
     #  solution parameters
     num_iter = 20
-    tsp = tsp_ruin_recreate
+    #tsp = tsp_ruin_recreate
+    tsp = tsp_local
 
     points = get_data(n, r)
     t0 = time.time()
