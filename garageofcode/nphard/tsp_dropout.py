@@ -166,7 +166,6 @@ class TSPath:
             self.insert(self.optimal_insert(v), v)
 
 
-
 def get_data(n, r):
     """Return n points in [[0, r), [0, r)]
     """
@@ -282,7 +281,7 @@ def tsp_ruin_recreate(points):
 def main():
     np.random.seed(0)
     #  problem parameters
-    n = 1000
+    n = 100
     k = 4
     r = 100
 
