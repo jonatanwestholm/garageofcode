@@ -98,11 +98,11 @@ class TSPath:
         if self.get_pathlen() < self.in_cycle:
             raise RuntimeError("dropped nodes!")
 
-    def improving_cross(self, u0, u1):
+    def improving_cross(self, u0, v0):
         G = self.G
         D = self.D
-        v0, v1 = G[u0], G[u1]
-        return D[u0, u1] + D[v0, v1] < D[u0, v0] + D[u1, v1]
+        u1, v1 = G[u0], G[v0]
+        return D[u0, v0] + D[u1, v1] < D[u0, u1] + D[v0, v1]
 
     def remove_head(self, u):
         """
@@ -190,6 +190,30 @@ class TSPath:
             self.cross_switch(u, v)
             found = True
         return found
+
+    def _exhaust_crosses(self):
+        """
+        Incorrect attempt at optimizing exhaust_crosses
+        """
+        G = self.G
+        crossing_edges = []
+        for u in range(self.N):
+            for v in range(self.N):
+                if u != v and self.improving_cross(u, v):
+                    crossing_edges.append(((u, G[u]), (v, G[v])))
+
+        while crossing_edges:
+            print(len(crossing_edges))
+            (u0, u1), (v0, v1) = crossing_edges.pop()
+            if G[u0] != u1 or G[v0] != v1:
+                # graph has changed
+                continue
+            self.cross_switch(u0, v0)
+            for w in range(self.N):
+                if u != w and self.improving_cross(u, w):
+                    crossing_edges.append(((u, G[u]), (w, G[w])))
+                if v != w and self.improving_cross(v, w):
+                    crossing_edges.append(((v, G[v]), (w, G[w])))
 
     def get_triple(self):
         G = self.G
@@ -291,7 +315,8 @@ def tsp_local(points):
                 score = new_score
             else:
                 # metropolis-hastings
-                #if np.random.rand() > 0: #10**((score - new_score) / 10 * np.log(i+1)):
+                #if np.random.rand() > 0: 
+                #10**((score - new_score) / 10 * np.log(i+1)):
                 tspath.triple_switch(*(reversed(u)))
         else:
             R = 50  # radius for ruin
@@ -319,7 +344,7 @@ def tsp_local(points):
                 print("G:", tspath.G)
                 raise RuntimeError("dropped nodes!")
 
-    return tspath.get_path()
+    return tspath
 
 
 def tsp_ruin_recreate(points):
@@ -357,7 +382,7 @@ def tsp_ruin_recreate(points):
             print("G:", tspath.G)
             raise RuntimeError("dropped nodes!")
 
-    return tspath.get_path()
+    return tspath
 
 
 def tsp_exhaust_cross(points):
@@ -367,7 +392,7 @@ def tsp_exhaust_cross(points):
 
     tspath.exhaust_crosses()
 
-    return tspath.get_path()
+    return tspath
 
 def tsp_exhaust_triples(points):
     N = len(points)
@@ -376,7 +401,7 @@ def tsp_exhaust_triples(points):
 
     tspath.exhaust_triples()
 
-    return tspath.get_path()
+    return tspath
 
 def tsp_exhaust_triples_and_crosses(points):
     N = len(points)
@@ -390,34 +415,38 @@ def tsp_exhaust_triples_and_crosses(points):
             continue
         break
 
-    return tspath.get_path()
+    return tspath
 
 
 def main():
     np.random.seed(0)
     #  problem parameters
-    N = 20
+    N = 50
     k = 4
     r = 100
 
     #  solution parameters
     #tsp = tsp_ruin_recreate
     #tsp = tsp_local
-    #tsp = tsp_exhaust_cross
+    tsp = tsp_exhaust_cross
     #tsp = tsp_exhaust_triples
-    tsp = tsp_exhaust_triples_and_crosses
+    #tsp = tsp_exhaust_triples_and_crosses
 
     points = get_data(N, r)
     t0 = time.time()
-    path = tsp(points)
+    tspath = tsp(points)
     t1 = time.time()
+    path = tspath.get_path()
+    score = tspath.get_score()
     print("time: {0:.3f}".format(t1 - t0))
+    print("score: {0:.3f}".format(score))
     path_coords = [points[id_num] for id_num in path + [path[0]]]
     x_coords, y_coords = zip(*path_coords)
     plt.scatter(x_coords, y_coords, s=10, color='r')
     plt.plot(x_coords, y_coords)
 
-    plt.title("N={}, exhausted all triple switches and crosses".format(N))
+    title = "N={0}, {1} \nscore: {2:.3f}".format(N, tsp.__name__, score)
+    plt.title(title)
     plt.xlabel("x")
     plt.ylabel("y")
 
