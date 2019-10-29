@@ -170,7 +170,7 @@ class TSPath:
         v0, v1 = self.points[v]
         return edges_cross(u0, u1, v0, v1)
 
-    def get_cross(self):
+    def _get_cross(self):
         for u in range(self.N):
             for v in range(u):
                 #if self.edges_cross(u, v):
@@ -179,11 +179,31 @@ class TSPath:
                     return u, v
         raise StopIteration
 
+    def get_cross(self):
+        while True:
+            found = False
+            for u in range(self.N):
+                for v in range(u):
+                    #if self.edges_cross(u, v):
+                    #    return u, v
+                    if self.improving_cross(u, v):
+                        yield u, v
+                        found = True
+                ''' unoptimized version
+                        break
+                else:
+                    continue
+                break
+                '''
+            if not found:
+                break
+
     def exhaust_crosses(self):
         found = False
+        get_cross = iter(self.get_cross())
         while True:
             try:
-                u, v = self.get_cross()
+                u, v = next(get_cross)
             except StopIteration:
                 break
 
@@ -417,20 +437,39 @@ def tsp_exhaust_triples_and_crosses(points):
 
     return tspath
 
+def tsp_test_exhaust_crosses(points):
+    N = len(points)
+    tspath = TSPath(points)
+    tspath.greedy_init()
+
+    while True:
+        t0 = time.time()
+        tspath.exhaust_crosses()
+        t1 = time.time()
+        print("time: {0:.3f}".format(t1 - t0))
+        
+        u = np.random.choice(N, size=2, replace=False)
+        tspath.cross_switch(*u)
+        time.sleep(0.1)
+
+
+    return tspath
+
 
 def main():
     np.random.seed(0)
     #  problem parameters
-    N = 50
+    N = 1000
     k = 4
     r = 100
 
     #  solution parameters
     #tsp = tsp_ruin_recreate
     #tsp = tsp_local
-    tsp = tsp_exhaust_cross
+    #tsp = tsp_exhaust_cross
     #tsp = tsp_exhaust_triples
     #tsp = tsp_exhaust_triples_and_crosses
+    tsp = tsp_test_exhaust_crosses
 
     points = get_data(N, r)
     t0 = time.time()
