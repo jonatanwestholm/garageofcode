@@ -215,19 +215,26 @@ class TSPath:
     def get_crossing_edges(self):
         crossing_edges = []
         for u in range(self.N):
-            for v in range(self.N):
+            for v in range(u):
                 if u != v and self.improving_cross(u, v):
                     crossing_edges.append(((u, self.G[u]), (v, self.G[v])))
         return crossing_edges
 
     def exhaust_crosses(self):
         crossing_edges = self.get_crossing_edges()
+        def unchanged(u, v):
+            u0, u1 = u
+            v0, v1 = v
+            return self.G[u0] == u1 and self.G[v0] == v1
 
+        idx = 0
         while crossing_edges:
             (u0, u1), (v0, v1) = crossing_edges.pop()
-            if self.G[u0] != u1 or self.G[v0] != v1:
+            if not unchanged((u0, u1), (v0, v1)):
                 # graph has changed
                 continue
+            #if self.G[u0] != u1 or self.G[v0] != v1:
+            #    continue
             self.cross_switch(u0, v0)
             assert self.get_pathlen() == self.N
             assert self.G[v1] == u1
@@ -237,11 +244,16 @@ class TSPath:
                     crossing_edges.append(((v1, self.G[v1]), (w, self.G[w])))
                 if v0 != w and self.improving_cross(v0, w):
                     crossing_edges.append(((v0, self.G[v0]), (w, self.G[w])))
+            crossing_edges = [ce for ce in crossing_edges if unchanged(*ce)]
             try:
                 assert len(crossing_edges) == len(self.get_crossing_edges())
             except AssertionError as e:
-                pass
-
+                print(idx)
+                print("state:", crossing_edges)
+                print("actual:", self.get_crossing_edges())
+                print((u0, u1), (v0, v1))
+                #raise e
+            idx += 1
 
 
     def get_triple(self):
@@ -468,7 +480,7 @@ def tsp_test_exhaust_crosses(points):
 def main():
     np.random.seed(0)
     #  problem parameters
-    N = 200
+    N = 8
     k = 4
     r = 100
 
@@ -496,6 +508,8 @@ def main():
     #    plt.arrow(x, y, dx, dy, width=0.3)
     plt.scatter(x_coords, y_coords, s=10, color='r', zorder=100)
     plt.plot(x_coords, y_coords, zorder=100)
+    for idx, (x_c, y_c) in enumerate(path_coords[:-1]):
+        plt.text(x_c, y_c, str(idx))
 
     title = "N={0}, {1} \nscore: {2:.3f}".format(N, tsp.__name__, score)
     plt.title(title)
