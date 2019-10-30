@@ -97,6 +97,7 @@ class TSPath:
         G[u0], G[u1] = G[u1], G[u0]  # ha-ha!
         if self.get_pathlen() < self.in_cycle:
             raise RuntimeError("dropped nodes!")
+        return u0
 
     def improving_cross(self, u0, v0):
         G = self.G
@@ -198,7 +199,7 @@ class TSPath:
             if not found:
                 break
 
-    def exhaust_crosses(self):
+    def _exhaust_crosses(self):
         found = False
         get_cross = iter(self.get_cross())
         while True:
@@ -211,29 +212,37 @@ class TSPath:
             found = True
         return found
 
-    def _exhaust_crosses(self):
-        """
-        Incorrect attempt at optimizing exhaust_crosses
-        """
-        G = self.G
+    def get_crossing_edges(self):
         crossing_edges = []
         for u in range(self.N):
             for v in range(self.N):
                 if u != v and self.improving_cross(u, v):
-                    crossing_edges.append(((u, G[u]), (v, G[v])))
+                    crossing_edges.append(((u, self.G[u]), (v, self.G[v])))
+        return crossing_edges
+
+    def exhaust_crosses(self):
+        crossing_edges = self.get_crossing_edges()
 
         while crossing_edges:
-            print(len(crossing_edges))
             (u0, u1), (v0, v1) = crossing_edges.pop()
-            if G[u0] != u1 or G[v0] != v1:
+            if self.G[u0] != u1 or self.G[v0] != v1:
                 # graph has changed
                 continue
             self.cross_switch(u0, v0)
+            assert self.get_pathlen() == self.N
+            assert self.G[v1] == u1
+            assert self.G[v0] == u0
             for w in range(self.N):
-                if u != w and self.improving_cross(u, w):
-                    crossing_edges.append(((u, G[u]), (w, G[w])))
-                if v != w and self.improving_cross(v, w):
-                    crossing_edges.append(((v, G[v]), (w, G[w])))
+                if v1 != w and self.improving_cross(v1, w):
+                    crossing_edges.append(((v1, self.G[v1]), (w, self.G[w])))
+                if v0 != w and self.improving_cross(v0, w):
+                    crossing_edges.append(((v0, self.G[v0]), (w, self.G[w])))
+            try:
+                assert len(crossing_edges) == len(self.get_crossing_edges())
+            except AssertionError as e:
+                pass
+
+
 
     def get_triple(self):
         G = self.G
@@ -459,17 +468,17 @@ def tsp_test_exhaust_crosses(points):
 def main():
     np.random.seed(0)
     #  problem parameters
-    N = 1000
+    N = 200
     k = 4
     r = 100
 
     #  solution parameters
     #tsp = tsp_ruin_recreate
     #tsp = tsp_local
-    #tsp = tsp_exhaust_cross
+    tsp = tsp_exhaust_cross
     #tsp = tsp_exhaust_triples
     #tsp = tsp_exhaust_triples_and_crosses
-    tsp = tsp_test_exhaust_crosses
+    #tsp = tsp_test_exhaust_crosses
 
     points = get_data(N, r)
     t0 = time.time()
@@ -481,8 +490,12 @@ def main():
     print("score: {0:.3f}".format(score))
     path_coords = [points[id_num] for id_num in path + [path[0]]]
     x_coords, y_coords = zip(*path_coords)
-    plt.scatter(x_coords, y_coords, s=10, color='r')
-    plt.plot(x_coords, y_coords)
+    #for p0, p1 in zip(path_coords, path_coords[1:]):
+    #    x, y = p0
+    #    dx, dy = p1 - p0
+    #    plt.arrow(x, y, dx, dy, width=0.3)
+    plt.scatter(x_coords, y_coords, s=10, color='r', zorder=100)
+    plt.plot(x_coords, y_coords, zorder=100)
 
     title = "N={0}, {1} \nscore: {2:.3f}".format(N, tsp.__name__, score)
     plt.title(title)
