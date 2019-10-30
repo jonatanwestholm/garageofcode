@@ -99,12 +99,6 @@ class TSPath:
             raise RuntimeError("dropped nodes!")
         return u0
 
-    def improving_cross(self, u0, v0):
-        G = self.G
-        D = self.D
-        u1, v1 = G[u0], G[v0]
-        return D[u0, v0] + D[u1, v1] < D[u0, u1] + D[v0, v1]
-
     def remove_head(self, u):
         """
         Removes the head of u from the path
@@ -166,9 +160,18 @@ class TSPath:
         for v in nodes:
             self.insert(self.optimal_insert(v), v)
 
-    def edges_cross(self, u, v):
-        u0, u1 = self.points[u]
-        v0, v1 = self.points[v]
+    def _improving_cross(self, u0, v0):
+        G = self.G
+        D = self.D
+        u1, v1 = G[u0], G[v0]
+        return D[u0, v0] + D[u1, v1] < D[u0, u1] + D[v0, v1]
+
+    def improving_cross(self, u, v):
+        G = self.G
+        u0 = self.points[u]
+        u1 = self.points[G[u]]
+        v0 = self.points[v]
+        v1 = self.points[G[v]]
         return edges_cross(u0, u1, v0, v1)
 
     def _get_cross(self):
@@ -252,6 +255,8 @@ class TSPath:
                 print("state:", crossing_edges)
                 print("actual:", self.get_crossing_edges())
                 print((u0, u1), (v0, v1))
+                print("G:", self.G)
+                print("path:", self.get_path())
                 #raise e
             idx += 1
 
@@ -300,18 +305,32 @@ class TSPath:
 
 
 def edges_cross(u0, u1, v0, v1):
-    umid = (u0 + u1) / 2
-    vmid = (v0 + v1) / 2
+    u0x, u0y = u0[0], u0[1]
+    u1x, u1y = u1
+    v0x, v0y = v0
+    v1x, v1y = v1
 
-    return is_between(v0, v1, umid) and is_between(u0, u1, vmid)
+    A = np.array([[u1x - u0x, v0x - v1x],
+                  [u1y - u0y, v0y - v1y]])
+    b = np.array([v0x - u0x,
+                  v0y - u0y])
+    try:
+        l1, l2 = np.linalg.solve(A, b)
+    except np.LinAlgError:
+        return False
 
+    return 0 < l1 < 1 and 0 < l2 < 1
 
-def is_between(v0, v1, umid):
-    w0 = v0 - umid
-    w1 = v1 - umid
+'''
+    return     is_between(v0, v1, u0) and is_between(v0, v1, u1) \
+           and is_between(u0, u1, v1) and is_between(u0, u1, v1)
+
+def is_between(v0, v1, u):
+    w0 = v0 - u
+    w1 = v1 - u
 
     return np.dot(w0, w1) < 0
-
+'''
 
 def get_data(n, r):
     """Return n points in [[0, r), [0, r)]
@@ -480,7 +499,7 @@ def tsp_test_exhaust_crosses(points):
 def main():
     np.random.seed(0)
     #  problem parameters
-    N = 8
+    N = 50
     k = 4
     r = 100
 
@@ -508,8 +527,8 @@ def main():
     #    plt.arrow(x, y, dx, dy, width=0.3)
     plt.scatter(x_coords, y_coords, s=10, color='r', zorder=100)
     plt.plot(x_coords, y_coords, zorder=100)
-    for idx, (x_c, y_c) in enumerate(path_coords[:-1]):
-        plt.text(x_c, y_c, str(idx))
+    for id_num, (x_c, y_c) in zip(path, path_coords[:-1]):
+        plt.text(x_c, y_c, str(id_num))
 
     title = "N={0}, {1} \nscore: {2:.3f}".format(N, tsp.__name__, score)
     plt.title(title)
