@@ -72,6 +72,14 @@ class TSPath:
             score += self.D[i, j]
         return score
 
+    def triple_switch(self, u0, u1, u2):
+        G = self.G
+        G[u0], G[u1], G[u2] = G[u1], G[u2], G[u0]
+        if self.get_pathlen() < self.in_cycle:
+            # in case orientation was wrong
+            # it will only have to recurse once
+            self.triple_switch(u0, u1, u2)
+
     def reverse_cycle(self, u0):
         path = self.get_path(u0)
         for i, j in zip(path, [path[-1]] + path[:-1]):
@@ -80,14 +88,6 @@ class TSPath:
             return path[1]
         else:
             return path[0]
-
-    def triple_switch(self, u0, u1, u2):
-        G = self.G
-        G[u0], G[u1], G[u2] = G[u1], G[u2], G[u0]
-        if self.get_pathlen() < self.in_cycle:
-            # in case orientation was wrong
-            # it will only have to recurse once
-            self.triple_switch(u0, u1, u2)
 
     def cross_switch(self, u0, u1):
         G = self.G
@@ -166,57 +166,6 @@ class TSPath:
         u1, v1 = G[u0], G[v0]
         return D[u0, v0] + D[u1, v1] < D[u0, u1] + D[v0, v1]
 
-    def _improving_cross(self, u, v):
-        G = self.G
-        u0 = self.points[u]
-        u1 = self.points[G[u]]
-        v0 = self.points[v]
-        v1 = self.points[G[v]]
-        if u == G[v] or v == G[u]:
-            return False
-        return edges_cross(u0, u1, v0, v1)
-
-    def _get_cross(self):
-        for u in range(self.N):
-            for v in range(u):
-                #if self.edges_cross(u, v):
-                #    return u, v
-                if self.improving_cross(u, v):
-                    return u, v
-        raise StopIteration
-
-    def get_cross(self):
-        while True:
-            found = False
-            for u in range(self.N):
-                for v in range(u):
-                    #if self.edges_cross(u, v):
-                    #    return u, v
-                    if self.improving_cross(u, v):
-                        yield u, v
-                        found = True
-                ''' unoptimized version
-                        break
-                else:
-                    continue
-                break
-                '''
-            if not found:
-                break
-
-    def _exhaust_crosses(self):
-        found = False
-        get_cross = iter(self.get_cross())
-        while True:
-            try:
-                u, v = next(get_cross)
-            except StopIteration:
-                break
-
-            self.cross_switch(u, v)
-            found = True
-        return found
-
     def get_crossing_edges(self):
         crossing_edges = []
         for u in range(self.N):
@@ -250,188 +199,11 @@ class TSPath:
                 if v0 != w and self.improving_cross(v0, w):
                     crossing_edges.append(((v0, self.G[v0]), (w, self.G[w])))
 
-    def get_triple(self):
-        G = self.G
-        D = self.D
-        u = 0
-        while True:
-            u = G[u]
-            if u == 0:
-                break
-            u_head = G[u]
-            du = D[u, G[u]]
-            v = u
-            while True:
-                v = G[v]
-                if v == u:
-                    break
-                dv = D[v, G[v]]
-                duv = D[u, G[v]]
-                w = v
-                while True:
-                    w = G[w]
-                    if w == u:
-                        break
-                    dw = D[w, G[w]]
-                    dvw = D[v, G[w]]
-                    dwu = D[w, u_head]
-
-                    if du + dv + dw > duv + duv + dvw + dwu:
-                        return u, v, w
-        raise StopIteration
-
-    def exhaust_triples(self):
-        found = False
-        while True:
-            try:
-                u, v, w = self.get_triple()
-            except StopIteration:
-                break
-
-            self.triple_switch(u, v, w)
-            found = True
-        return found
-
-
-def edges_cross(u0, u1, v0, v1):
-    u0x, u0y = u0
-    u1x, u1y = u1
-    v0x, v0y = v0
-    v1x, v1y = v1
-
-    A = np.array([[u1x - u0x, v0x - v1x],
-                  [u1y - u0y, v0y - v1y]])
-    b = np.array([v0x - u0x,
-                  v0y - u0y])
-    try:
-        l1, l2 = np.linalg.solve(A, b)
-    except np.LinAlgError:
-        return False
-
-    return 0 < l1 < 1 and 0 < l2 < 1
-
-'''
-    return     is_between(v0, v1, u0) and is_between(v0, v1, u1) \
-           and is_between(u0, u1, v1) and is_between(u0, u1, v1)
-
-def is_between(v0, v1, u):
-    w0 = v0 - u
-    w1 = v1 - u
-
-    return np.dot(w0, w1) < 0
-'''
 
 def get_data(n, r):
     """Return n points in [[0, r), [0, r)]
     """
     return np.random.random([n, 2]) * r
-
-
-def test_cross_switch():
-    G = {}
-    G[0] = 1
-    G[1] = 2
-    G[2] = 3
-    G[3] = 0
-    tspath = TSPath(G=G)
-    print("G0:", tspath.G)
-
-    tspath.cross_switch(0, 2)
-    print("G1:", tspath.G)
-
-def tsp_local(points):
-    """
-    Random greedy search with local operations
-    """
-    N = len(points)
-    tspath = TSPath(points)
-    tspath.greedy_init()
-
-    score = tspath.get_score()
-    for i in range(10001):
-        if i % 1000 == 0:
-            print("{0:.1f}".format(score))
-        r = np.random.rand()
-        if r < 0.33:
-            u = np.random.choice(N, size=2, replace=False)
-            if tspath.improving_cross(*u):
-                tspath.cross_switch(*u)
-        elif r < 0.67:
-            u = np.random.choice(N, size=3, replace=False)
-            tspath.triple_switch(*u)
-            new_score = tspath.get_score()
-            if new_score <= score:
-                score = new_score
-            else:
-                # metropolis-hastings
-                #if np.random.rand() > 0: 
-                #10**((score - new_score) / 10 * np.log(i+1)):
-                tspath.triple_switch(*(reversed(u)))
-        else:
-            R = 50  # radius for ruin
-
-            # ruin step
-            u = np.random.randint(N)
-            r = np.random.random() * R
-            nodes = filter(lambda v: tspath.D[v, u] < r, tspath.G)
-            prev_G = {u: tspath.G[u] for u in tspath.G}
-            singles = list(tspath.ruin(nodes))
-            
-            # recreate step
-            tspath.recreate(singles)
-
-            new_score = tspath.get_score()
-            if new_score <= score:
-                score = new_score
-            else:
-                # reverse changes
-                tspath.G = prev_G
-
-            if tspath.get_pathlen() < N:
-                print("i:", i)
-                print("u:", u)
-                print("G:", tspath.G)
-                raise RuntimeError("dropped nodes!")
-
-    return tspath
-
-
-def tsp_ruin_recreate(points):
-    R = 20  # radius for ruin
-
-    N = len(points)
-    tspath = TSPath(points)
-    tspath.greedy_init()
-
-    score = tspath.get_score()
-    for i in range(10000):
-        if i % 1000 == 0:
-            print("{0:.1f}".format(score))
-        
-        # ruin step
-        u = np.random.randint(N)
-        r = np.random.random() * R
-        nodes = filter(lambda v: tspath.D[v, u] < r, tspath.G)
-        prev_G = {u: tspath.G[u] for u in tspath.G}
-        singles = tspath.ruin(nodes)
-        
-        # recreate step
-        tspath.recreate(singles)
-
-        new_score = tspath.get_score()
-        if new_score <= score:
-            score = new_score
-        else:
-            # reverse changes
-            tspath.G = prev_G
-
-        if tspath.get_pathlen() < N:
-            print("i:", i)
-            print("u:", u)
-            print("G:", tspath.G)
-            raise RuntimeError("dropped nodes!")
-
-    return tspath
 
 
 def tsp_exhaust_cross(points):
@@ -445,51 +217,6 @@ def tsp_exhaust_cross(points):
 
     return tspath
 
-def tsp_exhaust_triples(points):
-    N = len(points)
-    tspath = TSPath(points)
-    tspath.greedy_init()
-
-    tspath.exhaust_triples()
-    for u in range(N):
-        tspath.recreate(list(tspath.ruin([u])))
-
-    return tspath
-
-def tsp_exhaust_triples_and_crosses(points):
-    N = len(points)
-    tspath = TSPath(points)
-    tspath.greedy_init()
-
-    while True:
-        if tspath.exhaust_triples():
-            continue
-        if tspath.exhaust_crosses():
-            continue
-        break
-
-    for u in range(N):
-        tspath.recreate(list(tspath.ruin([u])))
-
-    return tspath
-
-def tsp_test_exhaust_crosses(points):
-    N = len(points)
-    tspath = TSPath(points)
-    tspath.greedy_init()
-
-    while True:
-        t0 = time.time()
-        tspath.exhaust_crosses()
-        t1 = time.time()
-        print("time: {0:.3f}".format(t1 - t0))
-        
-        u = np.random.choice(N, size=2, replace=False)
-        tspath.cross_switch(*u)
-        time.sleep(0.1)
-
-
-    return tspath
 
 def main():
     np.random.seed(0)
@@ -524,10 +251,6 @@ def main():
     plt.plot(x_coords, y_coords)
     for id_num, (x_c, y_c) in zip(path, path_coords[:-1]):
         plt.text(x_c, y_c, str(id_num))
-    #u, v, w = tspath.get_triple()
-    #x_c, y_c = zip(points[u], points[v], points[w])
-    #plt.scatter(x_c, y_c, s=20, color='g')
-
 
     title = "N={0}, {1} \nscore: {2:.3f}".format(N, tsp.__name__, score)
     plt.title(title)
@@ -539,5 +262,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-    #test_cross_switch()
