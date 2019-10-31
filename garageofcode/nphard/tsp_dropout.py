@@ -218,20 +218,56 @@ def tsp_exhaust_cross(points):
     return tspath
 
 
+def tsp_rnr_cross(points):
+    N = len(points)
+    tspath = TSPath(points)
+    tspath.greedy_init()
+
+    score = tspath.get_score()
+    for idx in range(100):
+        if idx % 10 == 0:
+            print("{0:.3f}".format(score))
+        # ruin step
+        R = 50
+        u = np.random.randint(N)
+        r = np.random.random() * R
+        nodes = filter(lambda v: tspath.D[v, u] < r, tspath.G)
+        prev_G = {u: tspath.G[u] for u in tspath.G}
+        singles = list(tspath.ruin(nodes))
+        
+        # recreate step
+        tspath.recreate(singles)
+
+        tspath.exhaust_crosses()
+
+        new_score = tspath.get_score()
+        if new_score <= score:
+            score = new_score
+        else:
+            # reverse changes
+            tspath.G = prev_G
+
+        if tspath.get_pathlen() < N:
+            print("i:", i)
+            print("u:", u)
+            print("G:", tspath.G)
+            raise RuntimeError("dropped nodes!")
+        for u in range(N):
+            tspath.recreate(list(tspath.ruin([u])))
+
+    return tspath
+
+
 def main():
     np.random.seed(0)
     #  problem parameters
-    N = 200
+    N = 1000
     k = 4
     r = 100
 
     #  solution parameters
-    #tsp = tsp_ruin_recreate
-    #tsp = tsp_local
-    tsp = tsp_exhaust_cross
-    #tsp = tsp_exhaust_triples
-    #tsp = tsp_exhaust_triples_and_crosses
-    #tsp = tsp_test_exhaust_crosses
+    #tsp = tsp_exhaust_cross
+    tsp = tsp_rnr_cross
 
     points = get_data(N, r)
     t0 = time.time()
