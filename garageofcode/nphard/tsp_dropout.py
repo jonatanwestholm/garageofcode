@@ -235,7 +235,6 @@ class TSPath:
             else:
                 return None
 
-        #idx = 0
         while crossing_edges:
             (u0, u1), (v0, v1) = crossing_edges.pop()
             try:
@@ -245,30 +244,11 @@ class TSPath:
                 continue
 
             self.cross_switch(u0, v0)
-            assert self.get_pathlen() == self.N
-            assert self.G[v1] == u1
-            assert self.G[v0] == u0
             for w in range(self.N):
                 if v1 != w and self.improving_cross(v1, w):
                     crossing_edges.append(((v1, self.G[v1]), (w, self.G[w])))
                 if v0 != w and self.improving_cross(v0, w):
                     crossing_edges.append(((v0, self.G[v0]), (w, self.G[w])))
-            '''
-            crossing_edges = [ce for ce in crossing_edges if unchanged(*ce)]
-            try:
-                assert len(crossing_edges) == len(self.get_crossing_edges())
-                print("passed, idx:", idx)
-            except AssertionError as e:
-                print(idx)
-                print("state:", crossing_edges)
-                print("actual:", self.get_crossing_edges())
-                print((u0, u1), (v0, v1))
-                print("G:", self.G)
-                print("path:", self.get_path())
-                #raise e
-            idx += 1
-            '''
-
 
     def get_triple(self):
         G = self.G
@@ -460,6 +440,8 @@ def tsp_exhaust_cross(points):
     tspath.greedy_init()
 
     tspath.exhaust_crosses()
+    for u in range(N):
+        tspath.recreate(list(tspath.ruin([u])))
 
     return tspath
 
@@ -469,6 +451,8 @@ def tsp_exhaust_triples(points):
     tspath.greedy_init()
 
     tspath.exhaust_triples()
+    for u in range(N):
+        tspath.recreate(list(tspath.ruin([u])))
 
     return tspath
 
@@ -483,6 +467,9 @@ def tsp_exhaust_triples_and_crosses(points):
         if tspath.exhaust_crosses():
             continue
         break
+
+    for u in range(N):
+        tspath.recreate(list(tspath.ruin([u])))
 
     return tspath
 
@@ -504,20 +491,19 @@ def tsp_test_exhaust_crosses(points):
 
     return tspath
 
-
 def main():
     np.random.seed(0)
     #  problem parameters
-    N = 100
+    N = 200
     k = 4
     r = 100
 
     #  solution parameters
     #tsp = tsp_ruin_recreate
     #tsp = tsp_local
-    #tsp = tsp_exhaust_cross
+    tsp = tsp_exhaust_cross
     #tsp = tsp_exhaust_triples
-    tsp = tsp_exhaust_triples_and_crosses
+    #tsp = tsp_exhaust_triples_and_crosses
     #tsp = tsp_test_exhaust_crosses
 
     points = get_data(N, r)
@@ -534,10 +520,14 @@ def main():
     #    x, y = p0
     #    dx, dy = p1 - p0
     #    plt.arrow(x, y, dx, dy, width=0.3)
-    plt.scatter(x_coords, y_coords, s=10, color='r', zorder=100)
-    plt.plot(x_coords, y_coords, zorder=100)
+    plt.scatter(x_coords, y_coords, s=10, color='r')
+    plt.plot(x_coords, y_coords)
     for id_num, (x_c, y_c) in zip(path, path_coords[:-1]):
         plt.text(x_c, y_c, str(id_num))
+    #u, v, w = tspath.get_triple()
+    #x_c, y_c = zip(points[u], points[v], points[w])
+    #plt.scatter(x_c, y_c, s=20, color='g')
+
 
     title = "N={0}, {1} \nscore: {2:.3f}".format(N, tsp.__name__, score)
     plt.title(title)
