@@ -174,8 +174,24 @@ class TSPath:
                     crossing_edges.append(((u, self.G[u]), (v, self.G[v])))
         return crossing_edges
 
-    def exhaust_crosses(self):
-        crossing_edges = self.get_crossing_edges()
+    def get_crossing_edges_from(self, nodes):
+        crossing_edges = []
+        for idx, u in enumerate(nodes):
+            for v in nodes[:idx]:
+                if self.improving_cross(u, v):
+                    crossing_edges.append(((u, self.G[u]), (v, self.G[v])))
+
+        for u in nodes:
+            for v in range(self.N):
+                if v in nodes:
+                    continue
+                if self.improving_cross(u, v):
+                    crossing_edges.append(((u, self.G[u]), (v, self.G[v])))
+        return crossing_edges
+
+    def exhaust_crosses(self, crossing_edges=None):
+        if crossing_edges is None:
+            crossing_edges = self.get_crossing_edges()
         def changed(u0, u1):
             if self.G[u0] == u1:
                 return u0, u1
