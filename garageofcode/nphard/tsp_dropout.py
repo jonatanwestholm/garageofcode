@@ -240,8 +240,8 @@ def tsp_rnr_cross(points):
     tspath.greedy_init()
 
     score = tspath.get_score()
-    for idx in range(100):
-        if idx % 10 == 0:
+    for idx in range(10000):
+        if idx % 100 == 0:
             print("{0:.3f}".format(score))
         # ruin step
         R = 50
@@ -277,7 +277,7 @@ def tsp_rnr_cross(points):
 def main():
     np.random.seed(0)
     #  problem parameters
-    N = 1000
+    N = 100
     k = 4
     r = 100
 
