@@ -141,6 +141,13 @@ def generate_boxes(b0, N):
 def generate_points(boxes, num_leafs, points_per_box=1):
     return [b.sample_point() for b in boxes for _ in range(points_per_box)]
 
+def get_points(n, dim):
+    b0 = [(0, 1) for _ in range(dim)]
+    T = SamplingBoxTree()
+    T.initialize(b0, n)
+    boxes = T.get_leafs()
+    return generate_points(boxes, 1)
+
 def draw_boxes(ax, boxes):
     for box in boxes:
         corners = list(box.corners())

@@ -9,9 +9,10 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from garageofcode.mip.tsp import tsp as tsp_mip
+from garageofcode.sampling.box import get_points
 
 class TSPath:
-    def __init__(self, points=None, G=None):
+    def __init__(self, points=None, D=None, G=None):
         """Should I restrict this to having input either
         points or G? What are the use cases of having both?
         Spinning off sub-optimizations with an init path?
@@ -24,6 +25,9 @@ class TSPath:
             #  distance matrix
             self.D = np.array([[np.linalg.norm(x - y) 
                             for y in points] for x in points])
+        elif D is not None:
+            self.N = len(D)
+            self.D = D
         if G is None:
             self.G = {}  # single linked list
             for i in range(self.N):
@@ -240,11 +244,11 @@ def tsp_rnr_cross(points):
     tspath.greedy_init()
 
     score = tspath.get_score()
-    for idx in range(10000):
+    for idx in range(1000):
         if idx % 100 == 0:
             print("{0:.3f}".format(score))
         # ruin step
-        R = 50
+        R = 20
         u = np.random.randint(N)
         r = np.random.random() * R
         nodes = filter(lambda v: tspath.D[v, u] < r, tspath.G)
@@ -277,7 +281,7 @@ def tsp_rnr_cross(points):
 def main():
     np.random.seed(0)
     #  problem parameters
-    N = 100
+    N = 200
     k = 4
     r = 100
 
@@ -285,7 +289,9 @@ def main():
     #tsp = tsp_exhaust_cross
     tsp = tsp_rnr_cross
 
-    points = get_data(N, r)
+    #points = get_data(N, r)
+    points = np.array(get_points(N, dim=2)) * r
+
     t0 = time.time()
     tspath = tsp(points)
     t1 = time.time()

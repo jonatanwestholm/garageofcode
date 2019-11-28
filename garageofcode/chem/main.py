@@ -49,3 +49,6 @@ if __name__ == '__main__':
     fn_target = get_fn("chem", "structures.xyz", main_dir="data")
 
     csv2xyz(fn, fn_target, n_mols=None)
+
+    # obabel structures.xyz -Ostructures.mol2
+    # takes a minute
