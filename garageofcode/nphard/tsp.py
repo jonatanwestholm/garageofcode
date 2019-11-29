@@ -244,14 +244,18 @@ def tsp_rnr_cross(points):
     tspath.greedy_init()
 
     score = tspath.get_score()
-    for idx in range(1000):
-        if idx % 100 == 0:
+    for idx in range(10000):
+        if idx % 500 == 0:
             print("{0:.3f}".format(score))
         # ruin step
-        R = 20
+        R = 50
         u = np.random.randint(N)
         r = np.random.random() * R
-        nodes = filter(lambda v: tspath.D[v, u] < r, tspath.G)
+        if np.random.random() < 0.5:
+            nodes = filter(lambda v: tspath.D[v, u] < r, tspath.G)
+        else:
+            path = tspath.get_path(i0=u)
+            nodes = path[:25] + path[-25:]
         prev_G = {u: tspath.G[u] for u in tspath.G}
         singles = list(tspath.ruin(nodes))
         
@@ -281,7 +285,7 @@ def tsp_rnr_cross(points):
 def main():
     np.random.seed(0)
     #  problem parameters
-    N = 200
+    N = 100
     k = 4
     r = 100
 
