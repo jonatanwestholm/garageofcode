@@ -3,6 +3,10 @@ from itertools import chain, combinations
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
+from matplotlib.collections import PatchCollection
+
+from garageofcode.mip.convex_hull import in_hull
 
 def powerset(s):
     return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
@@ -35,16 +39,56 @@ def subrotation(theta, x1, x2, N):
     A[x2, x2] = np.cos(theta)
     return A
 
+def get_contour(V):
+    return [u for u in V if in_hull(u, V, verbose=False)]
 
 def main():
-    N = 10
-    #points = ncube_corners(N)
+    N = 2
+    num_iter = 10
+    P = ncube_corners(N).T * 2 - 1 
     #print(points)
-    A = rotation(N, 10, 0.5)
-    #print(A)
+    A0 = rotation(N, 1, np.pi/7)
+    A0 /= np.linalg.det(A0)
 
-    plt.imshow(A)
-    plt.show()
+
+    for i in range(num_iter):
+        U = get_contour(P[:2, :].T)
+        print(U)
+        U = list(sorted(U, key=lambda x: np.arctan2(x[1], x[0])))
+        print(U)
+        print()
+        polygon = Polygon(U, True)
+        p = PatchCollection([polygon])
+        fig, ax = plt.subplots()
+        ax.add_collection(p)
+        ax.set_xlim([-1.5, 1.5])
+        ax.set_ylim([-1.5, 1.5])
+        plt.savefig("../../../results/highdim/projections/{}.png".format(i))
+        plt.close()
+
+        P = np.dot(A0, P)
+
+
+    """
+    print(np.linalg.det(A0))
+    A = np.eye(N)
+    #print(A)
+    for i in range(10):
+        plt.imshow(A)
+        plt.title(i)
+        #if i % 10 == 0:
+        try:
+            plt.show()
+        except KeyboardInterrupt:
+            break
+        '''
+        else:
+            plt.draw()
+            plt.pause(0.1)
+            plt.close()
+        '''
+        A = np.dot(A0, A)
+    """
 
     
 

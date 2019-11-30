@@ -23,7 +23,7 @@ def draw_planes(ax, planes):
         ax.plot(x_p, y_p, color='r')
 
 
-def in_hull(u, V):
+def in_hull(u, V, **kwargs):
     """
     Checks if u is in convex hull of V using linear programming.
     V is a list of points
@@ -39,7 +39,7 @@ def in_hull(u, V):
 
     solver.Add(solver.Sum(X) == 1)
 
-    result = solver.Solve(time_limit=10)
+    result = solver.Solve(time_limit=10, **kwargs)
     result = status2str[result]
     return result == "OPTIMAL"
 
