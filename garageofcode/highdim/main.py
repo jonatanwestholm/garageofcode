@@ -40,30 +40,41 @@ def subrotation(theta, x1, x2, N):
     return A
 
 def get_contour(V):
-    return [u for u in V if in_hull(u, V, verbose=False)]
+    #return [u for i, u in enumerate(V) 
+    #        if not in_hull(u, [v for j, v in enumerate(V) if i != j], verbose=False)]
+    U = []
+    for i, u in enumerate(V):
+        W = [v for j, v in enumerate(V) if np.linalg.norm(v - u) > 1e-6]
+        if not in_hull(u, W, verbose=False):
+            U.append(u)
+    return U
+
 
 def main():
-    N = 2
-    num_iter = 10
+    np.random.seed(0)
+    N = 5
+    num_iter = 200
+    scale = np.sqrt(N) + 0.5
     P = ncube_corners(N).T * 2 - 1 
     #print(points)
-    A0 = rotation(N, 1, np.pi/7)
+    A0 = rotation(N, 10, 0.05)
     A0 /= np.linalg.det(A0)
 
 
     for i in range(num_iter):
         U = get_contour(P[:2, :].T)
-        print(U)
+        #print(U)
         U = list(sorted(U, key=lambda x: np.arctan2(x[1], x[0])))
-        print(U)
-        print()
+        #print(U)
+        #print()
         polygon = Polygon(U, True)
         p = PatchCollection([polygon])
         fig, ax = plt.subplots()
         ax.add_collection(p)
-        ax.set_xlim([-1.5, 1.5])
-        ax.set_ylim([-1.5, 1.5])
-        plt.savefig("../../../results/highdim/projections/{}.png".format(i))
+        ax.set_xlim([-scale, scale])
+        ax.set_ylim([-scale, scale])
+        ax.axis("off")
+        plt.savefig(f"../../../results/highdim/projections/{i:04d}.png")
         plt.close()
 
         P = np.dot(A0, P)
