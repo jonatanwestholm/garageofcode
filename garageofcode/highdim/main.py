@@ -82,7 +82,7 @@ def get_visible(G, P, contour):
         for j in G[i]:
             if j in visible:
                 continue
-            if np.all(P[2:, i] >= P[2:, j]):
+            if np.sum(P[2:, i]) >= np.sum(P[2:, j]):
                 visible.append(j)
                 queue.append(j)
     return visible
@@ -90,13 +90,13 @@ def get_visible(G, P, contour):
 
 def main():
     np.random.seed(0)
-    N = 4
+    N = 3
     num_iter = 100
     scale = np.sqrt(N) + 0.5
     P = ncube_corners(N).T * 2 - 1
     G = get_corner_graph(N)
     #print(points)
-    A0 = rotation(N, 10, 0.05)
+    A0 = rotation(N, 5, 0.05)
     A0 /= np.linalg.det(A0)
 
 
@@ -105,7 +105,7 @@ def main():
         #print(U)
         U = list(sorted(U, key=lambda x: np.arctan2(x[1], x[0])))
         visible = get_visible(G, P, contour_idxs)
-        print(len(visible))
+        #print(len(visible))
         #visible = range(2**N)
         #print(visible)
         #print(U)
