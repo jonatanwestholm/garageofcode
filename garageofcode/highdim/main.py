@@ -24,13 +24,20 @@ def ncube_corners(n):
     return A
 
 
-def rotation(N, num_pairs, theta):
+def rotation(N, theta, num_pairs=None):
     A = np.eye(N)
-    for _ in range(num_pairs):
-        x1, x2 = np.random.choice(N, 2, replace=False)
-        #th = np.random.random()*0.4 + 0.8
-        th = theta
-        A = np.dot(A, subrotation(th, x1, x2, N))
+    if num_pairs is not None:
+        def get_pairs():
+            for _ in range(num_pairs):
+                yield np.random.choice(N, 2, replace=False)
+    else:
+        def get_pairs():
+            for i in range(N):
+                for j in range(i):
+                    yield i, j
+
+    for x1, x2 in get_pairs():
+        A = np.dot(A, subrotation(theta, x1, x2, N))
     return A
 
 
@@ -90,13 +97,13 @@ def get_visible(G, P, contour):
 
 def main():
     np.random.seed(0)
-    N = 3
+    N = 4
     num_iter = 100
     scale = np.sqrt(N) + 0.5
     P = ncube_corners(N).T * 2 - 1
     G = get_corner_graph(N)
     #print(points)
-    A0 = rotation(N, 5, 0.05)
+    A0 = rotation(N, 0.063)
     A0 /= np.linalg.det(A0)
 
 
