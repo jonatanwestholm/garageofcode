@@ -5,6 +5,17 @@ import matplotlib.pyplot as plt
 
 from garageofcode.tda.main import get_mds
 
+def get_words():
+        data_dir = "/home/jdw/garageofcode/data/kaggle/word2vec_sample"
+        fn = os.path.join(data_dir, "pruned.word2vec.txt")
+        
+        df = pd.read_csv(fn, delimiter=",", nrows=None)
+
+        words = df["word"]
+        words = words.map(lambda x: x.lower())
+
+        return words.drop_duplicates()
+
 class Word2Vec:
     def __init__(self, fn):
         df = pd.read_csv(fn, delimiter=",", nrows=None)
