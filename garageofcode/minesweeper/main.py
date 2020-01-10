@@ -1,6 +1,7 @@
 from itertools import product
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 import networkx as nx
 
@@ -57,6 +58,9 @@ class Board:
 
 class Solution:
     def __init__(self, N, M, S):
+        self.N = N
+        self.M = M
+        self.S = S
         self.G = grid_8connect(N, M)
         for node in self.G:
             #self.G.nodes[node]["mine"] = None
@@ -80,6 +84,20 @@ class Solution:
                     if adj == 0:
                         queue.append(adj)
 
+    def plot(self):
+        fig, ax = plt.subplots()
+
+        for i in range(self.N + 1):
+            ax.axhline(i)
+
+        for i in range(self.M + 1):
+            ax.axvline(i)
+
+        ax.set_xlim(0, self.N-1)
+        ax.set_ylim(0, self.M-1)
+
+        plt.show()
+
 
 def main():
     N = 10 # height
@@ -87,6 +105,8 @@ def main():
     S = 10 # number of mines
 
     Board(N, M, S)
+    solution = Solution(N, M, S)
+    solution.plot()
 
 
 if __name__ == '__main__':
