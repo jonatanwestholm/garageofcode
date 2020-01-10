@@ -2,8 +2,13 @@ from itertools import product
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 
 import networkx as nx
+
+adj2col = {"0": "0.75", "1": "b", "2": "g", "3": "r",
+           "4": "y", "5": "c", "6": "m", "7": "m", "8": "m",
+           "*": "k", "N": "w"}
 
 def grid_8connect(N, M):
     G = nx.Graph()
@@ -28,6 +33,9 @@ def grid_8connect(N, M):
 
 class Board:
     def __init__(self, N, M, S):
+        self.N = N
+        self.M = M
+        self.S = S
         # init the grid
         self.G = grid_8connect(N, M)
         for node in self.G:
@@ -53,8 +61,32 @@ class Board:
             return self.G.nodes[node]["adj"]
 
     def get_0(self):
-        return np.random.choice([node for node in self.G 
-                                    if self.G.nodes[node]["adj"] == 0])
+        node_0s = [node for node in self.G 
+                    if self.G.nodes[node]["adj"] == 0 and not self.G.nodes[node]["mine"]]
+        return node_0s[np.random.randint(0, len(node_0s))]
+
+    def plot(self):
+        fig, ax = plt.subplots()
+
+        for i in range(self.N + 1):
+            ax.axhline(i, color="k")
+
+        for i in range(self.M + 1):
+            ax.axvline(i, color="k")
+
+
+        ax.set_xlim(0, self.N)
+        ax.set_ylim(0, self.M)
+
+        for i in range(self.N):
+            for j in range(self.M):
+                adj = self.open((i, j))
+                adj = str(adj) if adj is not None else "*"
+                ax.text(j+0.4, i+0.3, adj, color=adj2col[adj], fontweight="bold")
+
+        patch = Rectangle((0, 0), self.M, self.N, facecolor=adj2col["0"])
+        ax.add_patch(patch)
+
 
 class Solution:
     def __init__(self, N, M, S):
@@ -63,7 +95,7 @@ class Solution:
         self.S = S
         self.G = grid_8connect(N, M)
         for node in self.G:
-            #self.G.nodes[node]["mine"] = None
+            self.G.nodes[node]["mine"] = None
             self.G.nodes[node]["adj"] = None
 
     def update(self, node, adj):
@@ -82,21 +114,34 @@ class Solution:
                     adj = board.open(neigh)
                     self.update(neigh, adj)
                     if adj == 0:
-                        queue.append(adj)
+                        queue.append(neigh)
+
+    def open(self, node):
+        if self.G.nodes[node]["mine"]:
+            return "*"
+        else:
+            return self.G.nodes[node]["adj"]
 
     def plot(self):
         fig, ax = plt.subplots()
 
         for i in range(self.N + 1):
-            ax.axhline(i)
+            ax.axhline(i, color="k")
 
         for i in range(self.M + 1):
-            ax.axvline(i)
+            ax.axvline(i, color="k")
 
-        ax.set_xlim(0, self.N-1)
-        ax.set_ylim(0, self.M-1)
+        ax.set_xlim(0, self.N)
+        ax.set_ylim(0, self.M)
 
-        plt.show()
+        for i in range(self.N):
+            for j in range(self.M):
+                adj = self.open((i, j))
+                adj = str(adj) if adj is not None else "N"
+                ax.text(j+0.4, i+0.3, adj, color=adj2col[adj], fontweight="bold")
+
+        patch = Rectangle((0, 0), self.M, self.N, facecolor=adj2col["0"])
+        ax.add_patch(patch)
 
 
 def main():
@@ -104,9 +149,16 @@ def main():
     M = 10 # width
     S = 10 # number of mines
 
-    Board(N, M, S)
+    board = Board(N, M, S)
     solution = Solution(N, M, S)
+    node_0 = board.get_0()
+    print(node_0)
+    solution.exhaust_0(board, node_0)
+
+    board.plot()
     solution.plot()
+
+    plt.show()
 
 
 if __name__ == '__main__':
