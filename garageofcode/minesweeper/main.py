@@ -63,7 +63,7 @@ class Board(nx.Graph):
 
     def open(self, node):
         if self.nodes[node]["mine"]:
-            print("We opened a mine!")
+            print("We opened a mine!", node)
             return None
         else:
             return self.nodes[node]["adj"]
@@ -103,32 +103,32 @@ class Board(nx.Graph):
 
     def exhaust_1(self, board):
         while True:
-            unchecked = self.nodes
-            opened = []
-            for node in unchecked:
+            for node in self.nodes:
                 if self.nodes[node]["adj"] is None:
                     continue
 
                 if not self.num_unknown_neigh(node):
                     continue
 
+                if self.nodes[node]["adj"] == self.num_mine_neigh(node) + self.num_unknown_neigh(node):
+                    # All remaining adjacent tiles are mines
+                    for neigh in self[node]:
+                        if self.nodes[neigh]["mine"] is None:
+                            #print("mine:", node, "-->", neigh)
+                            self.update(neigh, None)
+                    break
+
                 if self.nodes[node]["adj"] == self.num_mine_neigh(node):
                     # We have found all adjacent mines
                     for neigh in self[node]:
-                        if self.nodes[node]["mine"] is None:
-                            self.update(neigh, None)
-                            opened.append(neigh)
-
-                if self.nodes[node]["adj"] == self.num_unknown_neigh(node):
-                    # All remaining adjacent tiles are mines
-                    for neigh in self[node]:
-                        if self.nodes[node]["mine"] is None:
+                        if self.nodes[neigh]["mine"] is None:
                             adj = board.open(neigh)
                             self.update(neigh, adj)
-                            opened.append(neigh)
+                            if adj is None:
+                                return
+                    break
 
-            print(opened)
-            if not opened:
+            else:
                 break
 
 
@@ -158,27 +158,32 @@ class Board(nx.Graph):
 
         patch = Rectangle((0, 0), self.M, self.N, facecolor=adj2col["0"])
         ax.add_patch(patch)
+        return ax
 
 
 def main():
     np.random.seed(0)
-    
-    N = 10 # height
-    M = 10 # width
-    S = 10 # number of mines
+
+    N = 20 # height
+    M = 20 # width
+    S = 100 # number of mines
 
     board = Board(N, M, S)
     board.populate()
     solution = Board(N, M, S)
     node_0 = board.get_0()
 
-    board.plot()
+    ax = board.plot()
+    ax.set_title("Ground Truth")
 
     solution.exhaust_0(board, node_0)
-    solution.plot()
+    #ax = solution.plot()
+    #ax.set_title("Exhaust 0")
 
     solution.exhaust_1(board)
-    solution.plot()
+    ax = solution.plot()
+    ax.set_title("Exhaust 1")
+
 
     plt.show()
 
