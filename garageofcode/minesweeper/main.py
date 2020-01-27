@@ -31,75 +31,60 @@ def grid_8connect(N, M):
     #exit(0)
     return G
 
-class Board:
+class Board(nx.Graph):
     def __init__(self, N, M, S):
+        super().__init__()
         self.N = N
         self.M = M
         self.S = S
         # init the grid
-        self.G = grid_8connect(N, M)
-        for node in self.G:
-            self.G.nodes[node]["mine"] = 0
+        G = grid_8connect(N, M)
+        self.add_edges_from(G.edges)
+        for node in self:
+            self.nodes[node]["mine"] = None
+            self.nodes[node]["adj"]  = None
+
+    def populate(self):
+        for node in self:
+            self.nodes[node]["mine"] = 0
         
         # add the mines
-        locs = list(product(range(N), range(M)))
-        mines = np.random.choice(N*M, S, replace=False)
+        locs = list(product(range(self.N), range(self.M)))
+        mines = np.random.choice(self.N*self.M, self.S, replace=False)
         mines = [locs[idx] for idx in mines]
         for mine in mines:
-            self.G.nodes[mine]["mine"] = 1
+            self.nodes[mine]["mine"] = 1
 
         # count neighbouring mines
-        for node in self.G:
-            adjacent_mines = sum([self.G.nodes[neigh]["mine"] 
-                                    for neigh in self.G[node]])
-            self.G.nodes[node]["adj"] = adjacent_mines
+        for node in self:
+            adjacent_mines = sum([self.nodes[neigh]["mine"] 
+                                    for neigh in self[node]])
+            self.nodes[node]["adj"] = adjacent_mines
 
     def open(self, node):
-        if self.G.nodes[node]["mine"]:
+        if self.nodes[node]["mine"]:
+            print("We opened a mine!")
             return None
         else:
-            return self.G.nodes[node]["adj"]
-
-    def get_0(self):
-        node_0s = [node for node in self.G 
-                    if self.G.nodes[node]["adj"] == 0 and not self.G.nodes[node]["mine"]]
-        return node_0s[np.random.randint(0, len(node_0s))]
-
-    def plot(self):
-        fig, ax = plt.subplots()
-
-        for i in range(self.N + 1):
-            ax.axhline(i, color="k")
-
-        for i in range(self.M + 1):
-            ax.axvline(i, color="k")
-
-
-        ax.set_xlim(0, self.N)
-        ax.set_ylim(0, self.M)
-
-        for i in range(self.N):
-            for j in range(self.M):
-                adj = self.open((i, j))
-                adj = str(adj) if adj is not None else "*"
-                ax.text(j+0.4, i+0.3, adj, color=adj2col[adj], fontweight="bold")
-
-        patch = Rectangle((0, 0), self.M, self.N, facecolor=adj2col["0"])
-        ax.add_patch(patch)
-
-
-class Solution:
-    def __init__(self, N, M, S):
-        self.N = N
-        self.M = M
-        self.S = S
-        self.G = grid_8connect(N, M)
-        for node in self.G:
-            self.G.nodes[node]["mine"] = None
-            self.G.nodes[node]["adj"] = None
+            return self.nodes[node]["adj"]
 
     def update(self, node, adj):
-        self.G.nodes[node]["adj"] = adj
+        if adj is None:
+            self.nodes[node]["mine"] = 1
+        else:
+            self.nodes[node]["mine"] = 0
+            self.nodes[node]["adj"]  = adj
+
+    def get_0(self):
+        node_0s = [node for node in self
+                    if self.nodes[node]["adj"] == 0 and not self.nodes[node]["mine"]]
+        return node_0s[np.random.randint(0, len(node_0s))]        
+
+    def num_unknown_neigh(self, node):
+        return sum([self.nodes[neigh]["mine"] is None for neigh in self[node]])
+
+    def num_mine_neigh(self, node):
+        return sum([self.nodes[neigh]["mine"] == 1 for neigh in self[node]])
 
     def exhaust_0(self, board, node_0):
         # given a node with 0 adjacent mines,
@@ -109,58 +94,43 @@ class Solution:
         queue = [node_0]
         while queue:
             node = queue.pop()
-            for neigh in self.G[node]:
-                if self.G.nodes[neigh]["adj"] is None:
+            for neigh in self[node]:
+                if self.nodes[neigh]["adj"] is None:
                     adj = board.open(neigh)
                     self.update(neigh, adj)
                     if adj == 0:
                         queue.append(neigh)
 
     def exhaust_1(self, board):
-        unchecked = self.G.nodes
         while True:
+            unchecked = self.nodes
             opened = []
             for node in unchecked:
-                if self.adj(node) is None:
+                if self.nodes[node]["adj"] is None:
                     continue
 
                 if not self.num_unknown_neigh(node):
                     continue
 
-                if self.adj(node) == self.num_mine_neigh(node):
-                    for neigh in self.G[node]:
-                        if self.mine(neigh) is None:
-                            pass # fuck. need to find a better representation of unknown
-                        adj = board.open(node)
-                        if adj is None:
-                            print("We hit a mine!")
-                        self.update(node, adj)
+                if self.nodes[node]["adj"] == self.num_mine_neigh(node):
+                    # We have found all adjacent mines
+                    for neigh in self[node]:
+                        if self.nodes[node]["mine"] is None:
+                            self.update(neigh, None)
+                            opened.append(neigh)
 
+                if self.nodes[node]["adj"] == self.num_unknown_neigh(node):
+                    # All remaining adjacent tiles are mines
+                    for neigh in self[node]:
+                        if self.nodes[node]["mine"] is None:
+                            adj = board.open(neigh)
+                            self.update(neigh, adj)
+                            opened.append(neigh)
 
-
-
-            if opened:
-                unchecked = opened
-            else:
+            print(opened)
+            if not opened:
                 break
 
-    def adj(self, node):
-        return self.G.nodes[node]["adj"]
-
-    def mine(self, node):
-        return self.G.nodes[node]["mine"]        
-
-    def num_unknown_neigh(self, node):
-        return sum([self.adj(node) is None for neigh in self.G[node]])
-
-    def num_mine_neigh(self, node):
-        return sum([self.mine(node) == 1 for neigh in self.G[node]])
-
-    def open(self, node):
-        if self.mine(node):
-            return "*"
-        else:
-            return self.adj(node)
 
     def plot(self):
         fig, ax = plt.subplots()
@@ -176,26 +146,38 @@ class Solution:
 
         for i in range(self.N):
             for j in range(self.M):
-                adj = self.open((i, j))
-                adj = str(adj) if adj is not None else "N"
-                ax.text(j+0.4, i+0.3, adj, color=adj2col[adj], fontweight="bold")
+                mine = self.nodes[(i, j)]["mine"]
+                adj = self.nodes[(i, j)]["adj"]
+                if mine:
+                    s = "*"
+                elif adj is not None:
+                    s = str(adj)
+                else:
+                    s = "N"
+                ax.text(j+0.4, i+0.3, s, color=adj2col[s], fontweight="bold")
 
         patch = Rectangle((0, 0), self.M, self.N, facecolor=adj2col["0"])
         ax.add_patch(patch)
 
 
 def main():
+    np.random.seed(0)
+    
     N = 10 # height
     M = 10 # width
     S = 10 # number of mines
 
     board = Board(N, M, S)
-    solution = Solution(N, M, S)
+    board.populate()
+    solution = Board(N, M, S)
     node_0 = board.get_0()
-    print(node_0)
-    solution.exhaust_0(board, node_0)
 
     board.plot()
+
+    solution.exhaust_0(board, node_0)
+    solution.plot()
+
+    solution.exhaust_1(board)
     solution.plot()
 
     plt.show()
