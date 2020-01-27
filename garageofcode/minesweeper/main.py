@@ -116,11 +116,51 @@ class Solution:
                     if adj == 0:
                         queue.append(neigh)
 
+    def exhaust_1(self, board):
+        unchecked = self.G.nodes
+        while True:
+            opened = []
+            for node in unchecked:
+                if self.adj(node) is None:
+                    continue
+
+                if not self.num_unknown_neigh(node):
+                    continue
+
+                if self.adj(node) == self.num_mine_neigh(node):
+                    for neigh in self.G[node]:
+                        if self.mine(neigh) is None:
+                            pass # fuck. need to find a better representation of unknown
+                        adj = board.open(node)
+                        if adj is None:
+                            print("We hit a mine!")
+                        self.update(node, adj)
+
+
+
+
+            if opened:
+                unchecked = opened
+            else:
+                break
+
+    def adj(self, node):
+        return self.G.nodes[node]["adj"]
+
+    def mine(self, node):
+        return self.G.nodes[node]["mine"]        
+
+    def num_unknown_neigh(self, node):
+        return sum([self.adj(node) is None for neigh in self.G[node]])
+
+    def num_mine_neigh(self, node):
+        return sum([self.mine(node) == 1 for neigh in self.G[node]])
+
     def open(self, node):
-        if self.G.nodes[node]["mine"]:
+        if self.mine(node):
             return "*"
         else:
-            return self.G.nodes[node]["adj"]
+            return self.adj(node)
 
     def plot(self):
         fig, ax = plt.subplots()
