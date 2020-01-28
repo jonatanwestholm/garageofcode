@@ -1,3 +1,4 @@
+import time
 from itertools import product
 
 import numpy as np
@@ -12,6 +13,7 @@ adj2col = {"0": "0.25", "1": "b", "2": "g", "3": "r",
            "*": "k", "N": "0.75"}
 
 fig, ax = plt.subplots()
+t0 = time.time()
 
 def flatten(lst):
     return [elem for sublist in lst for elem in sublist]
@@ -107,10 +109,21 @@ class Board(nx.Graph):
     def num_mine_neigh(self, node):
         return sum([self.nodes[neigh]["mine"] == 1 for neigh in self[node]])
 
+    def num_mines_total(self):
+        return sum([self.nodes[node]["mine"] == 1 for node in self])
+
+    def num_opened_total(self):
+        return sum([self.nodes[node]["adj"] is not None for node in self])
+
+    def is_done(self):
+        return self.num_opened_total() == self.N * self.M - self.S
+
     def exhaust_0(self, board, node_0):
         # given a node with 0 adjacent mines,
         # open all adjacents,
         # and do this recursively
+        adj = board.open(node_0)
+        self.update(node_0, adj)
 
         queue = [node_0]
         while queue:
@@ -269,14 +282,19 @@ def onclick(event):
 
     plt.cla()
     solution.plot(fig, ax)
+    ax.set_title("Mines: {0:d}/{1:d}".format(solution.num_mines_total(), solution.S))
     plt.draw()
+
+    if solution.is_done():
+        print("Done!")
+        print("Time: {0:.1f}s".format(time.time() - t0))
 
 def main():
     #np.random.seed(0)
     # beginner: 8, 8, 10
     # intermediate: 16, 16, 40
     # expert: 16, 30, 99
-    level = 2
+    level = 1
 
     if level == 0: # beginner
         N, M, S = 8, 8, 10
@@ -308,7 +326,11 @@ def main():
 
     solution.exhaust_1(board)
     solution.plot(fig, ax)
+    ax.set_title("Mines: {0:d}/{1:d}".format(solution.num_mines_total(), solution.S))
     #ax.set_title("Exhaust 1")
+    if solution.is_done():
+        print("Done!")
+        print("Time: {0:.1f}s".format(time.time() - t0))
 
 
     fig.canvas.mpl_connect('button_press_event', onclick)
