@@ -313,11 +313,11 @@ def onclick(event):
         print("Time: {0:.1f}s".format(time.time() - t0))
 
 def main():
-    np.random.seed(10)
+    #np.random.seed(3)
     # beginner: 8, 8, 10
     # intermediate: 16, 16, 40
     # expert: 16, 30, 99
-    level = 300
+    level = 3
 
     if level == 1: # beginner
         N, M, S = 8, 8, 10
@@ -357,7 +357,6 @@ def main():
     if solution.is_done():
         print("Done!")
         print("Time: {0:.1f}s".format(time.time() - t0))
-
 
     fig.canvas.mpl_connect('button_press_event', onclick)
 
