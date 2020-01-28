@@ -13,6 +13,9 @@ adj2col = {"0": "0.25", "1": "b", "2": "g", "3": "r",
 
 fig, ax = plt.subplots()
 
+def flatten(lst):
+    return [elem for sublist in lst for elem in sublist]
+
 def grid_8connect(N, M):
     G = nx.Graph()
     for n in range(N):
@@ -40,12 +43,17 @@ class Board(nx.Graph):
         self.N = N
         self.M = M
         self.S = S
+        self.use_sat = False
         # init the grid
         G = grid_8connect(N, M)
         self.add_edges_from(G.edges)
         for node in self:
             self.nodes[node]["mine"] = None
             self.nodes[node]["adj"]  = None
+
+    def import_sat(self):
+        global SugarRush
+        from sugarrush.solver import SugarRush
 
     def populate(self):
         for node in self:
@@ -90,8 +98,11 @@ class Board(nx.Graph):
                     if self.nodes[node]["adj"] == 0 and not self.nodes[node]["mine"]]
         return node_0s[np.random.randint(0, len(node_0s))]        
 
+    def get_unknown_neigh(self, node):
+        return [neigh for neigh in self[node] if self.nodes[neigh]["mine"] is None]
+
     def num_unknown_neigh(self, node):
-        return sum([self.nodes[neigh]["mine"] is None for neigh in self[node]])
+        return len(self.get_unknown_neigh(node))
 
     def num_mine_neigh(self, node):
         return sum([self.nodes[neigh]["mine"] == 1 for neigh in self[node]])
@@ -120,7 +131,8 @@ class Board(nx.Graph):
                 if not self.num_unknown_neigh(node):
                     continue
 
-                if self.nodes[node]["adj"] == self.num_mine_neigh(node) + self.num_unknown_neigh(node):
+                if self.nodes[node]["adj"] == self.num_mine_neigh(node) \
+                                              + self.num_unknown_neigh(node):
                     # All remaining adjacent tiles are mines
                     for neigh in self[node]:
                         if self.nodes[neigh]["mine"] is None:
@@ -141,6 +153,66 @@ class Board(nx.Graph):
             else:
                 break
 
+    def exhaust_inf(self, board):
+        if not self.use_sat:
+            self.use_sat = True
+            self.import_sat()
+
+        while True:
+            self.exhaust_1(board)
+
+            # build SAT model
+            # node2var dict
+            # find known tiles (opened + flagged)
+            # dilute once, reduce original, remaining is border
+            # one SAT var for each tile on border
+            # one cardinality constraint per opened tile adjacent to border
+            # loop through SAT vars
+            # for each var, try assumption that var = 0, then var = 1
+            # if either assumption fails to be satisfiable, we are certain of the other
+            # when finding a certainty, open/flag, then jump to loop again
+            # else: break
+
+            solver = SugarRush()
+            
+            known_tiles = set([node for node in self if self.nodes[node]["mine"] is not None])
+            known_dilute = set(flatten([self[node] for node in known_tiles]))
+            rim = known_dilute - known_tiles
+
+            unknown_tiles = set(self.nodes) - known_tiles
+            unknown_dilute = set(flatten([self[node] for node in unknown_tiles]))
+            front = unknown_dilute - unknown_tiles
+
+            node2var = {node: solver.var() for node in rim}
+            
+            # cardinality constraints
+            for node in front:
+                if self.nodes[node]["adj"] is None: # mine
+                    continue
+
+                unknown_neigh = self.get_unknown_neigh(node)
+                unknown_neigh = [node2var[neigh] for neigh in unknown_neigh]
+                adj = self.nodes[node]["adj"]
+                flagged_neigh = self.num_mine_neigh(node)
+                remaining_mines = adj - flagged_neigh
+                solver.add(solver.equals(unknown_neigh, bound=remaining_mines))
+
+            # no global constraint for now
+
+            for node in rim:
+                var = node2var[node]
+                if not solver.solve(assumptions=[var]): 
+                    # assumption that it's a mine failed -
+                    # must be free
+                    self.sweep(board, node)
+                    break
+                if not solver.solve(assumptions=[-var]):
+                    # assumption that it's free failed - 
+                    # must be a mine
+                    self.flag(node)
+                    break
+            else:
+                break
 
     def plot(self, fig=None, ax=None):
         if fig is None:
@@ -183,11 +255,15 @@ def onclick(event):
 
     if button == MouseButton.LEFT:
         solution.sweep(board, node)
-        print("sweeped:", solution.nodes[node]["adj"])
+        print("swept:", solution.nodes[node]["adj"])
     elif button == MouseButton.RIGHT:
         solution.flag(node)
         #print(solution.nodes[node]["mine"])
         print("flagged")
+    elif button == MouseButton.MIDDLE:
+        # run SAT
+        solution.exhaust_inf(board)
+        print("ran exhaust_inf")
 
     solution.exhaust_1(board)
 
@@ -197,10 +273,24 @@ def onclick(event):
 
 def main():
     #np.random.seed(0)
+    # beginner: 8, 8, 10
+    # intermediate: 16, 16, 40
+    # expert: 16, 30, 99
+    level = 2
 
-    N = 16 # height
-    M = 30 # width
-    S = 99 # number of mines
+    if level == 0: # beginner
+        N, M, S = 8, 8, 10
+    elif level == 1: # intermediate
+        N, M, S = 16, 16, 40
+    elif level == 2: # expert
+        N, M, S = 16, 30, 99
+    else: 
+        # between intermediate and expert
+        N, M, S = 15, 25, 72
+
+    #N = 16 # height
+    #M = 16 # width
+    #S = 40 # number of mines
 
     global board
     board = Board(N, M, S)
