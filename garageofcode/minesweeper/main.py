@@ -210,7 +210,13 @@ class Board(nx.Graph):
                 remaining_mines = adj - flagged_neigh
                 solver.add(solver.equals(unknown_neigh, bound=remaining_mines))
 
-            # no global constraint for now
+            # global constraint
+            all_vars = [var for var in node2var.values()]
+            remaining_mines = self.S - self.num_mines_total()
+            if len(rim) == len(unknown_tiles):
+                solver.add(solver.equals(all_vars, bound=remaining_mines))
+            else:
+                solver.add(solver.atmost(all_vars, bound=remaining_mines))
 
             for node in rim:
                 var = node2var[node]
@@ -294,17 +300,19 @@ def main():
     # beginner: 8, 8, 10
     # intermediate: 16, 16, 40
     # expert: 16, 30, 99
-    level = 2
+    level = 2.5
 
-    if level == 0: # beginner
+    if level == 1: # beginner
         N, M, S = 8, 8, 10
-    elif level == 1: # intermediate
+    elif level == 2: # intermediate
         N, M, S = 16, 16, 40
-    elif level == 2: # expert
+    elif level == 2.5# between intermediate and expert
+        N, M, S = 15, 25, 72
+    elif level == 3: # expert
         N, M, S = 16, 30, 99
     else: 
-        # between intermediate and expert
-        N, M, S = 15, 25, 72
+        # "The 300"
+        N, M, S = 30, 50, 300
 
     #N = 16 # height
     #M = 16 # width
