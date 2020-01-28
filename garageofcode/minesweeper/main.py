@@ -3,12 +3,15 @@ from itertools import product
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+from matplotlib.backend_bases import MouseButton
 
 import networkx as nx
 
-adj2col = {"0": "0.75", "1": "b", "2": "g", "3": "r",
+adj2col = {"0": "0.25", "1": "b", "2": "g", "3": "r",
            "4": "y", "5": "c", "6": "m", "7": "m", "8": "m",
-           "*": "k", "N": "w"}
+           "*": "k", "N": "0.75"}
+
+fig, ax = plt.subplots()
 
 def grid_8connect(N, M):
     G = nx.Graph()
@@ -75,6 +78,13 @@ class Board(nx.Graph):
             self.nodes[node]["mine"] = 0
             self.nodes[node]["adj"]  = adj
 
+    def sweep(self, board, node):
+        adj = board.open(node)
+        self.update(node, adj)
+
+    def flag(self, node):
+        self.nodes[node]["mine"] = 1
+
     def get_0(self):
         node_0s = [node for node in self
                     if self.nodes[node]["adj"] == 0 and not self.nodes[node]["mine"]]
@@ -132,8 +142,9 @@ class Board(nx.Graph):
                 break
 
 
-    def plot(self):
-        fig, ax = plt.subplots()
+    def plot(self, fig=None, ax=None):
+        if fig is None:
+            fig, ax = plt.subplots()
 
         for i in range(self.N + 1):
             ax.axhline(i, color="k")
@@ -141,8 +152,8 @@ class Board(nx.Graph):
         for i in range(self.M + 1):
             ax.axvline(i, color="k")
 
-        ax.set_xlim(0, self.N)
-        ax.set_ylim(0, self.M)
+        ax.set_xlim(0, self.M)
+        ax.set_ylim(0, self.N)
 
         for i in range(self.N):
             for j in range(self.M):
@@ -156,37 +167,63 @@ class Board(nx.Graph):
                     s = "N"
                 ax.text(j+0.4, i+0.3, s, color=adj2col[s], fontweight="bold")
 
-        patch = Rectangle((0, 0), self.M, self.N, facecolor=adj2col["0"])
+        patch = Rectangle((0, 0), self.M, self.N, facecolor=adj2col["N"])
         ax.add_patch(patch)
-        return ax
+        return fig, ax
 
+def onclick(event):
+    i = event.ydata
+    j = event.xdata
+    if i is None or not (0 <= i <= solution.N):
+        return
+    if j is None or not (0 <= j <= solution.M):
+        return 
+    node = (int(i), int(j))
+    button = event.button
+
+    if button == MouseButton.LEFT:
+        solution.sweep(board, node)
+        print("sweeped:", solution.nodes[node]["adj"])
+    elif button == MouseButton.RIGHT:
+        solution.flag(node)
+        #print(solution.nodes[node]["mine"])
+        print("flagged")
+
+    solution.exhaust_1(board)
+
+    plt.cla()
+    solution.plot(fig, ax)
+    plt.draw()
 
 def main():
-    np.random.seed(0)
+    #np.random.seed(0)
 
-    N = 20 # height
-    M = 20 # width
-    S = 100 # number of mines
+    N = 16 # height
+    M = 30 # width
+    S = 99 # number of mines
 
+    global board
     board = Board(N, M, S)
     board.populate()
+    global solution
     solution = Board(N, M, S)
     node_0 = board.get_0()
 
-    ax = board.plot()
-    ax.set_title("Ground Truth")
+    #fig_board, ax_board = board.plot()
+    #ax_board.set_title("Ground Truth")
 
     solution.exhaust_0(board, node_0)
     #ax = solution.plot()
     #ax.set_title("Exhaust 0")
 
     solution.exhaust_1(board)
-    ax = solution.plot()
-    ax.set_title("Exhaust 1")
+    solution.plot(fig, ax)
+    #ax.set_title("Exhaust 1")
 
+
+    fig.canvas.mpl_connect('button_press_event', onclick)
 
     plt.show()
-
 
 if __name__ == '__main__':
     main()
