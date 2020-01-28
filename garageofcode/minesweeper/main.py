@@ -262,6 +262,23 @@ class Board(nx.Graph):
         ax.add_patch(patch)
         return fig, ax
 
+
+def get_workable(N, M, S):
+    i = 0
+    while True:
+        board = Board(N, M, S)
+        board.populate()
+        solution = Board(N, M, S)
+        node_0 = board.get_0()
+        solution.exhaust_0(board, node_0)
+        solution.exhaust_inf(board)
+        if solution.is_done():
+            return board
+        else:
+            print("unworkable", i)
+        i += 1
+
+
 def onclick(event):
     i = event.ydata
     j = event.xdata
@@ -296,17 +313,17 @@ def onclick(event):
         print("Time: {0:.1f}s".format(time.time() - t0))
 
 def main():
-    #np.random.seed(0)
+    np.random.seed(10)
     # beginner: 8, 8, 10
     # intermediate: 16, 16, 40
     # expert: 16, 30, 99
-    level = 2.5
+    level = 300
 
     if level == 1: # beginner
         N, M, S = 8, 8, 10
     elif level == 2: # intermediate
         N, M, S = 16, 16, 40
-    elif level == 2.5# between intermediate and expert
+    elif level == 2.5: # between intermediate and expert
         N, M, S = 15, 25, 72
     elif level == 3: # expert
         N, M, S = 16, 30, 99
@@ -319,8 +336,9 @@ def main():
     #S = 40 # number of mines
 
     global board
-    board = Board(N, M, S)
-    board.populate()
+    board = get_workable(N, M, S)
+    #board = Board(N, M, S)
+    #board.populate()
     global solution
     solution = Board(N, M, S)
     node_0 = board.get_0()
