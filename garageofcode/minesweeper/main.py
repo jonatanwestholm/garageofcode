@@ -9,7 +9,7 @@ from matplotlib.backend_bases import MouseButton
 import networkx as nx
 
 adj2col = {"0": "0.25", "1": "b", "2": "g", "3": "r",
-           "4": "y", "5": "c", "6": "m", "7": "m", "8": "m",
+           "4": np.array([1, 1, 0.5]), "5": "c", "6": "m", "7": "m", "8": "m",
            "*": "k", "N": "0.75"}
 
 fig, ax = plt.subplots()
@@ -294,7 +294,7 @@ def main():
     # beginner: 8, 8, 10
     # intermediate: 16, 16, 40
     # expert: 16, 30, 99
-    level = 1
+    level = 2
 
     if level == 0: # beginner
         N, M, S = 8, 8, 10
