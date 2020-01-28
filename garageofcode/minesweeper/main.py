@@ -273,7 +273,7 @@ def get_workable(N, M, S):
         solution.exhaust_0(board, node_0)
         solution.exhaust_inf(board)
         if solution.is_done():
-            return board
+            return board, node_0
         else:
             print("unworkable", i)
         i += 1
@@ -317,7 +317,7 @@ def main():
     # beginner: 8, 8, 10
     # intermediate: 16, 16, 40
     # expert: 16, 30, 99
-    level = 3
+    level = 2.5
 
     if level == 1: # beginner
         N, M, S = 8, 8, 10
@@ -336,12 +336,12 @@ def main():
     #S = 40 # number of mines
 
     global board
-    board = get_workable(N, M, S)
+    board, node_0 = get_workable(N, M, S)
     #board = Board(N, M, S)
     #board.populate()
     global solution
     solution = Board(N, M, S)
-    node_0 = board.get_0()
+    #node_0 = board.get_0()
 
     #fig_board, ax_board = board.plot()
     #ax_board.set_title("Ground Truth")
