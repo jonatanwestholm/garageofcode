@@ -313,11 +313,11 @@ def onclick(event):
         print("Time: {0:.1f}s".format(time.time() - t0))
 
 def main():
-    #np.random.seed(3)
+    np.random.seed(45)
     # beginner: 8, 8, 10
     # intermediate: 16, 16, 40
     # expert: 16, 30, 99
-    level = 2.5
+    level = 3
 
     if level == 1: # beginner
         N, M, S = 8, 8, 10
@@ -329,7 +329,7 @@ def main():
         N, M, S = 16, 30, 99
     else: 
         # "The 300"
-        N, M, S = 30, 50, 300
+        N, M, S = 30, 50, 325
 
     #N = 16 # height
     #M = 16 # width
