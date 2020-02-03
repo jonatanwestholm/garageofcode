@@ -1,5 +1,5 @@
 import time
-from itertools import product
+from itertools import product, chain
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,8 +8,10 @@ from matplotlib.backend_bases import MouseButton
 
 import networkx as nx
 
-adj2col = {"0": "0.25", "1": "b", "2": "g", "3": "r",
+adj2col = {"0": "0.5", "1": "b", "2": "g", "3": "r",
            "4": np.array([1, 1, 0.5]), "5": "c", "6": "m", "7": "m", "8": "m",
+           "-1": "r", "-2": "r", "-3": "r", "-4": "r", 
+           "-5": "r", "-6": "r", "-7": "r", "-8": "r",
            "*": "k", "N": "0.75"}
 
 fig, ax = plt.subplots()
@@ -135,7 +137,17 @@ class Board(nx.Graph):
                     if adj == 0:
                         queue.append(neigh)
 
-    def exhaust_1(self, board):
+    def exhaust_1(self, board, center=None):
+        '''
+        if center is None:
+            nodes = self.nodes
+        else:
+            nodes = set(self[center])
+            nodes.add(center)
+            nodes = set(flatten([self[node] for node in nodes]))
+            nodes = set(flatten([self[node] for node in nodes]))
+        '''
+
         while True:
             for node in self.nodes:
                 if self.nodes[node]["adj"] is None:
@@ -151,6 +163,9 @@ class Board(nx.Graph):
                         if self.nodes[neigh]["mine"] is None:
                             #print("mine:", node, "-->", neigh)
                             self.update(neigh, None)
+                    if center is not None:
+                        nodes.update(list(self[node]))
+                        nodes.update(flatten([self[nd] for nd in self[node]]))
                     break
 
                 if self.nodes[node]["adj"] == self.num_mine_neigh(node):
@@ -161,6 +176,9 @@ class Board(nx.Graph):
                             self.update(neigh, adj)
                             if adj is None:
                                 return
+                    if center is not None:
+                        nodes.update(list(self[node]))
+                        nodes.update(flatten([self[nd] for nd in self[node]]))
                     break
 
             else:
@@ -248,12 +266,15 @@ class Board(nx.Graph):
 
         for i in range(self.N):
             for j in range(self.M):
-                mine = self.nodes[(i, j)]["mine"]
-                adj = self.nodes[(i, j)]["adj"]
+                node = (i, j)
+                mine = self.nodes[node]["mine"]
+                adj = self.nodes[node]["adj"]
                 if mine:
                     s = "*"
                 elif adj is not None:
-                    s = str(adj)
+                    #s = str(adj)
+                    rem = adj - self.num_mine_neigh(node)
+                    s = str(rem)
                 else:
                     s = "N"
                 ax.text(j+0.4, i+0.3, s, color=adj2col[s], fontweight="bold")
@@ -313,11 +334,13 @@ def onclick(event):
         print("Time: {0:.1f}s".format(time.time() - t0))
 
 def main():
-    np.random.seed(45)
-    # beginner: 8, 8, 10
-    # intermediate: 16, 16, 40
-    # expert: 16, 30, 99
-    level = 3
+    np.random.seed(0)
+    # good expert: 52, 56 (global), 58 (tricky), 
+    #  64 (corridor), 68 (two moves), 72 (tricky extension), 
+    #  74 (long), 75 (global), 78 (trivially solved!), 79
+    #  89 (simple opening), 90 (hard beginning), 92 (good tiledom),
+    #  
+    level = 300
 
     if level == 1: # beginner
         N, M, S = 8, 8, 10
@@ -327,6 +350,8 @@ def main():
         N, M, S = 15, 25, 72
     elif level == 3: # expert
         N, M, S = 16, 30, 99
+    elif level == 4: # expert plus
+        N, M, S = 16, 30, 108
     else: 
         # "The 300"
         N, M, S = 30, 50, 325
