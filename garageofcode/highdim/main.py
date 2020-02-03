@@ -97,7 +97,7 @@ def get_visible(G, P, contour):
 
 def main():
     np.random.seed(0)
-    N = 4
+    N = 5
     num_iter = 100
     scale = np.sqrt(N) + 0.5
     P = ncube_corners(N).T * 2 - 1
