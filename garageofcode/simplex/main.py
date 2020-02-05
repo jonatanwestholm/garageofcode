@@ -35,7 +35,7 @@ def lp(A, b, c):
 
     print(T)
 
-    #basic = list(range(1, num_slack+1))
+    basic = list(range(1, num_slack+1))
 
     while True:
         pc = select_pivot_column(T[0, 1:])
@@ -51,16 +51,48 @@ def lp(A, b, c):
         T = pivot(T, pc, pr)
         print(T)
 
-        return
+        print("active var:", get_active_var(T[1:, pc]))
+        basic[get_active_var(T[1:, pc])] = pc
+        print("basic:", basic)
 
-    return collect_solution(T), T[0, -1]
+    return collect_solution(T, basic), -T[0, -1]
+
+
+def collect_solution(T, basic):
+    num_slack = len(basic)
+    num_vars = len(T[0]) - num_slack - 2
+    b = T[:, -1]
+
+    solution = np.zeros([num_vars])
+
+    for j in range(len(T[0, :-1])):
+        if j not in basic or j <= num_slack:
+            T[:, j] = 0
+
+    for i, var_row in enumerate(T[1:]):
+        if not sum(var_row[num_slack+1:-1]):
+            continue
+
+        ev = get_active_var(var_row[num_slack+1:-1])
+        print("ev:", ev)
+        print("var_row:", var_row)
+
+        solution[ev] = T[i + 1, -1] / T[i + 1, ev + num_slack + 1]
+
+    return solution
+
+
+def get_active_var(a):
+    return np.argmax(a)
 
 
 def pivot(T, pc, pr):
-    z_pc = T[0, pc]
-    pivot_row = T[pr, :]
-    pivot_row /= z_pc
-    T -= np.dot(T[:, pc].reshape([-1, 1]), pivot_row.reshape([1, -1]))
+    print("pc:", pc, "pr:", pr)
+    pe = T[pr, pc] # pivot element
+    pivot_row = T[pr, :] * 1.0 # stupid numpy copy gotcha
+    pivot_row /= pe
+    offset = np.dot(T[:, pc].reshape([-1, 1]), pivot_row.reshape([1, -1]))
+    T -= offset
     T[pr, :] = pivot_row
     return T
 
@@ -92,11 +124,11 @@ def select_pivot_row(Tc, b):
 
 
 def main():
-    A = np.array([[2, 1], [1, 2]])
-    b = np.array([[1], [1]])
+    A = np.array([[2, 1], [1, 2], [4, 4]])
+    b = np.array([[1], [1], [1]])
     c = np.array([1, 1])
 
-    lp(A, b, c)
+    print(lp(A, b, c))
 
 
 if __name__ == '__main__':
