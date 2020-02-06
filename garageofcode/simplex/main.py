@@ -6,6 +6,7 @@ def lp(A, b, c):
     such that
     Ax <= b
     x >= 0
+    b >= 0
     """
 
     # build a tableau T
@@ -35,25 +36,23 @@ def lp(A, b, c):
 
     print(T)
 
-    basic = list(range(1, num_slack+1))
+    basic = list(range(num_slack))
 
     while True:
         pc = select_pivot_column(T[0, 1:])
         if pc is None: # found optimum
             break
-        print("pc:", pc)
+        #print("pc:", pc)
 
         pr = select_pivot_row(T[1:, pc], T[1:, -1])
         if pr is None: # unbounded
             return None, np.inf
-        print("pr:", pr)
+        #print("pr:", pr)
 
         T = pivot(T, pc, pr)
         print(T)
 
-        print("active var:", get_active_var(T[1:, pc]))
-        basic[get_active_var(T[1:, pc])] = pc
-        print("basic:", basic)
+        basic[pr - 1] = pc
 
     return collect_solution(T, basic), -T[0, -1]
 
@@ -61,33 +60,21 @@ def lp(A, b, c):
 def collect_solution(T, basic):
     num_slack = len(basic)
     num_vars = len(T[0]) - num_slack - 2
-    b = T[:, -1]
+    b = T[1:, -1]
 
     solution = np.zeros([num_vars])
 
-    for j in range(len(T[0, :-1])):
-        if j not in basic or j <= num_slack:
-            T[:, j] = 0
-
-    for i, var_row in enumerate(T[1:]):
-        if not sum(var_row[num_slack+1:-1]):
+    for pr, pc in enumerate(basic):
+        if pc <= num_slack: # is a slack variable
             continue
 
-        ev = get_active_var(var_row[num_slack+1:-1])
-        print("ev:", ev)
-        print("var_row:", var_row)
-
-        solution[ev] = T[i + 1, -1] / T[i + 1, ev + num_slack + 1]
+        solution[pc - num_slack - 1] = T[pr + 1, -1] / T[pr + 1, pc]
 
     return solution
 
 
-def get_active_var(a):
-    return np.argmax(a)
-
-
 def pivot(T, pc, pr):
-    print("pc:", pc, "pr:", pr)
+    #print("pc:", pc, "pr:", pr)
     pe = T[pr, pc] # pivot element
     pivot_row = T[pr, :] * 1.0 # stupid numpy copy gotcha
     pivot_row /= pe
@@ -114,8 +101,8 @@ def select_pivot_row(Tc, b):
     Which ceiling are we going to hit our head in first?
     """
 
-    print(Tc)
-    if all(Tc <= 0): # can't select pivot row
+    #print(Tc)
+    if all(Tc <= 0): # no roof over our head - to the stars!
         return None
 
     ratios = [bi / Tci if Tci > 0 else np.inf for Tci, bi in zip(Tc, b)]
@@ -124,8 +111,8 @@ def select_pivot_row(Tc, b):
 
 
 def main():
-    A = np.array([[2, 1], [1, 2], [4, 4]])
-    b = np.array([[1], [1], [1]])
+    A = np.array([[2, 1], [1, 2]])
+    b = np.array([[1], [1]])
     c = np.array([1, 1])
 
     print(lp(A, b, c))
