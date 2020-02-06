@@ -1,6 +1,60 @@
 import numpy as np
 
-def lp(A, b, c):
+
+def pivot(T, pc, pr):
+    #print("pc:", pc, "pr:", pr)
+    pe = T[pr, pc] # pivot element
+    pivot_row = T[pr, :] * 1.0 # stupid numpy copy gotcha
+    pivot_row /= pe
+    offset = np.dot(T[:, pc].reshape([-1, 1]), pivot_row.reshape([1, -1]))
+    T -= offset
+    T[pr, :] = pivot_row
+    return T
+
+
+def select_pivot_column(z):
+    """
+    Pick one variable that increases the objective
+    """
+
+    for i, zi in enumerate(z):
+        if zi > 0:
+            return i + 1
+    else:
+        return None
+
+
+def select_pivot_row(Tc, b):
+    """
+    Which ceiling are we going to hit our head in first?
+    """
+
+    #print(Tc)
+    if all(Tc <= 0): # no roof over our head - to the stars!
+        return None
+
+    ratios = [bi / Tci if Tci > 0 else np.inf for Tci, bi in zip(Tc, b)]
+    #print("ratios:", ratios)
+    return np.argmin(ratios) + 1
+
+
+def collect_solution(T, basic):
+    num_slack = len(basic)
+    num_vars = len(T[0]) - num_slack - 2
+    b = T[1:, -1]
+
+    solution = np.zeros([num_vars])
+
+    for pr, pc in enumerate(basic):
+        if pc <= num_slack: # is a slack variable
+            continue
+
+        solution[pc - num_slack - 1] = T[pr + 1, -1] / T[pr + 1, pc]
+
+    return solution
+
+
+def lp_core(A, b, c):
     """
     maximize c * x 
     such that
@@ -56,58 +110,32 @@ def lp(A, b, c):
 
     return collect_solution(T, basic), -T[0, -1]
 
-
-def collect_solution(T, basic):
-    num_slack = len(basic)
-    num_vars = len(T[0]) - num_slack - 2
-    b = T[1:, -1]
-
-    solution = np.zeros([num_vars])
-
-    for pr, pc in enumerate(basic):
-        if pc <= num_slack: # is a slack variable
-            continue
-
-        solution[pc - num_slack - 1] = T[pr + 1, -1] / T[pr + 1, pc]
-
-    return solution
-
-
-def pivot(T, pc, pr):
-    #print("pc:", pc, "pr:", pr)
-    pe = T[pr, pc] # pivot element
-    pivot_row = T[pr, :] * 1.0 # stupid numpy copy gotcha
-    pivot_row /= pe
-    offset = np.dot(T[:, pc].reshape([-1, 1]), pivot_row.reshape([1, -1]))
-    T -= offset
-    T[pr, :] = pivot_row
-    return T
-
-
-def select_pivot_column(z):
+def find_feasible(A, b, c):
     """
-    Pick one variable that increases the objective
+    find a feasible solution to 
+    Ax <= b
+    x >= 0
+
+    and perform variable substitution so that
+    A'x' <= b'
+    x' >= 0
+    b' >= 0
+
+    also transform c to c', to preserve optimum
     """
 
-    for i, zi in enumerate(z):
-        if zi > 0:
-            return i + 1
-    else:
-        return None
+    pass
 
 
-def select_pivot_row(Tc, b):
+def lp(A, b, c):
     """
-    Which ceiling are we going to hit our head in first?
+    maximize c * x 
+    such that
+    Ax <= b
+    x >= 0
     """
 
-    #print(Tc)
-    if all(Tc <= 0): # no roof over our head - to the stars!
-        return None
-
-    ratios = [bi / Tci if Tci > 0 else np.inf for Tci, bi in zip(Tc, b)]
-    #print("ratios:", ratios)
-    return np.argmin(ratios) + 1
+    pass
 
 
 def main():
