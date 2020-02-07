@@ -117,7 +117,7 @@ def find_feasible(A, b, c):
     x >= 0
 
     and perform variable substitution so that
-    A'x' <= b'
+    Ax' <= b'
     x' >= 0
     b' >= 0
 
