@@ -121,7 +121,7 @@ def phase1(A, b, c):
     x' >= 0
     b' >= 0
 
-    also transform c to c', to preserve optimum
+    also transform c to c', to preserve optimum.
     """
 
     pass
