@@ -110,7 +110,7 @@ def lp_core(A, b, c):
 
     return collect_solution(T, basic), -T[0, -1]
 
-def find_feasible(A, b, c):
+def phase1(A, b, c):
     """
     find a feasible solution to 
     Ax <= b
