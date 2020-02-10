@@ -215,6 +215,8 @@ def lp(A, b, c):
     x >= 0
     """
 
+    num_constr, num_vars = A.shape
+
     x_bfs = phase1(A, b, c)
     if x_bfs is None:
         return None, None, 2 # infeasible
@@ -232,6 +234,8 @@ def lp(A, b, c):
     if x_opt is None:
         return None, np.inf, 3 # unbounded
 
+    x_opt = x_opt[:num_vars] - x_opt[-num_vars:]
+    x_opt = x_opt + x_bfs
     return x_opt, val, 0 # optimal
 
 
@@ -239,8 +243,11 @@ def main():
     global debug
     debug = False
 
-    test_cases = ["basic", "basic_2",
+    all_tests = ["basic", "basic_2", "basic_3",
+                 "basic_4",
                   "unbounded", "infeasible"]
+    test_cases = ["basic_4"]
+
     if "basic" in test_cases:
         A = np.array([[2, 1], [1, 2]])
         b = np.array([[1], [1]])
@@ -257,6 +264,23 @@ def main():
         x_opt, opt_val, status = lp(A, b, c)
         print(x_opt, opt_val, status2str[status])
 
+    if "basic_3" in test_cases:
+        A = np.array([[2, 1], [1, 2], [-2, -2]])
+        b = np.array([[1], [1], [-1]])
+        c = np.array([1, 1])
+        print("Should be OPTIMAL")
+        x_opt, opt_val, status = lp(A, b, c)
+        print(x_opt, opt_val, status2str[status])
+
+    if "basic_4" in test_cases:
+        A = np.array([[3, 1], [1, 3], [2, 3]])
+        b = np.array([[1], [1], [1]])
+        c = np.array([1, 1])
+        print("Should be OPTIMAL")
+        x_opt, opt_val, status = lp(A, b, c)
+        print(x_opt, opt_val, status2str[status])
+
+
     if "infeasible" in test_cases:
         A = np.array([[2, 1], [1, 2], [1, 1]])
         b = np.array([[1], [1], [-1]])
@@ -272,17 +296,6 @@ def main():
         print("Should be UNBOUNDED")
         x_opt, opt_val, status = lp(A, b, c)
         print(x_opt, opt_val, status2str[status])
-
-    #A = np.array([[2, 1], [1, 2], [1, 1]])
-    #b = np.array([[1], [1], [-1]])
-    #A = np.array([[-1, -1]])
-    #b = np.array([[-1]])
-    #A = np.array([[2, 1], [1, 2], [4, 4]])
-    #b = np.array([[1], [1], [1]])
-
-    #c = np.array([1, 1])
-
-    #print(lp(A, b, c))
 
 
 if __name__ == '__main__':
