@@ -4,6 +4,11 @@ import numpy as np
 status2str = ["OPTIMAL", "FEASIBLE", "INFEASIBLE", "UNBOUNDED", 
               "ABNORMAL", "MODEL_INVALID", "NOT_SOLVED"]
 
+debug = False
+def dbg(s0, *s):
+    if debug:
+        print(s0, *s)
+
 def pivot(T, pc, pr):
     #print("pc:", pc, "pr:", pr)
     pe = T[pr, pc] # pivot element
@@ -91,7 +96,7 @@ def phase2(A, b, c):
     T2 = np.hstack([z_s1, np.eye(num_slack), A, b])
     T = np.vstack([T1, T2])
 
-    #print(T)
+    #dbg(T)
 
     basic = list(range(num_slack))
 
@@ -126,23 +131,25 @@ def phase1(A, b, c):
     c_ext = np.concatenate([np.zeros([num_vars]), -1 * np.ones([num_constr])])
     A_ext = np.hstack([A, -I])
     z_init = -b * (b < 0)
-    print("z_init:\n", z_init)
+    dbg("z_init:\n", z_init)
     x_relaxed = np.concatenate([np.zeros([num_vars, 1]), z_init])
-    print("x_relaxed:\n", x_relaxed)
+    dbg("x_relaxed:\n", x_relaxed)
     A_prim, b_prim, c_prim, d_prim = phase1_5(A_ext, b, c_ext, x_relaxed)
     #c_prim[-len(c_prim) // 2:] = 0
-    print("A_prim:\n", A_prim)
-    print("b_prim:\n", b_prim)
-    print("c_prim:\n", c_prim)
-    print("d_prim:\n", d_prim)
+    dbg("A_prim:\n", A_prim)
+    dbg("b_prim:\n", b_prim)
+    dbg("c_prim:\n", c_prim)
+    dbg("d_prim:\n", d_prim)
 
     x_bfs, val = phase2(A_prim, b_prim, c_prim)
 
-    print(x_bfs, val)
+    dbg("x_bfs:", x_bfs, "val:", val, "d:", d_prim)
     #exit(0)
 
+    # c_ext * [0 z] = c_prim * x_bfs + d_prim
+
     tol = 1e-8
-    if val > tol + d_prim: # infeasible
+    if val + d_prim < -tol: # infeasible
         return None
 
     return x_bfs[:num_vars]
@@ -183,11 +190,11 @@ def phase1_5(A, b, c, x_bfs):
     num_constr, num_vars = A.shape
 
     y_bfs = np.dot(A, x_bfs).reshape([-1, 1])
-    print("y_bfs:", y_bfs)
+    dbg("y_bfs:", y_bfs)
     b_prim = b - y_bfs
-    print("b_prim:", b_prim)
+    dbg("b_prim:", b_prim)
     b_prim = np.vstack([b_prim, x_bfs.reshape([-1, 1])])
-    print("b_prim:", b_prim)
+    dbg("b_prim:", b_prim)
 
     A_prim = np.hstack([A, -A])
     I = np.eye(num_vars)
@@ -212,14 +219,14 @@ def lp(A, b, c):
     if x_bfs is None:
         return None, 2 # infeasible
 
-    print("x_bfs:", x_bfs)
+    dbg("x_bfs:", x_bfs)
 
-    print("b", b)
+    dbg("b", b)
     A, b, c, d = phase1_5(A, b, c, x_bfs)
-    print(A)
-    print(b)
-    print(c)
-    print(d)
+    dbg(A)
+    dbg(b)
+    dbg(c)
+    dbg(d)
 
     x_opt, val = phase2(A, b, c)
     if x_opt is None:
@@ -229,10 +236,18 @@ def lp(A, b, c):
 
 
 def main():
+    global debug
+    debug = False
+    
     #A = np.array([[2, 1], [1, 2]])
     #b = np.array([[1], [1]])
-    A = np.array([[2, 1], [1, 2], [1, 1]])
-    b = np.array([[1], [1], [-1]])
+    #A = np.array([[2, 1], [1, 2], [1, 1]])
+    #b = np.array([[1], [1], [-1]])
+    #A = np.array([[-1, -1]])
+    #b = np.array([[-1]])
+    A = np.array([[2, 1], [1, 2], [4, 4]])
+    b = np.array([[1], [1], [1]])
+
     c = np.array([1, 1])
 
     print(lp(A, b, c))
