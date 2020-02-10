@@ -146,7 +146,7 @@ def phase1(A, b, c):
     dbg("x_bfs:", x_bfs, "val:", val, "d:", d_prim)
     #exit(0)
 
-    # c_ext * [0 z] = c_prim * x_bfs + d_prim
+    # c_ext * [0 z] = c_prim * x_bfs + d_prim = val + d_prim
 
     tol = 1e-8
     if val + d_prim < -tol: # infeasible
@@ -244,9 +244,11 @@ def main():
     debug = False
 
     all_tests = ["basic", "basic_2", "basic_3",
-                 "basic_4",
-                  "unbounded", "infeasible"]
-    test_cases = ["basic_4"]
+                 "basic_4", "basic_5",
+                  "infeasible", "infeasible_2",
+                  "unbounded"]
+
+    test_cases = ["basic_5"]
 
     if "basic" in test_cases:
         A = np.array([[2, 1], [1, 2]])
@@ -280,9 +282,25 @@ def main():
         x_opt, opt_val, status = lp(A, b, c)
         print(x_opt, opt_val, status2str[status])
 
+    if "basic_5" in test_cases:
+        # this should take just two pivots
+        A = np.array([[-1, 1], [1, -1], [1, 1]])
+        b = np.array([[1], [1], [10000000]])
+        c = np.array([1, 1])
+        print("Should be OPTIMAL")
+        x_opt, opt_val, status = lp(A, b, c)
+        print(x_opt, opt_val, status2str[status])
 
     if "infeasible" in test_cases:
         A = np.array([[2, 1], [1, 2], [1, 1]])
+        b = np.array([[1], [1], [-1]])
+        c = np.array([1, 1])
+        print("Should be INFEASIBLE")
+        x_opt, opt_val, status = lp(A, b, c)
+        print(x_opt, opt_val, status2str[status])
+
+    if "infeasible_2" in test_cases:
+        A = np.array([[2, 1], [1, 2], [-1, -1]])
         b = np.array([[1], [1], [-1]])
         c = np.array([1, 1])
         print("Should be INFEASIBLE")
