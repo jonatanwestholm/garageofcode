@@ -217,7 +217,7 @@ def lp(A, b, c):
 
     x_bfs = phase1(A, b, c)
     if x_bfs is None:
-        return None, 2 # infeasible
+        return None, None, 2 # infeasible
 
     dbg("x_bfs:", x_bfs)
 
@@ -230,27 +230,59 @@ def lp(A, b, c):
 
     x_opt, val = phase2(A, b, c)
     if x_opt is None:
-        return None, 3 # unbounded
+        return None, np.inf, 3 # unbounded
 
-    return x_opt, 0 # optimal
+    return x_opt, val, 0 # optimal
 
 
 def main():
     global debug
     debug = False
-    
-    #A = np.array([[2, 1], [1, 2]])
-    #b = np.array([[1], [1]])
+
+    test_cases = ["basic", "basic_2",
+                  "unbounded", "infeasible"]
+    if "basic" in test_cases:
+        A = np.array([[2, 1], [1, 2]])
+        b = np.array([[1], [1]])
+        c = np.array([1, 1])
+        print("Should be OPTIMAL")
+        x_opt, opt_val, status = lp(A, b, c)
+        print(x_opt, opt_val, status2str[status])
+
+    if "basic_2" in test_cases:
+        A = np.array([[2, 1], [1, 2], [4, 4]])
+        b = np.array([[1], [1], [1]])
+        c = np.array([1, 1])
+        print("Should be OPTIMAL")
+        x_opt, opt_val, status = lp(A, b, c)
+        print(x_opt, opt_val, status2str[status])
+
+    if "infeasible" in test_cases:
+        A = np.array([[2, 1], [1, 2], [1, 1]])
+        b = np.array([[1], [1], [-1]])
+        c = np.array([1, 1])
+        print("Should be INFEASIBLE")
+        x_opt, opt_val, status = lp(A, b, c)
+        print(x_opt, opt_val, status2str[status])
+
+    if "unbounded" in test_cases:
+        A = np.array([[-1, -1]])
+        b = np.array([[-1]])
+        c = np.array([1, 1])
+        print("Should be UNBOUNDED")
+        x_opt, opt_val, status = lp(A, b, c)
+        print(x_opt, opt_val, status2str[status])
+
     #A = np.array([[2, 1], [1, 2], [1, 1]])
     #b = np.array([[1], [1], [-1]])
     #A = np.array([[-1, -1]])
     #b = np.array([[-1]])
-    A = np.array([[2, 1], [1, 2], [4, 4]])
-    b = np.array([[1], [1], [1]])
+    #A = np.array([[2, 1], [1, 2], [4, 4]])
+    #b = np.array([[1], [1], [1]])
 
-    c = np.array([1, 1])
+    #c = np.array([1, 1])
 
-    print(lp(A, b, c))
+    #print(lp(A, b, c))
 
 
 if __name__ == '__main__':
