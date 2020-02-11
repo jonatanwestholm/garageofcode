@@ -244,11 +244,11 @@ def main():
     debug = False
 
     all_tests = ["basic", "basic_2", "basic_3",
-                 "basic_4", "basic_5",
+                 "basic_4", "basic_5", "basic_6"
                   "infeasible", "infeasible_2",
                   "unbounded"]
 
-    test_cases = ["basic_5"]
+    test_cases = ["basic_6"]
 
     if "basic" in test_cases:
         A = np.array([[2, 1], [1, 2]])
@@ -290,6 +290,15 @@ def main():
         print("Should be OPTIMAL")
         x_opt, opt_val, status = lp(A, b, c)
         print(x_opt, opt_val, status2str[status])
+
+    if "basic_6" in test_cases:
+        A = np.array([[-1, 1], [1, -1], [1, 1]])
+        b = np.array([[1], [1], [1]])
+        c = np.array([1, 1])
+        print("Should be OPTIMAL")
+        x_opt, opt_val, status = lp(A, b, c)
+        print(x_opt, opt_val, status2str[status])
+
 
     if "infeasible" in test_cases:
         A = np.array([[2, 1], [1, 2], [1, 1]])
