@@ -63,12 +63,12 @@ def get_potentials(G, s, t):
     solver.Solve(time_limit=10)
 
     total_current = solver.solution_value(total_in)
-    print("Total current:", total_current)
     total_resistance = total_potential / total_current
-    print("Total resistance:", total_resistance)
+    #print("Total resistance: {0:.3f}".format(total_resistance))
+    print("Total current: {0:.3f}".format(total_current))
 
-    for node, potential in sorted(potentials.items()):
-        print("{0:d}  {1:.3f}".format(node, solver.solution_value(potential)))
+    #for node, potential in sorted(potentials.items()):
+    #    print("{0:d}  {1:.3f}".format(node, solver.solution_value(potential)))
 
 def main():
     G = get_xkcd730_graph()
