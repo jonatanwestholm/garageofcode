@@ -16,6 +16,8 @@ Which starting number, under one million, produces the longest chain?
 NOTE: Once the chain starts the terms are allowed to go above one million.
 """
 
+import time
+
 memo = {1: 1}
 
 def collatz(n):
@@ -31,6 +33,7 @@ def collatz(n):
         memo[n] = val
         return val
 
+t0 = time.time()
 longest = 0
 best_n = None
 for n in range(1, int(1e6)):
@@ -39,4 +42,6 @@ for n in range(1, int(1e6)):
         longest = chain_length
         best_n = n
 
+t1 = time.time()
+print("Time: {0:.3f}".format(t1- t0))
 print(best_n, longest)
