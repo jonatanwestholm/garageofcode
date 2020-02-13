@@ -7,7 +7,7 @@
 int* memo; 
 
 int collatz(long n){
-    //printf("%d\n", n);
+    //printf("n: %d\n", n);
     if(n < N){
         if(memo[n] > 0){
             return memo[n];
@@ -15,12 +15,14 @@ int collatz(long n){
     }
     int val;
     if(n % 2 == 0){
+        //printf("n/2: %d\n", n / 2);
         val = 1 + collatz(n / 2);
         if(n < N){
             memo[n] = val;
         }
         return val;
     }else{
+        //printf("3*n + 1: %d\n", 3*n + 1);
         val = 1 + collatz(3*n + 1);
         if(n < N){
             memo[n] = val;
