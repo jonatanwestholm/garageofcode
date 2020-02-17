@@ -1,8 +1,10 @@
+import time
 import numpy as np
 
 import networkx as nx
 
-from garageofcode.mip.solver import get_solver
+#from garageofcode.mip.solver import get_solver
+from sentian_miami import get_solver
 
 def get_xkcd730_graph():
     G = nx.DiGraph()
@@ -29,8 +31,9 @@ def get_potentials(G, s, t):
     # it's just a linear equation system.
     # But it makes for a simple formulation.
 
-    solver = get_solver("CBC")
+    solver = get_solver("mono")
 
+    t0 = time.time()
     potentials = {node: solver.NumVar(lb=0) for node in G}
     currents = {e: solver.NumVar(lb=-100) for e in G.edges}
 
@@ -59,6 +62,9 @@ def get_potentials(G, s, t):
         Iij = currents[e]
         Rij = 1 # ignore resistance parameter for now
         solver.Add(Ui - Uj == Rij * Iij)
+
+    t1 = time.time()
+    print("Build time: {0:.3f}".format(t1 - t0))
 
     solver.Solve(time_limit=10)
 
