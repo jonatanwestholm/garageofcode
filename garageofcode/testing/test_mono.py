@@ -8,10 +8,13 @@ def main():
 
     a = solver.NumVar(lb=0)
     b = solver.NumVar(lb=0)
+    c = solver.NumVar(lb=0)
 
-    solver.Add(2*a + b <= 1)
-    solver.Add(a + 2*b <= 1)
-    solver.SetObjective(a + b, maximize=True)
+    solver.Add(a == 1)
+    solver.Add(2*a - 2*b == 0)
+    solver.Add(-1*a + 1*c == 0)
+
+    #solver.SetObjective(a + b, maximize=True)
     t1 = time.time()
 
     print("Build time: {0:.3f}".format(t1 - t0))
@@ -23,6 +26,7 @@ def main():
 
     print("a: {}".format(a_solve))
     print("b: {}".format(b_solve))
+
 
 
 if __name__ == '__main__':
