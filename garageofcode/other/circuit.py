@@ -3,37 +3,8 @@ import numpy as np
 
 import networkx as nx
 
-#from garageofcode.mip.solver import get_solver
 from sentian_miami import get_solver
 
-def get_xkcd730_graph():
-    G = nx.DiGraph()
-    edges = [(0, 1), (0, 7), (0, 9), (0, 10),
-             (1, 7), (1, 3), (1, 6),
-             (3, 4), (3, 5),
-             (4, 5), (4, 9),
-             (5, 8),
-             (6, 7), (6, 8),
-             (7, 8), (7, 9), (7, 12), (7, 13), (7, 14),
-             (8, 14),
-             (9, 10), (9, 11),
-             (10, 11),
-             (11, 12), (11, 13),
-             (12, 13),
-             (13, 14)
-             ]
-
-    G.add_edges_from(edges)
-    return G
-
-def get_simple_graph():
-    G = nx.DiGraph()
-    edges = [(0, 1), (0, 2),
-             (1, 2), (1, 3),
-             (2, 3),
-            ]
-    G.add_edges_from(edges)
-    return G
 
 def get_potentials(G, s, t):
     # It's not necessary to use a MIP solver for this;
@@ -84,12 +55,3 @@ def get_potentials(G, s, t):
 
     #for node, potential in sorted(potentials.items()):
     #    print("{0:d}  {1:.3f}".format(node, solver.solution_value(potential)))
-
-def main():
-    G = get_xkcd730_graph()
-    #G = get_simple_graph()
-    get_potentials(G, 0, max(G))
-
-
-if __name__ == '__main__':
-    main()
