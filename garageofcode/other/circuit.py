@@ -11,7 +11,7 @@ def get_potentials(G, s, t):
     # it's just a linear equation system.
     # But it makes for a simple formulation.
 
-    solver = get_solver("mono")
+    solver = get_solver("CBC")
 
     t0 = time.time()
     potentials = {node: solver.NumVar(lb=0) for node in G}
