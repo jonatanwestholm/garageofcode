@@ -79,13 +79,14 @@ def get_potentials(G, s, t):
 
     total_current = solver.solution_value(total_in)
     total_resistance = total_potential / total_current
-    #print("Total resistance: {0:.3f}".format(total_resistance))
+    print("Total resistance: {0:.3f}".format(total_resistance))
     print("Total current: {0:.3f}".format(total_current))
 
-    #for node, potential in sorted(potentials.items()):
-    #    print("{0:d}  {1:.3f}".format(node, solver.solution_value(potential)))
+    for node, potential in sorted(potentials.items()):
+        print("{0:d}  {1:.3f}".format(node, solver.solution_value(potential)))
 
 def main():
+    np.random.seed(0)
     G = get_xkcd730_graph()
     #G = get_simple_graph()
     get_potentials(G, 0, max(G))
