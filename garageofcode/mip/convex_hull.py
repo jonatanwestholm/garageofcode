@@ -3,7 +3,7 @@ import numpy as np
 from scipy import linalg
 import matplotlib.pyplot as plt
 
-from garageofcode.mip.solver import get_solver, status2str
+from sentian_miami import get_solver
 from garageofcode.sampling.timeseries import get_ts
 
 tol = 1e-4
@@ -30,7 +30,7 @@ def in_hull(u, V, **kwargs):
     u is a point
     """
 
-    solver = get_solver("CBC")
+    solver = get_solver("mono")
     
     X = [solver.NumVar(lb=0) for _ in range(len(V))]
     
@@ -39,9 +39,7 @@ def in_hull(u, V, **kwargs):
 
     solver.Add(solver.Sum(X) == 1)
 
-    result = solver.Solve(time_limit=10, **kwargs)
-    result = status2str[result]
-    return result == "OPTIMAL"
+    return solver.Solve(time_limit=10, **kwargs)
 
 
 def is_inside(point, planes):
@@ -182,7 +180,7 @@ def main():
     #points = [[0, 0], [10, 0], [0, 10]]
     avg = 0
     dim = 2
-    num_points = 200
+    num_points = 10
     n_iter = 1
     for _ in range(n_iter):
         points = np.random.random([num_points, dim]) - 0.5

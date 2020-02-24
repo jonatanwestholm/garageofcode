@@ -75,7 +75,7 @@ def get_potentials(G, s, t):
     t1 = time.time()
     print("Build time: {0:.3f}".format(t1 - t0))
 
-    solver.Solve(time_limit=10)
+    solver.Solve(time_limit=10, verbose=True)
 
     total_current = solver.solution_value(total_in)
     total_resistance = total_potential / total_current
