@@ -178,9 +178,10 @@ def main():
     '''
 
     #points = [[0, 0], [10, 0], [0, 10]]
+    np.random.seed(0)
     avg = 0
     dim = 2
-    num_points = 10
+    num_points = 100
     n_iter = 1
     for _ in range(n_iter):
         points = np.random.random([num_points, dim]) - 0.5

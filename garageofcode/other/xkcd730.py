@@ -44,7 +44,7 @@ def get_potentials(G, s, t):
 
     t0 = time.time()
     potentials = {node: solver.NumVar(lb=0) for node in G}
-    currents = {e: solver.NumVar(lb=-100) for e in G.edges}
+    currents = {e: solver.NumVar() for e in G.edges}
 
     # Edge conditions
     U0, U_1 = 1, 0
@@ -57,9 +57,9 @@ def get_potentials(G, s, t):
         in_current = solver.Sum([currents[e] for e in G.in_edges(node)])
         out_current = solver.Sum([currents[e] for e in G.out_edges(node)])
         if node == s:
-            total_in = out_current
+            total_in = out_current - in_current
         elif node == t:
-            total_out = in_current
+            total_out = in_current - out_current
         else:
             solver.Add(in_current == out_current)
 

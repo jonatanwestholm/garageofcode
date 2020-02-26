@@ -3,6 +3,7 @@ import numpy as np
 import networkx as nx
 
 from sentian_miami import get_solver
+from garageofcode.networkx.utils import get_random_graph
 
 def get_xkcd730_graph():
     G = nx.DiGraph()
@@ -25,10 +26,10 @@ def get_xkcd730_graph():
     return G
 
 
-def get_flows(G, s, t):
+def get_flows(G, s, t, capacity):
     solver = get_solver("CBC")
 
-    flows = {e: solver.NumVar(lb=-1, ub=1) for e in G.edges}
+    flows = {(u, v): solver.NumVar(lb=0, ub=cap) for u, v, cap in G.edges(data=capacity)}
 
     for node in G:
         in_flow = solver.Sum([flows[e] for e in G.in_edges(node)])
@@ -45,11 +46,14 @@ def get_flows(G, s, t):
 
     solver.Solve(time_limit=10, verbose=True)
     total_out = solver.solution_value(total_out)
-    print("Total out:", total_out)
+    #print("Total out:", total_out)
+    return {e: solver.solution_value(flow) for e, flow in flows.items()}
 
 
 def main():
-    G = get_xkcd730_graph()
+    np.random.seed(1)
+    #G = get_xkcd730_graph()
+    G = get_random_graph(100, 0.2, directed=True)
     get_flows(G, 0, max(G))
 
 
