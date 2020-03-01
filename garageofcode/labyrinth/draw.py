@@ -6,21 +6,21 @@ def draw_patch(ax, node, **kwargs):
     patch = Rectangle((j + 0.1, i + 0.1), 0.8, 0.8, **kwargs)
     ax.add_patch(patch)
 
-def draw_labyrinth(ax, L, start, end, n, m):
+def draw_labyrinth(ax, L, start, end, n, m, **kwargs):
     draw_patch(ax, start, facecolor='g', zorder=100)
     draw_patch(ax, end, facecolor='r', zorder=100)
 
-    ax.plot([0, m], [0, 0], 'k')
-    ax.plot([0, m], [n, n], 'k')
-    ax.plot([0, 0], [0, n], 'k')
-    ax.plot([m, m], [0, n], 'k')
+    ax.plot([0, m], [0, 0], 'k', **kwargs)
+    ax.plot([0, m], [n, n], 'k', **kwargs)
+    ax.plot([0, 0], [0, n], 'k', **kwargs)
+    ax.plot([m, m], [0, n], 'k', **kwargs)
 
     for i in range(n):
         for j in range(m):
             if (i, j + 1) not in L[(i, j)]:
-                ax.plot([j + 1, j + 1], [i, i + 1], 'k')
+                ax.plot([j + 1, j + 1], [i, i + 1], 'k', **kwargs)
             if (i + 1, j) not in L[(i, j)]:
-                ax.plot([j, j + 1], [i + 1, i + 1], 'k')
+                ax.plot([j, j + 1], [i + 1, i + 1], 'k', **kwargs)
 
 def draw_heuristics(ax, T, nodes):
     for node in nodes:

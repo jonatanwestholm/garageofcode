@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from garageofcode.mip.solver import get_solver, solution_value
-from garageofcode.common.utils import flatten_simple, shuffled, manhattan, get_fn
+from garageofcode.common.utils import flatten_simple, shuffled, manhattan, get_fn, search_cost
 from garageofcode.common.search import bfs, dfs, a_star
 from garageofcode.labyrinth.utils import connect_labyrinth, init_grid_graph
 from garageofcode.labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree, draw_obstruction_graph, draw_heuristics
@@ -171,13 +171,6 @@ def get_labyrinth_complexity(L, start, end):
     solver.Solve(time_limit=10)
 
     return solution_value(node2complexity[start])
-
-def search_cost(algo, L, start, end):
-    T = next(algo(L, start, end))
-    path_nodes = nx.shortest_path(T, start, end)
-    backtrack_nodes = T.nodes - set(path_nodes)
-    total_edges_passed = len(path_nodes) - 1 + 2*len(backtrack_nodes)
-    return total_edges_passed
 
 def search_score(algo, L, start, end):
     T = next(algo(L, start, end))

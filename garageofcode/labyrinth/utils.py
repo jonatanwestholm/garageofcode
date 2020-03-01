@@ -1,7 +1,7 @@
 import random
 import networkx as nx
 
-from common.utils import shuffled
+from garageofcode.common.utils import shuffled
 
 def init_grid_graph(n, m, p):
     G = nx.Graph()
@@ -56,3 +56,10 @@ def get_grid_neighbours(L, n):
         neigh = (i + di, j + dj)
         if neigh in L:
             yield neigh
+
+def search_cost(algo, L, start, end):
+    T = next(algo(L, start, end))
+    path_nodes = nx.shortest_path(T, start, end)
+    backtrack_nodes = T.nodes - set(path_nodes)
+    total_edges_passed = len(path_nodes) - 1 + 2*len(backtrack_nodes)
+    return total_edges_passed

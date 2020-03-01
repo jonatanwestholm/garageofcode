@@ -1,7 +1,7 @@
 import random
 import networkx as nx
-from common.utils import Heap, shuffled, manhattan
-from labyrinth.utils import init_obstruction_graph, get_grid_neighbours
+from garageofcode.common.utils import Heap, shuffled, manhattan
+from garageofcode.labyrinth.utils import init_obstruction_graph, get_grid_neighbours
 
 def obstructed_h(Obs, node, end):
     try: 
@@ -42,9 +42,57 @@ def anti_obstruction(G, start, end, inspection=False):
                     h_neigh = h_node + 1
                 heap.push(((h_neigh, depth + 1), neigh))
     else:
-        print("Warning: algo did not find path from {} to {}".format(start, end))
+        #print("Warning: algo did not find path from {} to {}".format(start, end))
+        yield None
 
 
     dead_end_nodes = set(T.nodes) - expanded_nodes
     T.remove_nodes_from(dead_end_nodes)
     yield T
+
+
+def bidirectional(G, start, end):
+    T = nx.Graph() # the search tree
+    expanded_nodes = set()
+    seen_forward = {start}
+    seen_backward = {end}
+    heap = Heap()
+
+    heap.push((0, start))
+    heap.push((0, end))
+
+    while heap:
+        depth, node = heap.pop()
+        if node in expanded_nodes:
+            continue
+        expanded_nodes.add(node)
+        if node in seen_forward and  node in seen_backward:
+            # gotta find a way to connect
+            # maybe don't need to? T may already be connected
+            break
+        for neigh in get_grid_neighbours(G, node):
+            if (node, neigh) not in G.edges:
+                continue
+            if node in seen_forward:
+                seen_forward.add(neigh)
+            else:
+                seen_backward.add(neigh)
+            T.add_edge(node, neigh)
+            heap.push((depth + 1, neigh))
+    else:
+        yield None
+
+    yield T
+
+
+
+
+
+
+
+
+
+
+
+
+
