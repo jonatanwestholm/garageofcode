@@ -1,5 +1,5 @@
 import networkx as nx
-from common.utils import Heap, shuffled, manhattan
+from garageofcode.common.utils import Heap, shuffled, manhattan
 
 def a_star(G, start, end, inspection=False):
     T = nx.Graph() # the search tree

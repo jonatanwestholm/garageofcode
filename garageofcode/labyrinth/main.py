@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from garageofcode.mip.solver import get_solver, solution_value
-from garageofcode.common.utils import flatten_simple, shuffled, manhattan, get_fn, search_cost
+from garageofcode.common.utils import flatten_simple, shuffled, manhattan, get_fn
 from garageofcode.common.search import bfs, dfs, a_star
-from garageofcode.labyrinth.utils import connect_labyrinth, init_grid_graph
+from garageofcode.labyrinth.utils import connect_labyrinth, init_grid_graph, search_cost
 from garageofcode.labyrinth.draw import draw_labyrinth, draw_path, draw_search_tree, draw_obstruction_graph, draw_heuristics
 from garageofcode.labyrinth.search import anti_obstruction
 
@@ -77,10 +77,10 @@ def adversarial_targeted_random(algo, L, start, end, num_iter=20000):
     old_len_sp = len(L)
     best_L = copy.deepcopy(L)
     best_iter = 0
-    print("Initial cost:", best_cost)
+    #print("Initial cost:", best_cost)
     for i in range(num_iter):
         if i % 100 == 0:
-            print("iter", i)
+            pass #print("iter", i)
         T = next(algo(L, start, end))
         sp_nodes = nx.shortest_path(T, start, end)
         
@@ -132,10 +132,11 @@ def adversarial_targeted_random(algo, L, start, end, num_iter=20000):
             if new_cost > best_cost:
                 print("New best cost:", new_cost)
                 best_cost = new_cost
-                visualize_labyrinth(algo, L, start, end, iteration=i)
+                #visualize_labyrinth(algo, L, start, end, iteration=i)
+                return L
             old_len_sp = len(sp_nodes)
             if i % 50 == 0:
-                visualize_labyrinth(algo, L, start, end, iteration=i)
+                pass #visualize_labyrinth(algo, L, start, end, iteration=i)
             continue
         else:
             if i > best_iter + leniency_iters:
@@ -151,6 +152,7 @@ def adversarial_targeted_random(algo, L, start, end, num_iter=20000):
         assert nx.is_connected(L)
 
     L = best_L
+
 
 def get_labyrinth_complexity(L, start, end):
     solver = get_solver("CBC")
@@ -231,6 +233,7 @@ def main_draw_search_tree(ax, L, T, start=None, end=None):
     return "\n".join(title)
 
 
+"""
 algo2name = {bfs: "BFS", dfs: "DFS"}
 gif_dir = get_fn("labyrinth/gif")
 
@@ -244,10 +247,10 @@ end = (N // 2, M // 2)
 #end = (0, 1)
 algo = anti_obstruction
 adversary = adversarial_targeted_random
-leniency_iters = 100
 
 img_number = 0
-
+"""
+leniency_iters = 100
 
 def main():
     #random.seed(1)
