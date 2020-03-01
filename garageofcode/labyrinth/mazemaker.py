@@ -1,3 +1,4 @@
+import random
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -7,7 +8,9 @@ from garageofcode.labyrinth.utils import init_grid_graph, connect_labyrinth, sea
 from garageofcode.labyrinth.draw import draw_labyrinth, draw_search_tree, draw_path
 from garageofcode.labyrinth.search import anti_obstruction, bidirectional
 
-N = 10
+random.seed(0)
+np.random.seed(0)
+N = 15
 M = N
 start = (0, 0)
 end = (N // 2, M // 2)

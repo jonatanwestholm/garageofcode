@@ -1,4 +1,6 @@
 import random
+import numpy as np
+
 import networkx as nx
 
 from garageofcode.common.utils import shuffled
