@@ -32,13 +32,6 @@ def grid_8connect(N, M):
                 G.add_edge((n, m), (n + 1, m + 1))
             if n < N - 1 and m > 0:
                 G.add_edge((n, m), (n + 1, m - 1))
-
-    #A = np.zeros([N, M])
-    #for n in range(N):
-    #    for m in range(M):
-    #        A[n, m] = len(G[(n, m)])
-    #print(A)
-    #exit(0)
     return G
 
 class Board(nx.Graph):
@@ -138,16 +131,6 @@ class Board(nx.Graph):
                         queue.append(neigh)
 
     def exhaust_1(self, board, center=None):
-        '''
-        if center is None:
-            nodes = self.nodes
-        else:
-            nodes = set(self[center])
-            nodes.add(center)
-            nodes = set(flatten([self[node] for node in nodes]))
-            nodes = set(flatten([self[node] for node in nodes]))
-        '''
-
         while True:
             for node in self.nodes:
                 if self.nodes[node]["adj"] is None:
