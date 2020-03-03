@@ -95,23 +95,44 @@ def visualize(G, flows):
         plt.text(x, y, node)
 
     for (u, v), flow in sorted(flows.items(), key=lambda x: x[1]):
-        #if not (u == "women" or v == "men"):
-        #    print(u, v, "{0:.3f}".format(flow))
+        if not (u == "women" or v == "men"):
+            flow = 0.05
+            color = "k"
+            #print(u, v, "{0:.3f}".format(flow))
+        else:
+            color = "r"
+
         #if not flow:
         #    continue
         ux, uy = node2coord[u]
         vx, vy = node2coord[v]
-        plt.plot([ux, vx], [uy, vy], color='r', linewidth=10*np.abs(flow))
+        plt.plot([ux, vx], [uy, vy], color=color, linewidth=10*np.abs(flow), zorder=0)
 
-    plt.title("Total match rate: {0:.1f}%".format(total_flow*100))
+    #plt.title("Total match rate: {0:.1f}%".format(total_flow*100))
+    plt.axis("off")
 
     plt.show()
+
+
+def get_left_out(G, flows):
+    for node in G:
+        if node[-1] == "w":
+            total_capacity = sum(G.edges[e]["capacity"] for e in G.in_edges(node))
+        elif node[-1] == "m":
+            total_capacity = sum(G.edges[e]["capacity"] for e in G.out_edges(node))
+        else:
+            continue
+        total_flow = sum(flows[e] for e in G.in_edges(node))
+        left_out = (total_capacity - total_flow) / total_capacity
+        print("{0:s}: {1:.1f}%".format(node, left_out*100))
+        #print("{0:s}: {1:.1f}%\n".format(node, total_capacity*100))
 
 
 def main():
     G = get_political_matching()
     flows = get_flows(G, "women", "men", capacity="capacity")
-    visualize(G, flows)
+    get_left_out(G, flows)
+    #visualize(G, flows)
 
 if __name__ == '__main__':
     main()
