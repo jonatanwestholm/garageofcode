@@ -53,7 +53,7 @@ def get_concentrations(r2c, p2k):
     #    #print("{0:s}: {1:.3f}".format(p, solver.solution_value(pc)))
     #    print(p, solver.solution_value(pc))
 
-    print("Total singles: {0:.3f}".format(sum(R_solve.values())))
-    print("Total couples: {0:.3f}".format(sum(P_solve.values())))
+    #print("Total singles: {0:.3f}".format(sum(R_solve.values())))
+    #print("Total couples: {0:.3f}".format(sum(P_solve.values())))
 
     return R_solve, P_solve
