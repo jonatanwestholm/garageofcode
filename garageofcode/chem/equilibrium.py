@@ -2,7 +2,7 @@ from sentian_miami import get_solver
 
 def get_concentrations(r2c, p2k):
     """
-    Get the concentrations of the reactant at equilibrium
+    Get the concentrations of the reactants at equilibrium
     r2c: concentrations per reactant
     p2k: equilibrium constants per product
 
@@ -17,20 +17,7 @@ def get_concentrations(r2c, p2k):
     R = {r: solver.NumVar(lb=0, ub=1) for r in r2c}
     P = {p: solver.NumVar(lb=0, ub=1) for p in p2k}
 
-    def get_card(p, r):
-        """
-        Gets the cardinality of r in p
-        Returns None if r not in p
-        """
-
-        for r_i, card in p:
-            if r_i == r:
-                return card
-        else:
-            return None
-
-
-    # mass balance equations
+    # mass conservation equations
     for r, rc in R.items():
         ps = [] # parts that contain r
         for p, pc in P.items():
@@ -59,8 +46,8 @@ def get_concentrations(r2c, p2k):
     R_solve = {r: solver.solution_value(rc) for r, rc in R.items()}
     P_solve = {p: solver.solution_value(pc) for p, pc in P.items()}
 
-    for r, rc in R.items():
-        print("{0:s}: {1:.3f}".format(r, solver.solution_value(rc)))
+    #for r, rc in R.items():
+    #    print("{0:s}: {1:.3f}".format(r, solver.solution_value(rc)))
 
     #for p, pc in P.items():
     #    #print("{0:s}: {1:.3f}".format(p, solver.solution_value(pc)))
@@ -68,3 +55,5 @@ def get_concentrations(r2c, p2k):
 
     print("Total singles: {0:.3f}".format(sum(R_solve.values())))
     print("Total couples: {0:.3f}".format(sum(P_solve.values())))
+
+    return R_solve, P_solve
