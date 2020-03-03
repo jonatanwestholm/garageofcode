@@ -8,41 +8,6 @@ from garageofcode.mip.maxflow import get_flows
 from garageofcode.chem.equilibrium import get_concentrations
 
 
-parties = ["V", "MP", "S", "C", "L", "M", "KD", "SD"]
-parties_women = [p + "w" for p in parties]
-parties_men = [p + "m" for p in parties]
-tolerance = np.array([[1, 1, 1, 0, 0, 0, 0, 0],
-                      [1, 1, 1, 1, 1, 0, 0, 0],
-                      [1, 1, 1, 1, 1, 1, 0, 0],
-                      [0, 1, 1, 1, 1, 1, 1, 0],
-                      [0, 1, 1, 1, 1, 1, 1, 0],
-                      [0, 0, 1, 1, 1, 1, 1, 1],
-                      [0, 0, 0, 1, 1, 1, 1, 1],
-                      [0, 0, 0, 0, 0, 1, 1, 1],
-                    ])
-'''
-tolerance = np.array([[1, 1, 1, 0, 0, 0, 0, 0, 0],
-                      [1, 1, 1, 1, 1, 0, 0, 0, 0],
-                      [1, 1, 1, 1, 1, 1, 0, 0, 0],
-                      [0, 1, 1, 1, 1, 1, 1, 0, 0],
-                      [0, 1, 1, 1, 1, 1, 1, 0, 0],
-                      [0, 0, 1, 1, 1, 1, 1, 1, 0],
-                      [0, 0, 0, 1, 1, 1, 1, 1, 0],
-                      [0, 0, 0, 0, 0, 1, 1, 1, 1],
-                      [1, 0, 0, 0, 0, 0, 0, 0, 0],
-                    ])
-'''
-women_poll = {"V": 23.9, "MP": 4.9, "S": 18.0,
-              "C": 16.8, "L": 4.1,
-              "M": 15.1, "KD": 3.1, "SD": 11.9, }
-              #"other": 2.1}
-
-men_poll   = {"V": 8.8, "MP": 3.7, "S": 8.7,
-              "C": 6.7, "L": 5.6,
-              "M": 26.9, "KD": 6.1, "SD": 28.6, }
-              #"other": 4.9}
-
-
 def get_political_matching():
     """
     A graph that models political tolerance
@@ -50,7 +15,39 @@ def get_political_matching():
     Includes data from polls among women 18-29 and men 18-29.
     """
 
-    global women_poll, men_poll
+    parties = ["V", "MP", "S", "C", "L", "M", "KD", "SD"]
+    parties_women = [p + "w" for p in parties]
+    parties_men = [p + "m" for p in parties]
+    tolerance = np.array([[1, 1, 1, 0, 0, 0, 0, 0],
+                          [1, 1, 1, 1, 1, 0, 0, 0],
+                          [1, 1, 1, 1, 1, 1, 0, 0],
+                          [0, 1, 1, 1, 1, 1, 1, 0],
+                          [0, 1, 1, 1, 1, 1, 1, 0],
+                          [0, 0, 1, 1, 1, 1, 1, 1],
+                          [0, 0, 0, 1, 1, 1, 1, 1],
+                          [0, 0, 0, 0, 0, 1, 1, 1],
+                        ])
+    '''
+    tolerance = np.array([[1, 1, 1, 0, 0, 0, 0, 0, 0],
+                          [1, 1, 1, 1, 1, 0, 0, 0, 0],
+                          [1, 1, 1, 1, 1, 1, 0, 0, 0],
+                          [0, 1, 1, 1, 1, 1, 1, 0, 0],
+                          [0, 1, 1, 1, 1, 1, 1, 0, 0],
+                          [0, 0, 1, 1, 1, 1, 1, 1, 0],
+                          [0, 0, 0, 1, 1, 1, 1, 1, 0],
+                          [0, 0, 0, 0, 0, 1, 1, 1, 1],
+                          [1, 0, 0, 0, 0, 0, 0, 0, 0],
+                        ])
+    '''
+    women_poll = {"V": 23.9, "MP": 4.9, "S": 18.0,
+                  "C": 16.8, "L": 4.1,
+                  "M": 15.1, "KD": 3.1, "SD": 11.9, }
+                  #"other": 2.1}
+
+    men_poll   = {"V": 8.8, "MP": 3.7, "S": 8.7,
+                  "C": 6.7, "L": 5.6,
+                  "M": 26.9, "KD": 6.1, "SD": 28.6, }
+                  #"other": 4.9}
 
     # normalize
     women_sum = sum(women_poll.values())
@@ -87,8 +84,41 @@ def get_chemical():
     """
     Dicts that model polls and equilibrium constants for couplings
     """
-    global women_poll, men_poll
+    
+    parties = ["V", "MP", "S", "C", "L", "M", "KD", "SD"]
+    parties_women = [p + "w" for p in parties]
+    parties_men = [p + "m" for p in parties]
+    tolerance = np.array([[1, 1, 1, 0, 0, 0, 0, 0],
+                          [1, 1, 1, 1, 1, 0, 0, 0],
+                          [1, 1, 1, 1, 1, 1, 0, 0],
+                          [0, 1, 1, 1, 1, 1, 1, 0],
+                          [0, 1, 1, 1, 1, 1, 1, 0],
+                          [0, 0, 1, 1, 1, 1, 1, 1],
+                          [0, 0, 0, 1, 1, 1, 1, 1],
+                          [0, 0, 0, 0, 0, 1, 1, 1],
+                        ])
+    '''
+    tolerance = np.array([[1, 1, 1, 0, 0, 0, 0, 0, 0],
+                          [1, 1, 1, 1, 1, 0, 0, 0, 0],
+                          [1, 1, 1, 1, 1, 1, 0, 0, 0],
+                          [0, 1, 1, 1, 1, 1, 1, 0, 0],
+                          [0, 1, 1, 1, 1, 1, 1, 0, 0],
+                          [0, 0, 1, 1, 1, 1, 1, 1, 0],
+                          [0, 0, 0, 1, 1, 1, 1, 1, 0],
+                          [0, 0, 0, 0, 0, 1, 1, 1, 1],
+                          [1, 0, 0, 0, 0, 0, 0, 0, 0],
+                        ])
+    '''
+    women_poll = {"V": 23.9, "MP": 4.9, "S": 18.0,
+                  "C": 16.8, "L": 4.1,
+                  "M": 15.1, "KD": 3.1, "SD": 11.9, }
+                  #"other": 2.1}
 
+    men_poll   = {"V": 8.8, "MP": 3.7, "S": 8.7,
+                  "C": 6.7, "L": 5.6,
+                  "M": 26.9, "KD": 6.1, "SD": 28.6, }
+                  #"other": 4.9}
+    
     # normalize
     women_sum = sum(women_poll.values()) * 2
     women_poll = {p + "w": v / women_sum for p, v in women_poll.items()}
@@ -99,18 +129,17 @@ def get_chemical():
     r2c.update(women_poll)
     r2c.update(men_poll)
 
-    p2c = {((pw, 1), (pm, 1)): 4900 for (i, pw), (j, pm) in 
+    p2c = {((pw, 1), (pm, 1)): 400000 for (i, pw), (j, pm) in 
             product(enumerate(parties_women), enumerate(parties_men))
                 if tolerance[i][j]}
 
     return r2c, p2c
 
 
-def visualize(G, flows):
-    # mostly hard code
-
-    total_flow = sum([flows[e] for e in G.in_edges("men")])
-    #print("Total flow: {0:.3f}".format(total_flow))
+def visualize(G, flows, total_flow=None):
+    if total_flow is None:
+        total_flow = sum([flows[e] for e in G.in_edges("men")])
+        #print("Total flow: {0:.3f}".format(total_flow))
 
     node2coord = {"women": (0, 0), "men": (3, 0),
                   "Vw": (1, 3.5), "MPw": (1, 2.5), "Sw": (1, 1.5), "Cw": (1, 0.5),
@@ -125,8 +154,8 @@ def visualize(G, flows):
 
     for (u, v), flow in sorted(flows.items(), key=lambda x: x[1]):
         if not (u == "women" or v == "men"):
-            flow = 0.05
-            color = "k"
+            #flow = 0.05
+            color = "r"
             #print(u, v, "{0:.3f}".format(flow))
         else:
             color = "r"
@@ -137,7 +166,7 @@ def visualize(G, flows):
         vx, vy = node2coord[v]
         plt.plot([ux, vx], [uy, vy], color=color, linewidth=10*np.abs(flow), zorder=0)
 
-    #plt.title("Total match rate: {0:.1f}%".format(total_flow*100))
+    plt.title("Total match rate: {0:.1f}%".format(total_flow*100))
     plt.axis("off")
 
     plt.show()
@@ -166,7 +195,22 @@ def network_flow_model():
 
 def chemical_model():
     r2c, p2k = get_chemical()
-    get_concentrations(r2c, p2k)
+    R2c, P2c = get_concentrations(r2c, p2k)
+    total_matched = 1 - sum(R2c.values())
+    for r, rc in r2c.items():
+        left_out = R2c[r] / rc
+        if r[-1] == "w":
+            name = r[:-1] + ", women"
+        else:
+            name = r[:-1] + ", men"
+        print("{0:10s} {1:.1f}%".format(name, left_out*100))        
+
+    G = get_political_matching()
+    flows = get_flows(G, "women", "men", capacity="capacity")
+    for p, c in P2c.items():
+        w, m = p[0][0], p[1][0]
+        flows[(w, m)] = c * 2
+    visualize(G, flows, total_matched)
 
 
 def main():
