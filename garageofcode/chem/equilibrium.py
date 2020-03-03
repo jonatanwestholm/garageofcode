@@ -1,6 +1,6 @@
 from sentian_miami import get_solver
 
-def get_concentrations(r2c, rr2k):
+def get_concentrations(r2c, p2k):
     """
     Get the concentrations of the reactant at equilibrium
     r2c: concentrations per reactant
@@ -54,10 +54,17 @@ def get_concentrations(r2c, rr2k):
             prod = prod * rc # don't think there is a better way
         solver.Add(prod == pc)
 
-    solver.Solve(time_limit=10, verbose=True)
+    solver.Solve(time_limit=10, verbose=False)
+
+    R_solve = {r: solver.solution_value(rc) for r, rc in R.items()}
+    P_solve = {p: solver.solution_value(pc) for p, pc in P.items()}
 
     for r, rc in R.items():
         print("{0:s}: {1:.3f}".format(r, solver.solution_value(rc)))
 
-    for p, pc in P.items():
-        print("{0:s}: {1:.3f}".format(p, solver.solution_value(pc)))
+    #for p, pc in P.items():
+    #    #print("{0:s}: {1:.3f}".format(p, solver.solution_value(pc)))
+    #    print(p, solver.solution_value(pc))
+
+    print("Total singles: {0:.3f}".format(sum(R_solve.values())))
+    print("Total couples: {0:.3f}".format(sum(P_solve.values())))
