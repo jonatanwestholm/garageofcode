@@ -14,12 +14,15 @@ res_dir = "/home/jdw/garageofcode/results/corona/"
 num_cases_data = os.path.join(data_dir, "time_series_19-covid-Confirmed.csv")
 case_data = os.path.join(line_data_dir, "COVID19_open_line_list.csv")
 
+"""
 latest = {"Sweden": 248, "Norway": 205, "Italy": 9172,
             "France": 1209, "Germany": 1176, "UK": 321, 
             "Netherlands": 321, "Belgium": 239, "Spain": 1073,
             "Switzerland": 374, "Iran": 7161, "Japan": 511,
             "South Korea": 7478, "Singapore": 150, 
             "Mainland China": 80735, "US": 604}
+"""
+latest = {}
 
 def exponential_regression(cases):
     N = len(cases)
@@ -137,6 +140,8 @@ def get_delay2freq():
     plt.ylabel("Cases")
     plt.show()
     '''
+    print("Median:", np.median(diff))
+
     delay2freq, _ = np.histogram(diff, bins=int(max(diff)))
     return delay2freq
 
@@ -203,6 +208,7 @@ def estimate_unconfirmed():
         #exp_diff: baseline hypothesis is that number of new cases grow by 30% each day
         #exp_diff = solver.Sum([(nc1 - 1.3 * nc0)**2 for nc0, nc1 in zip(new_cases, new_cases[1:])])
 
+
         solver.SetObjective(total_err + mass_sq * 0.1, maximize=False)
         solver.Solve(time_limit=10, verbose=False)
 
@@ -219,5 +225,20 @@ def estimate_unconfirmed():
 
 
 if __name__ == '__main__':
-    estimate_unconfirmed()
     #case_trend()
+    get_delay2freq()
+    #estimate_unconfirmed()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
