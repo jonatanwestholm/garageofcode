@@ -23,10 +23,10 @@ int main(){
     int num_vals = 8;
     int vals[8] = {200, 100, 50, 20, 10, 5, 2, 1};
     int target = 200;
-    t1 = clock();
-    printf("Time: %f\n", (double)(t1 - t0) / CLOCKS_PER_SEC);
 
     printf("%d\n", num_combs(vals, target, num_vals));
+    t1 = clock();
+    printf("Time: %f\n", (double)(t1 - t0) / CLOCKS_PER_SEC);
 
     /*
     int* p;

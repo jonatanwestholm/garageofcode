@@ -98,8 +98,8 @@ def delay():
     df = df.dropna(subset=["date_onset_symptoms", "date_confirmation"])
 
     country2ncases = df.groupby("country").size()
-    print(country2ncases)
-    exit(0)
+    #print(country2ncases)
+    #exit(0)
 
     date_onsets, date_conf = get_do_dc(df)
 
@@ -110,7 +110,7 @@ def delay():
                         for do, dc in zip(date_onsets, date_conf) if dc >= do])
 
     plt.hist(-diff, bins=2*int(max(diff)))
-    plt.title("N={}".format(len(diff)))
+    plt.title("N={}\n(China 455, Japan 135, Singapore 69, South Korea 21, Others 54)".format(len(diff)))
     plt.xlabel("Days from onset to confirmation")
     plt.ylabel("Cases")
     plt.show()

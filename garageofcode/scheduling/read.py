@@ -2,7 +2,7 @@ import csv
 from collections import defaultdict
 from datetime import datetime
 
-import scheduling.conf as conf
+import garageofcode.scheduling.conf as conf
 
 def read(fn):
     dt_format = conf.date_format + conf.time_format

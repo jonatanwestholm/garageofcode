@@ -116,7 +116,7 @@ def main():
     students, times, available = read(conf.fn)
 
     take_times = dict([(student, 1) for student in students])
-    max_simultaneous = dict([(dt, 3) for dt in times])
+    max_simultaneous = dict([(dt, ms) for dt, ms in zip(times, conf.max_simultaneous)])
 
     # Generate variables
     solver = get_solver("CBC")

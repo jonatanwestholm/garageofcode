@@ -11,7 +11,8 @@ from sentian_miami import get_solver
 line_data_dir = "/home/jdw/garageofcode/data/kaggle/corona/"
 data_dir = "/home/jdw/repositories/COVID-19/csse_covid_19_data/csse_covid_19_time_series/"
 res_dir = "/home/jdw/garageofcode/results/corona/"
-num_cases_data = os.path.join(data_dir, "time_series_19-covid-Confirmed.csv")
+num_cases_data = os.path.join(data_dir, "time_series_covid19_confirmed_global.csv")
+num_death_data = os.path.join(data_dir, "time_series_covid19_deaths_global.csv")
 case_data = os.path.join(line_data_dir, "COVID19_open_line_list.csv")
 
 """
@@ -35,8 +36,11 @@ def exponential_regression(cases):
     beta = np.exp(beta)
     return alpha, beta
 
-def get_num_confirmed(country):
-    df = pd.read_csv(num_cases_data)
+def get_num_confirmed(country, deaths=False):
+    if deaths:
+        df = pd.read_csv(num_death_data)
+    else:
+        df = pd.read_csv(num_cases_data)
 
     df = df[df["Country/Region"] == country].sum()
     days = [datetime.strptime(date, "%m/%d/%y") for date in df.keys()[4:]]
@@ -50,7 +54,7 @@ def get_num_confirmed(country):
 
 def case_trend():
     for country in ["Sweden", "US", "France", "Germany", "Italy", 
-                    "Iran", "UK", "South Korea", "Netherlands", 
+                    "Iran", "United Kingdom", "South Korea", "Netherlands", 
                     "Norway", "Belgium", "Spain", "Switzerland", 
                     "Japan", "Singapore"]:
         #df_country = df[df["Country/Region"] == country]
@@ -60,6 +64,8 @@ def case_trend():
         day2case = day2case[day2case >= 70]
         #print(min((day2case.keys())))
         days = [datetime.strptime(date, "%m/%d/%y") for date in day2case.keys()]
+        if not len(days):
+            continue
         #last_day = max(days.keys())
 
         #exit(0)
@@ -91,6 +97,132 @@ def case_trend():
         #plt.show()
 
         plt.savefig(os.path.join(res_dir, "{}.png".format(country)))
+        plt.close()
+
+
+def confirmed_vs_dead():
+    for country in ["China", "Sweden", "US", "France", "Germany", "Italy", 
+                    "Iran", "United Kingdom", "Korea, South", "Netherlands", 
+                    "Norway", "Belgium", "Spain", "Switzerland", 
+                    "Japan", "Singapore", "Poland", "Denmark", "Hungary", 
+                    "Czechia", "Austria", "Greece", "Brazil", "Israel", "Thailand"]:
+        day2case = get_num_confirmed(country, deaths=False)
+        days = [datetime.strptime(date, "%m/%d/%y") for date in day2case.keys()]
+        if not len(days):
+            continue
+        cases = day2case.to_numpy()
+        cases = np.array([val for val in cases]) # mysteriously breaks without this
+
+        day2death = get_num_confirmed(country, deaths=True)
+        deaths = day2death.to_numpy()
+        deaths = np.array([val for val in deaths]) # mysteriously breaks without this
+
+        times = list(range(len(cases)))
+
+        plt.scatter(times, cases, color="b")
+        plt.semilogy(cases, c="b")
+        plt.scatter(times, deaths, color="r")
+        plt.semilogy(deaths, c="r")
+        plt.xlabel("Days since {}".format(datetime.strftime(min(days), "%Y-%m-%d")))
+        plt.title("{}".format(country))
+        plt.legend(["confirmed", "deaths"])
+
+        plt.savefig(os.path.join(res_dir, "confirmed_vs_dead/{}.png".format(country)))
+        plt.close()
+
+
+def confirmed_vs_dead_all():
+    countries = ["China", "Sweden", "US", "France", "Germany", "Italy", 
+                 "United Kingdom", "Korea, South", "Netherlands", 
+                "Norway", "Belgium", "Spain", "Switzerland", 
+                "Japan", "Singapore", "Denmark", "Israel"]
+    for country in countries:
+        day2case = get_num_confirmed(country, deaths=False)
+        days = [datetime.strptime(date, "%m/%d/%y") for date in day2case.keys()]
+        if not len(days):
+            continue
+        cases = day2case.to_numpy()
+        cases = np.array([val for val in cases]) # mysteriously breaks without this
+
+        day2death = get_num_confirmed(country, deaths=True)
+        deaths = day2death.to_numpy()
+        deaths = np.array([val for val in deaths]) # mysteriously breaks without this
+
+        for i, x in enumerate(deaths):
+            if x > 0:
+                break
+        else:
+            continue
+
+        cases = cases[i:]
+        deaths = deaths[i:]
+
+        #plt.scatter(times, cases, color="b")
+        #plt.semilogy(cases, c="b")
+        #plt.scatter(times, deaths, color="r")
+        #plt.semilogy(deaths, c="r")
+        #plt.scatter(cases, deaths)
+        #plt.semilogy(cases, deaths)
+        plt.plot(cases, deaths, c="b")
+        plt.scatter(cases, deaths, color="b")
+        for r in [1, 0.1, 0.01, 0.001, 0.0001]:
+            x = np.array([0.1, 1, 10, 100, 1000, 10000, 100000, 1000000])
+            plt.plot(x, x*r, c="k")
+            plt.text(x[0], x[0]*r*1.5, "{0:.2f}%".format(r*100), rotation=25)
+        plt.xlim([0.05, 1000000])
+        plt.xscale("log")
+        plt.yscale("log")
+        plt.xlabel("Confirmed cases")
+        plt.ylabel("Deaths")
+        plt.title("{}".format(country))
+        plt.legend([country])
+        plt.savefig(os.path.join(res_dir, "confirmed_vs_dead_all/{}.png".format(country)))
+        plt.close()
+
+
+
+    #plt.xlabel("Days since {}".format(datetime.strftime(min(days), "%Y-%m-%d")))
+
+
+def new_cases_per_day(report_deaths=False):
+    for country in ["China", "Sweden", "US", "France", "Germany", "Italy", 
+                    "Iran", "United Kingdom", "Korea, South", "Netherlands", 
+                    "Norway", "Belgium", "Spain", "Switzerland", 
+                    "Japan", "Singapore", "Poland", "Denmark", "Hungary", 
+                    "Czechia", "Austria", "Greece", "Brazil", "Israel", "Thailand"]:
+        day2case = get_num_confirmed(country, deaths=False)
+        days = [datetime.strptime(date, "%m/%d/%y") for date in day2case.keys()]
+        if not len(days):
+            continue
+        cases = day2case.to_numpy()
+        cases = np.array([val for val in cases]) # mysteriously breaks without this
+
+        
+        day2death = get_num_confirmed(country, deaths=True)
+        deaths = day2death.to_numpy()
+        deaths = np.array([val for val in deaths]) # mysteriously breaks without this
+        
+
+        times = list(range(len(cases)))
+
+        new_cases = np.diff(cases)
+        new_dead = np.diff(deaths)
+
+        if report_deaths:
+            plt.bar(times[:-1], new_dead, color="r")
+        else:
+            plt.bar(times[:-1], new_cases, color="b")
+        #plt.semilogy(new_cases, c="b")
+        #plt.scatter(times, deaths, color="r")
+        #plt.semilogy(deaths, c="r")
+        plt.xlabel("Days since {}".format(datetime.strftime(min(days), "%Y-%m-%d")))
+        plt.title("{}".format(country))
+        if report_deaths:
+            plt.legend(["new dead"])
+        else:
+            plt.legend(["new cases"])            
+
+        plt.savefig(os.path.join(res_dir, "new_cases/{}.png".format(country)))
         plt.close()
 
 
@@ -140,7 +272,7 @@ def get_delay2freq():
     plt.ylabel("Cases")
     plt.show()
     '''
-    print("Median:", np.median(diff))
+    #print("Median:", np.median(diff))
 
     delay2freq, _ = np.histogram(diff, bins=int(max(diff)))
     return delay2freq
@@ -200,16 +332,16 @@ def estimate_unconfirmed():
 
         #mass: baseline hypothesis is that number of new cases is 0
         #mass = solver.Sum(nc for nc in new_cases)        
-        mass_sq = solver.Sum(nc**2 for nc in new_cases)
+        #mass_sq = solver.Sum(nc**2 for nc in new_cases)
         
         #diff: baseline hypothesis is that number of new cases is like yesterday
         #diff = solver.Sum([(nc1 - nc0)**2 for nc0, nc1 in zip(new_cases, new_cases[1:])])
         
         #exp_diff: baseline hypothesis is that number of new cases grow by 30% each day
-        #exp_diff = solver.Sum([(nc1 - 1.3 * nc0)**2 for nc0, nc1 in zip(new_cases, new_cases[1:])])
+        exp_diff = solver.Sum([(nc1 - 1.3 * nc0)**2 for nc0, nc1 in zip(new_cases, new_cases[1:])])
 
 
-        solver.SetObjective(total_err + mass_sq * 0.1, maximize=False)
+        solver.SetObjective(total_err + exp_diff * 0.1, maximize=False)
         solver.Solve(time_limit=10, verbose=False)
 
         new_cases_solve = [solver.solution_value(nc) for nc in new_cases]
@@ -225,8 +357,11 @@ def estimate_unconfirmed():
 
 
 if __name__ == '__main__':
+    #confirmed_vs_dead_all()
+    confirmed_vs_dead()
     #case_trend()
-    get_delay2freq()
+    #new_cases_per_day()
+    #get_delay2freq()
     #estimate_unconfirmed()
 
 

@@ -2,7 +2,8 @@ from datetime import timedelta
 
 from garageofcode.common.utils import get_fn
 
-fn = get_fn("private_tutoring_scheduling", "test_data.csv")
+fn = get_fn("private_tutoring_scheduling", "test_data2.csv")
+print(fn)
 
 date_format = "%Y-%m-%d"
 time_format = "%H:%M"
@@ -12,7 +13,7 @@ D = 5 # num days
 T_D = 10 # num times per day
 T = D * T_D
 N = 10 # num students
-max_simultaneous = [3 for _ in range(T)] # max num student per time
+max_simultaneous = [1 for _ in range(T)] # max num student per time
 min_times = [1 for _ in range(N)] # min times per student
 lesson_length = timedelta(minutes=20)
 
