@@ -9,14 +9,14 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 
 categorical = {
-               #"MOSTYPE",  
+               "MOSTYPE",  
                #"MGEMLEEF",  # let this be numerical instead
                "MOSHOOFD", 
                #"MGODRK" # let this be numerical
               }
 
 L = {
-        #"MOSTYPE": "Customer Subtype see L0",
+        "MOSTYPE": "Customer Subtype see L0",
         "MAANTHUI": "Number of houses 1 - 10",
         "MGEMOMV": "Avg size household 1 - 6",
         "MGEMLEEF": "Avg age see L1",
