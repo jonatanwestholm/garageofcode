@@ -8,8 +8,15 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 
+categorical = {
+               #"MOSTYPE",  
+               #"MGEMLEEF",  # let this be numerical instead
+               "MOSHOOFD", 
+               #"MGODRK" # let this be numerical
+              }
+
 L = {
-        "MOSTYPE": "Customer Subtype see L0",
+        #"MOSTYPE": "Customer Subtype see L0",
         "MAANTHUI": "Number of houses 1 - 10",
         "MGEMOMV": "Avg size household 1 - 6",
         "MGEMLEEF": "Avg age see L1",
@@ -219,14 +226,27 @@ def train_test_decision_tree(df):
     #print("test_score: {0:.3f}".format(test_score))
 
     print("Train score:")
-    get_confusion_matrix(model, X_train, y_train)
+    get_confusion_matrix(model, X_train, y_train, y_train.mean())
     print()
     print("Test score:")
-    get_confusion_matrix(model, X_test,  y_test)
+    get_confusion_matrix(model, X_test,  y_test, y_train.mean())
 
 
-def get_confusion_matrix(model, X, y):
+def get_confusion_matrix(model, X, y, base_p=0.5):
+    log2base_p = -np.log2(base_p)
+    log2comp_p = -np.log2(1 - base_p)
+
+
     yh = model.predict(X)
+
+    prior_h = -relative_information_gain({0: y.mean()}, {0: 1}, log2base_p, log2comp_p)
+    y_neg = [yhi for yhi, yi in zip(yh, y) if not yi]
+    y_pos = [yhi for yhi, yi in zip(yh, y) if yi]
+    posterior_h = -relative_information_gain({0: np.mean(y_neg), 1: np.mean(y_pos)},
+                                             {0: len(y_neg) / len(X_test), 1: len(y_pos) / len(X_test)},
+                                             log2base_p, log2comp_p)
+    print("Prior:     {0:.3f}\nPosterior: {1:.3f}".format(prior_h, posterior_h))
+
 
     tp = np.dot(  y,   yh)
     fp = np.dot(1-y,   yh)
@@ -260,7 +280,7 @@ def clump_small_categories(a2p, a2n, threshold):
     small_cats = {a for a, n in a2n.items() if n <= threshold}
     n_other = sum(a2n[a] for a in small_cats)
     if not n_other:
-        return a2p, a2n, []
+        return a2p, a2n, list(a2p.keys())
     p_other = sum(a2p[a]*a2n[a] for a in small_cats) / n_other
     for cat in small_cats:
         a2p.pop(cat)
@@ -271,20 +291,29 @@ def clump_small_categories(a2p, a2n, threshold):
     return a2p, a2n, nonsmall_cats
 
 
-def build_DTC(T, root, df, y_key, base_p, max_depth):
+def debug(*s):
+    if 0:
+        print(*s)
+
+def build_DTC(T, root, df, y_key, base_p, depth):
+    debug("\t" * (max_depth - depth) + root)
+    debug("\t" * (max_depth - depth) + str(len(df)))
     if not len(df): 
         T.nodes[root]["feature"] = ""
         T.nodes[root]["class"] = 1 # no examples - guess positive
         return 
 
-    if max_depth == 0:
+    if depth == 0:
+        debug("\t" * (max_depth - depth) + "Exiting because of depth")
         T.nodes[root]["feature"] = ""
-        T.nodes[root]["class"] = df[y_key].mean() > base_p
+        T.nodes[root]["class"] = (df[y_key].sum() + 1) / (len(df) + 2)# > base_p
         return
 
     if df[y_key].mean() in [0, 1]:
+        debug("\t" * (max_depth - depth) + "Exiting because of mean")
         T.nodes[root]["feature"] = ""
-        T.nodes[root]["class"] = df[y_key].mean() > base_p
+        # laplace probability of unseen
+        T.nodes[root]["class"] = (df[y_key].sum() + 1) / (len(df) + 2) # > base_p
         return
 
     log2base_p = -np.log2(base_p)
@@ -292,43 +321,94 @@ def build_DTC(T, root, df, y_key, base_p, max_depth):
 
     key2h = {}
     key2nonsmall = {}
+    key2split_sign = {}
 
     for key in L:
-        if 1: #key in categorical:
+        if key in categorical:
             a2p = df[[key, y_key]].groupby(key).mean()
             a2p = dict(a2p[y_key].items())
-            a2n = df[[key, y_key]].groupby(key).count() / len(df)
+            a2n = df[[key, y_key]].groupby(key).count() # / len(df)
             a2n = dict(a2n[y_key].items())
+            #if key == "MOSTYPE":
+            #    print(a2n)
 
-            a2p, a2n, nonsmall_cats = clump_small_categories(a2p, a2n, 0)
+            a2p, a2n, nonsmall_cats = clump_small_categories(a2p, a2n, 5)
+            a2n = {a: n / len(df) for a, n in a2n.items()}
+            #if key == "MOSTYPE":
+            #    print(nonsmall_cats)
+            #    exit(0)
             key2nonsmall[key] = nonsmall_cats
+        else: # numerical
+            neg = df.loc[df[y_key] == 0][key] 
+            pos = df.loc[df[y_key] == 1][key]
+            neg_mean = neg.mean()
+            pos_mean = pos.mean()
+            split = (neg_mean + pos_mean) / 2
+            sign = ((pos_mean >= neg_mean) - 0.5) * 2
+            a2p = {}
+            left_split = df[[key, y_key]].loc[df[key] * sign < split * sign]
+            right_split = df[[key, y_key]].loc[df[key] * sign >= split * sign]
+            a2p[0] = left_split[y_key].mean()
+            a2p[1] = right_split[y_key].mean()
+            #print(a2p)
+            '''
+            if key == "PBESAUT":
+                print("split:", split)
+                print("sign:", sign)
+                print("a2p:", a2p)
+                print("len neg:", len(neg))
+                plt.hist([neg, pos])
+                plt.show()
+                #exit(0)
+            '''
+            a2n = {}
+            a2n[0] = len(left_split) / len(df)
+            a2n[1] = len(right_split) / len(df)
+            key2nonsmall[key] = []
+            key2split_sign[key] = (split, sign)
 
         key2h[key] = relative_information_gain(a2p, a2n, log2base_p, log2comp_p)
 
-    #print(root)
     #for key, h in sorted(key2h.items(), key=lambda x: -x[1]):
     #    print("\t{0:<50}{1:.5f}".format(L[key], h))
+    #exit(0)
 
     key, h = max(key2h.items(), key=lambda x: x[1])
 
     T.nodes[root]["feature"] = key
-    #print("\t" * (2 - max_depth), L[key])
+    debug("\t" * (max_depth - depth) + L[key])
     nonsmall_cats = key2nonsmall[key]
 
-    for a, sub_df in df.groupby(key):
-        if a in nonsmall_cats:
-            continue
-        #print(a)
-        #print(sub_df[key])
-        #print()
-        root_a = root + "_" + str(a)
-        T.add_edge(root, root_a)
-        build_DTC(T, root_a, sub_df, y_key, base_p, max_depth-1) # depth-first
+    if key in categorical:
+        for a, sub_df in df.groupby(key):
+            if a not in nonsmall_cats:
+                continue
+            #print(a)
+            #print(sub_df[key])
+            #print()
+            root_a = root + "_" + str(a)
+            T.add_edge(root, root_a)
+            build_DTC(T, root_a, sub_df, y_key, base_p, depth-1) # depth-first
 
-    root_a = root + "_other"
-    T.add_edge(root, root_a)
-    other_x = df.loc[df[key].isin(nonsmall_cats)]
-    build_DTC(T, root_a, other_x, y_key, base_p, max_depth-1)
+        root_a = root + "_other"
+        T.add_edge(root, root_a)
+        other_x = df.loc[~df[key].isin(nonsmall_cats)]
+        build_DTC(T, root_a, other_x, y_key, base_p, depth-1)
+    else:
+        split, sign = key2split_sign[key]
+        T.nodes[root]["split"] = split
+        T.nodes[root]["sign"]  = sign
+        #print("split, sign:", split, sign)
+        neg_df = df.loc[df[key] * sign < split * sign]
+        pos_df = df.loc[df[key] * sign >= split * sign]
+
+        root_a = root + "_0"
+        T.add_edge(root, root_a)
+        build_DTC(T, root_a, neg_df, y_key, base_p, depth-1)
+
+        root_a = root + "_1"
+        T.add_edge(root, root_a)
+        build_DTC(T, root_a, pos_df, y_key, base_p, depth-1)
 
 
 def classify(T, root, x):
@@ -337,18 +417,28 @@ def classify(T, root, x):
     if not feature:
         return T.nodes[root]["class"]
 
-    a = "_" + str(x[feature])
-
-    if root+a in T[root]:
-        root_a = root + a
+    if feature in categorical:
+        a = "_" + str(x[feature])
+    
+        if root+a in T[root]:
+            root_a = root + a
+        else:
+            root_a = root + "_other"
     else:
-        root_a = root + "_other"
+        split = T.nodes[root]["split"]
+        sign  = T.nodes[root]["sign"]
+        a = int(x[feature] * sign >= split * sign)
+        root_a = root + "_" + str(a)
     
     return classify(T, root_a, x)
 
 
 def train_dtc(df):
-    X_train = df.loc[:2000]
+    global max_depth
+    max_depth = 20
+
+    N_train = 4000
+    X_train = df.loc[:N_train]
 
     root = "root"
     T = nx.DiGraph()
@@ -356,10 +446,13 @@ def train_dtc(df):
     y_key = "CARAVAN"
     base_p = X_train[y_key].mean() # balanced
     #base_p = 1 # unbalanced
-    build_DTC(T, root, X_train, y_key, base_p, 3)
+    build_DTC(T, root, X_train, y_key, base_p, max_depth)
+
+    log2base_p = -np.log2(base_p)
+    log2comp_p = -np.log2(1 - base_p)
 
     #X_test = X_train 
-    X_test = df.loc[2000:]
+    X_test = df.loc[N_train:]
 
     #print(T.nodes())
     for _, x in X_test.iterrows():
@@ -367,6 +460,15 @@ def train_dtc(df):
 
     yh = np.array([classify(T, root, x) for _, x in X_test.iterrows()])
     y = X_test[y_key]
+    prior_h = -relative_information_gain({0: y.mean()}, {0: 1}, log2base_p, log2comp_p)
+    y_neg = [yhi for yhi, yi in zip(yh, y) if not yi]
+    y_pos = [yhi for yhi, yi in zip(yh, y) if yi]
+    posterior_h = -relative_information_gain({0: np.mean(y_neg), 1: np.mean(y_pos)},
+                                             {0: len(y_neg) / len(X_test), 1: len(y_pos) / len(X_test)},
+                                             log2base_p, log2comp_p)
+    print("Prior:     {0:.3f}\nPosterior: {1:.3f}".format(prior_h, posterior_h))
+
+    yh = np.array([yhi > base_p for yhi in yh])
 
     tp = np.dot(  y,   yh)
     fp = np.dot(1-y,   yh)
@@ -376,6 +478,9 @@ def train_dtc(df):
     print("{0} {1}\n{2} {3}".format(tp, fp, fn, tn))
 
 
+    plt.hist([y_neg, y_pos], density=True, bins=50)
+    plt.axvline(x=base_p, color="k")
+    plt.show()
 
 def main():
     t0 = time.time()
@@ -402,10 +507,10 @@ def main():
     #    plt.title(L[key])
     #    plt.show()
     #print(df["CARAVAN"].mean())
-    #train_test_svm(df)
+    train_test_svm(df)
     #train_test_decision_tree(df)
 
-    train_dtc(df)
+    #train_dtc(df)
 
 
     '''
