@@ -1,4 +1,3 @@
-
 def get_subexpr(s):
     d = 1
     for i, ch in enumerate(s):
@@ -10,28 +9,79 @@ def get_subexpr(s):
             break
     else:
         raise # Unmatched left parenthesis
-    return s[:i]
+    return s[:i], s[i:]
 
 
 def get_token(s):
     s = s.strip()
-    
+    if s[0] in ["+", "-", "*", "/", "(", ")"]:
+        return s[0], s[1:]
+
+    for i, ch in enumerate(s):
+        #print("ch:", ch)
+        if not ch.isalnum():
+            break
+    else:
+        return s, ""
+    return s[:i], s[i:]
 
 
 def tokenize(s):
+    s = s.strip()
     while s:
         tok, s = get_token(s)
         if tok == "(":
             sub_s, s = get_subexpr(s)
-            yield parse(s)
+            #print("sub_s:", sub_s)
+            #print("s:", s)
+            yield parse(sub_s)
+        elif tok == ")":
+            pass
         else:
             yield tok
 
 
 def parse(s):
     tokens = list(tokenize(s))
-    # magic happens, returns an expression
+    
+    newtokens = []
+    for tok in tokens:
+        try:
+            tok = int(tok)
+        except ValueError:
+            pass
+        except TypeError:
+            pass
+        newtokens.append(tok)
+    tokens = newtokens
 
+    while len(tokens) > 1:
+        if "/" in tokens:
+            i = tokens.index("/")
+            expr = Expression("/", tokens[i-1], tokens[i+1])
+            tokens = tokens[:i-1] + [expr] + tokens[i+2:]
+            continue
+
+        if "*" in tokens:
+            i = tokens.index("*")
+            expr = Expression("*", tokens[i-1], tokens[i+1])
+            tokens = tokens[:i-1] + [expr] + tokens[i+2:]
+            continue
+
+        if "-" in tokens:
+            i = tokens.index("-")
+            expr = Expression("-", tokens[i-1], tokens[i+1])
+            tokens = tokens[:i-1] + [expr] + tokens[i+2:]
+            continue
+
+        if "+" in tokens:
+            i = tokens.index("+")
+            expr = Expression("+", tokens[i-1], tokens[i+1])
+            tokens = tokens[:i-1] + [expr] + tokens[i+2:]
+            continue
+
+
+    return tokens[0]
 
 
 class Expression:
@@ -157,9 +207,12 @@ def differentiate(expr, x):
                           )
 
 def main():
-    expr = Expression("*", 2, "x")
-    print(expr.simplify())
+    #expr = Expression("*", 2, "x")
+    #print(expr.simplify())
     #print(differentiate(expr, "x").simplify())
+
+    print(differentiate(parse("asdf2 - 45 / (a + b)"), "a").simplify())
+
 
 
 if __name__ == '__main__':

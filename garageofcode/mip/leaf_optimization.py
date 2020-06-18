@@ -46,8 +46,9 @@ def sw_optimize(Y):
     """
     Don't optimize, just return the score
     """
-    grad = np.diff(np.concatenate([[0], Y]))
-    return np.sum(grad * (grad > 0))
+    #grad = np.diff(np.concatenate([[0], Y]))
+    #return np.sum(grad * (grad > 0))
+    return sum(x1 - x0 for x0, x1 in zip(Y, Y[1:]) if x1 > x0) + Y[0]
 
 
 def main():

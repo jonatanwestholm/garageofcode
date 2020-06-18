@@ -1,5 +1,13 @@
 import numpy as np
+
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.collections as col
+from matplotlib.colors import Normalize
+import cartopy.crs as ccrs
+from cartopy.feature import ShapelyFeature
+import cartopy.io.shapereader as shpreader
 
 import pandas as pd
 
@@ -161,7 +169,7 @@ country_codes = {
                     "Iceland": "IS",
                     "India": "IN",
                     "Indonesia": "ID",
-                    "Iran (Islamic Republic of)": "IR",
+                    "Iran": "IR",
                     "Iraq": "IQ",
                     "Ireland": "IE",
                     "Isle of Man": "IM",
@@ -175,7 +183,7 @@ country_codes = {
                     "Kenya": "KE",
                     "Kiribati": "KI",
                     "Korea (the Democratic People's Republic of)": "KP",
-                    "Korea (the Republic of)": "KR",
+                    "South Korea": "KR",
                     "Kuwait": "KW",
                     "Kyrgyzstan": "KG",
                     "Lao People's Democratic Republic (the)": "LA",
@@ -212,11 +220,11 @@ country_codes = {
                     "Namibia": "NA",
                     "Nauru": "NR",
                     "Nepal": "NP",
-                    "Netherlands (the)": "NL",
+                    "Netherlands": "NL",
                     "New Caledonia": "NC",
                     "New Zealand": "NZ",
                     "Nicaragua": "NI",
-                    "Niger (the)": "NE",
+                    "Niger": "NE",
                     "Nigeria": "NG",
                     "Niue": "NU",
                     "Norfolk Island": "NF",
@@ -230,7 +238,7 @@ country_codes = {
                     "Papua New Guinea": "PG",
                     "Paraguay": "PY",
                     "Peru": "PE",
-                    "Philippines (the)": "PH",
+                    "Philippines": "PH",
                     "Pitcairn": "PN",
                     "Poland": "PL",
                     "Portugal": "PT",
@@ -238,7 +246,7 @@ country_codes = {
                     "Qatar": "QA",
                     "Republic of North Macedonia": "MK",
                     "Romania": "RO",
-                    "Russian Federation (the)": "RU",
+                    "Russia": "RU",
                     "Rwanda": "RW",
                     "Réunion": "RE",
                     "Saint Barthélemy": "BL",
@@ -273,7 +281,7 @@ country_codes = {
                     "Sweden": "SE",
                     "Switzerland": "CH",
                     "Syrian Arab Republic": "SY",
-                    "Taiwan (Province of China)": "TW",
+                    "Taiwan": "TW",
                     "Tajikistan": "TJ",
                     "Tanzania, United Republic of": "TZ",
                     "Thailand": "TH",
@@ -285,18 +293,18 @@ country_codes = {
                     "Tunisia": "TN",
                     "Turkey": "TR",
                     "Turkmenistan": "TM",
-                    "Turks and Caicos Islands (the)": "TC",
+                    "Turks and Caicos Islands": "TC",
                     "Tuvalu": "TV",
                     "Uganda": "UG",
                     "Ukraine": "UA",
-                    "United Arab Emirates (the)": "AE",
-                    "United Kingdom of Great Britain and Northern Ireland (the)": "GB",
+                    "UAE": "AE",
+                    "UK": "GB",
                     "United States Minor Outlying Islands (the)": "UM",
-                    "United States of America (the)": "US",
+                    "USA": "US",
                     "Uruguay": "UY",
                     "Uzbekistan": "UZ",
                     "Vanuatu": "VU",
-                    "Venezuela (Bolivarian Republic of)": "VE",
+                    "Venezuela": "VE",
                     "Viet Nam": "VN",
                     "Virgin Islands (British)": "VG",
                     "Virgin Islands, (U.S.)": "VI",
@@ -307,6 +315,8 @@ country_codes = {
                     "Zimbabwe": "ZW",
                     "Åland Islands": "AX",
 }
+
+country_codes = {val: key for key, val in country_codes.items()}
 
 
 def get_psy(df):
@@ -324,7 +334,7 @@ def get_psy(df):
     return psy
 
 
-def main():
+def psy_density():
     df = pd.read_csv("/home/jdw/garageofcode/data/kaggle/big5/big5.csv", delimiter="\t", nrows=1000000)
     df_se = df[df["country"] == "PE"]
 
@@ -357,7 +367,64 @@ def main():
     #plt.show()
 
 
+def top5():
+    df = pd.read_csv("/home/jdw/garageofcode/data/kaggle/big5/big5.csv", delimiter="\t", nrows=100000)
+    cc2psy = []
+    
+    for cc, df_cc in df.groupby("country"):
+        if len(df_cc) < 100:
+            continue
+    
+        psy_cc = get_psy(df_cc).mean()
+        psy_cc["country"] = country_codes.get(cc, cc)[:20]
+
+        cc2psy.append(psy_cc)
+        
+    cc2psy = pd.DataFrame(cc2psy)
+    
+    '''
+    met = "OPN"
+    print(cc2psy.sort_values(by=met, ascending=False).iloc[:5])
+    print("...")
+    print(cc2psy.sort_values(by=met, ascending=False).iloc[-5:])
+    '''
+
+    # ok, make the map
+    feat = "OPN"
+
+    shapefile = "/home/jdw/garageofcode/data/ne_10m_admin_0_countries"
+    num_colors = 9
+    title = "worldmap_" + feat
+    fn_img = '/home/jdw/garageofcode/results/kaggle/big5/{}.png'.format(title)
+
+
+
+    mpl.style.use('map')
+    fig = plt.figure(figsize=(22, 12))
+
+    ax = fig.add_subplot(111, axisbg='w', frame_on=False)
+    #fig.suptitle("worldmap", fontsize=30, y=.95)
+
+    m = Basemap(lon_0=0, projection='robin')
+    m.drawmapboundary(color='w')
+
+    m.readshapefile(shapefile, 'units', color='#444444', linewidth=.2)
+    for info, shape in zip(m.units_info, m.units):
+        iso2 = info['ADM0_A2']
+        if iso3 not in df["country"]:
+            color = '#dddddd'
+        else:
+            color = (float(df[df["country"] == iso2][feat]) + 15) / 60
+
+        patches = [Polygon(np.array(shape), True)]
+        pc = PatchCollection(patches)
+        pc.set_facecolor(color)
+        ax.add_collection(pc)
+
+    plt.savefig(imgfile, bbox_inches='tight', pad_inches=.2)
+
+
 
 
 if __name__ == '__main__':
-    main()
+    top5()
