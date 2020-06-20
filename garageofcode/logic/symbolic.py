@@ -1,3 +1,5 @@
+import numpy as np
+
 def get_subexpr(s):
     d = 1
     for i, ch in enumerate(s):
@@ -13,9 +15,13 @@ def get_subexpr(s):
 
 
 def get_token(s):
+    """
+    Unary minus sign is a big bug
+    """
     s = s.strip()
-    if s[0] in ["+", "-", "*", "/", "(", ")"]:
-        return s[0], s[1:]
+    for pat in ["+", "-", "*", "/", "(", ")", "cos(", "sin("]:
+        if s.startswith(pat):
+            return s[:len(pat)], s[len(pat):]
 
     for i, ch in enumerate(s):
         #print("ch:", ch)
@@ -35,6 +41,12 @@ def tokenize(s):
             #print("sub_s:", sub_s)
             #print("s:", s)
             yield parse(sub_s)
+        elif tok == "cos(":
+            sub_s, s = get_subexpr(s)
+            yield Expression("cos", parse(sub_s))
+        elif tok == "sin(":
+            sub_s, s = get_subexpr(s)
+            yield Expression("sin", parse(sub_s))
         elif tok == ")":
             pass
         else:
@@ -161,6 +173,18 @@ class Expression:
                 return self.lhs
             return self
 
+        if self.op == "cos":
+            try:
+                return np.cos(self.lhs)
+            except TypeError:
+                return self
+
+        if self.op == "sin":
+            try:
+                return np.sin(self.lhs)
+            except TypeError:
+                return self
+
 
 def differentiate(expr, x):
     #print(expr)
@@ -205,13 +229,26 @@ def differentiate(expr, x):
                                                 )
                                     )
                           )
+    elif expr.op == "sin":
+        return Expression("*", 
+                          differentiate(expr.lhs, x), 
+                          Expression("cos", expr.lhs)
+                        )
+    elif expr.op == "cos":
+        return Expression("*", 
+                          -1, 
+                          Expression("*", 
+                                     differentiate(expr.lhs, x),
+                                     Expression("sin", expr.lhs)
+                                    )
+                        )
 
 def main():
     #expr = Expression("*", 2, "x")
     #print(expr.simplify())
     #print(differentiate(expr, "x").simplify())
 
-    print(differentiate(parse("asdf2 - 45 / (a + b)"), "a").simplify())
+    print(differentiate(parse("cos(x)*cos(x) + sin(x)*sin(x)"), "x").simplify())
 
 
 
