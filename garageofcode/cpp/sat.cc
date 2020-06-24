@@ -5,22 +5,22 @@
 
 // lit is a var with a sign, denoting whether it's true or false
 
-bool is_empty_clause(CNF_VARS cnf_vars, int clause){
+bool is_empty_clause(CNF_VARS* cnf_vars, int clause){
     for(const auto& lit: clauses[clause]){
-        if(cnf_vars.count(abs(lit))){
+        if(cnf_vars->count(abs(lit))){
             return false;
         }
     }
     return true;
 }
 
-bool assume(CNF_CLAUSES& cnf_clauses, CNF_VARS& cnf_vars, int lit){
+bool assume(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, int lit){
     int var = abs(lit);
-    cnf_vars.erase(var);
+    cnf_vars->erase(var);
     for(const auto& clause: vars[var]){
         if(lit * clause > 0){
-            cnf_clauses.erase(abs(clause));
-            printf("size of cnf_clauses: %d\n", cnf_clauses.size());
+            cnf_clauses->erase(abs(clause));
+            printf("size of cnf_clauses: %d\n", cnf_clauses->size());
         }else{
             if(is_empty_clause(cnf_vars, clause)){
                 return false;
@@ -30,14 +30,14 @@ bool assume(CNF_CLAUSES& cnf_clauses, CNF_VARS& cnf_vars, int lit){
     return true;
 }
 
-void unassume(CNF_CLAUSES& cnf_clauses, CNF_VARS& cnf_vars, int var){
-    cnf_vars.insert(var);
+void unassume(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, int var){
+    cnf_vars->insert(var);
     for(const auto& lit_clause: vars[var]){
-        cnf_clauses.insert(abs(lit_clause));
+        cnf_clauses->insert(abs(lit_clause));
     }
 }
 
-int get_priority(CNF_CLAUSES& cnf_clauses, CNF_VARS& cnf_vars){
+int get_priority(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars){
     /*
     int least_decreased = cnf_clauses.size();
     int best_lit;
@@ -70,14 +70,14 @@ int get_priority(CNF_CLAUSES& cnf_clauses, CNF_VARS& cnf_vars){
     */
 
     // to begin with: just return the first var
-    for(const auto& var: cnf_vars){
+    for(const auto& var: (*cnf_vars)){
         return var;
     }
 }
 
 
-bool solve(CNF_CLAUSES& cnf_clauses, CNF_VARS& cnf_vars, ASSIGNMENT assignment){
-    if(not cnf_clauses.size()){
+bool solve(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, ASSIGNMENT* assignment){
+    if(not cnf_clauses->size()){
         return true;
     }
 
@@ -90,10 +90,10 @@ bool solve(CNF_CLAUSES& cnf_clauses, CNF_VARS& cnf_vars, ASSIGNMENT assignment){
         // either assumption fails right away b.c. clause gets empty
         // or it fails down the line
         if(assume(cnf_clauses, cnf_vars, lit)){
-            printf("size cnf_clauses, post assume: %d\n", cnf_clauses.size());
+            printf("size cnf_clauses, post assume: %d\n", cnf_clauses->size());
             if(solve(cnf_clauses, cnf_vars, assignment)){
                 // assumption worked - walk up
-                assignment[var] = lit;
+                (*assignment)[var] = lit;
                 return true;
             }else{
                 // assumption didn't work, continue
@@ -114,7 +114,7 @@ int main(int argc, char const *argv[])
     ASSIGNMENT assignment;
 
     clauses[1] = {1};
-    //clauses[2] = {1, 4, -5};
+    clauses[2] = {-5};
 
     int var;
     int sgn;
@@ -133,7 +133,7 @@ int main(int argc, char const *argv[])
         cnf_clauses.insert(clause);
     }
 
-    solve(cnf_clauses&, cnf_vars&, assignment);
+    solve(&cnf_clauses, &cnf_vars, &assignment);
     for(const auto& [var, lit]: assignment){
         cout << lit << " ";
     }
