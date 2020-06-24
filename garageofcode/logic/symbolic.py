@@ -92,7 +92,6 @@ def parse(s):
             tokens = tokens[:i-1] + [expr] + tokens[i+2:]
             continue
 
-
     return tokens[0]
 
 
@@ -184,6 +183,21 @@ class Expression:
                 return np.sin(self.lhs)
             except TypeError:
                 return self
+
+    def collect_literals(self):
+        try:
+            self.lhs.collect_literals()
+        except AttributeError:
+            lhs_literals = {1: self.lhs}
+
+        try:
+            self.rhs.collect_literals()
+        except AttributeError:
+            rhs_literals = {1: self.rhs}
+
+        self.literals = {}
+        if self.op == "+":
+            pass
 
 
 def differentiate(expr, x):
