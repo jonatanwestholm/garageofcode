@@ -1,9 +1,9 @@
-from common.utils import flatten_simple as flatten
-from common.utils import dbg
-
 from pysat.solvers import Solver
 from pysat.card import CardEnc, EncType, ITotalizer
 from pysat.formula import CNF
+
+from garageofcode.common.utils import flatten_simple as flatten
+from garageofcode.common.utils import dbg
 
 class SugarRush(Solver):
     """
