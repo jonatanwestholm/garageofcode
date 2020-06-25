@@ -33,7 +33,7 @@ def enumeration_test(solver, variables):
     #[print(lits) for lits in sorted(unsatisfying_assignments)]
 
 def langford_test(n):
-    with SugarRush() as solver:
+    with SugarRush("cadical") as solver:
         X = langford(solver, n)
 
         print("n:", n)
@@ -43,6 +43,9 @@ def langford_test(n):
         print("Satisfiable:", satisfiable)
         if not satisfiable:
             return
+        
+        model = solver.get_model()
+        print(model)
 
         print_langford_solution(solver, X)
 
