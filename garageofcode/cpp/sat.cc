@@ -123,6 +123,12 @@ int get_priority(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars){
     int most_satisfied = 0;
     int best_lit;
     int pos_satisfying, neg_satisfying;
+
+    best_lit = get_trivial(cnf_clauses, cnf_vars);
+    if(best_lit){
+        return best_lit;
+    }
+
     for(const auto& var: *cnf_vars){
         pos_satisfying = 0;
         neg_satisfying = 0;
@@ -170,7 +176,7 @@ int get_trivial(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars){
 }
 
 
-bool solve(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, ASSIGNMENT* assignment){
+bool solve_recursive(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, ASSIGNMENT* assignment){
     CALLS_TO_SOLVE++;
     if(CALLS_TO_SOLVE % 10000 == 0){
         printf("calls to solve: %d\n", CALLS_TO_SOLVE);
@@ -181,10 +187,11 @@ bool solve(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, ASSIGNMENT* assignment)
 
     int best_lit, lit, var;
 
-    best_lit = get_trivial(cnf_clauses, cnf_vars); // check for trivial assignments
-    if(not best_lit){
-        best_lit = get_priority(cnf_clauses, cnf_vars);
-    }
+    //best_lit = get_trivial(cnf_clauses, cnf_vars); // check for trivial assignments
+    //if(not best_lit){
+    //    best_lit = get_priority(cnf_clauses, cnf_vars);
+    //}
+    best_lit = get_priority(cnf_clauses, cnf_vars);
     DEBUG("best_lit: %d\n", best_lit);
     for(const auto& lit: {best_lit, -best_lit}){
         DEBUG("lit: %d\n", lit);
@@ -193,7 +200,7 @@ bool solve(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, ASSIGNMENT* assignment)
         // or it fails down the line
         if(assume(cnf_clauses, cnf_vars, assignment, lit)){
             DEBUG("size cnf_clauses, post assume: %lu\n", cnf_clauses->size());
-            if(solve(cnf_clauses, cnf_vars, assignment)){
+            if(solve_recursive(cnf_clauses, cnf_vars, assignment)){
                 // assumption worked - walk up
                 return true;
             }else{
@@ -206,6 +213,31 @@ bool solve(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, ASSIGNMENT* assignment)
     // then the cnf is not satisfiable
     return false;
 }
+
+bool solve(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, ASSIGNMENT* assignment){
+    VECTOR lit_stack;
+    VECTOR m_stack;
+
+    do{
+        if(cnf_clauses->size() == 0){
+            return true;
+        }
+
+
+
+        int best_lit, lit, var;
+        best_lit = get_priority(cnf_clauses, cnf_vars);
+        if(assume(cnf_clauses, cnf_vars, assignment, lit)){
+            
+        }
+        unassume(cnf_clauses, cnf_vars, assignment, lit);
+        
+
+
+    }while(lit_stack.size() > 0);
+
+}
+
 
 vector<std::string> split(std::string s, char delimiter){
     vector<std::string> v;
