@@ -1,9 +1,25 @@
+#include <cstdlib>
 #include <iostream>
-#include <math.h>
+#include <fstream>
+#include <cmath>
+#include <string>
+#include <chrono>
 
 #include "sat.h"
 
 // lit is a var with a sign, denoting whether it's true or false
+
+//#define DEBUG printf
+#define DEBUG //
+int CALLS_TO_SOLVE = 0;
+
+int nof_clauses(){
+    return clauses.size();
+}
+
+int nof_vars(){
+    return vars.size();
+}
 
 bool is_empty_clause(CNF_VARS* cnf_vars, int clause){
     for(const auto& lit: clauses[clause]){
@@ -25,7 +41,7 @@ bool assume(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, ASSIGNMENT* assignment
         }
         if(lit * lit_clause > 0){
             cnf_clauses->erase(clause);
-            printf("size of cnf_clauses: %lu\n", cnf_clauses->size());
+            DEBUG("size of cnf_clauses: %lu\n", cnf_clauses->size());
         }else{
             if(is_empty_clause(cnf_vars, clause)){
                 return false;
@@ -59,61 +75,124 @@ void unassume(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, ASSIGNMENT* assignme
     }
 }
 
+/*
 int get_priority(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars){
-    /*
-    int least_decreased = cnf_clauses.size();
+    for(const auto& var: (*cnf_vars)){
+        return var;
+    }
+}
+
+int get_priority(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars){
+    // pick most decreasing first
+    // this tactic sucks
+    int num_decreased;
+    int most_decreased = 0;
     int best_lit;
-    int pos_count, neg_count;
-    for(const auto& var: cnf_vars){
-        pos_count = 0;
-        neg_count = 0;
+    int pos_decreased, neg_decreased;
+    for(const auto& var: *cnf_vars){
+        pos_decreased = 0;
+        neg_decreased = 0;
         for(const auto& lit_clause: vars[var]){
-            if(cnf_clauses.count(abs(lit_clause))){
-                if(lit_clause < 0){
-                    neg_count++;
+            if(cnf_clauses->count(abs(lit_clause))){
+                if(lit_clause > 0){
+                    neg_decreased++;
                 }else{
-                    pos_count++;
+                    pos_decreased++;
                 }
             }
         }
-        num_decreased = min(pos_count, neg_count);
-        if(num_decreased < least_decreased){
-            least_decreased = num_decreased;
-            if(pos_count > neg_count){
+        num_decreased = max(pos_decreased, neg_decreased);
+        if(num_decreased > most_decreased){
+            most_decreased = num_decreased;
+            if(pos_decreased > neg_decreased){
                 best_lit = var;
             }else{
                 best_lit = -var;
             }
         }
     }
-    VECTOR prio;
-    prio.push_back(best_lit);
-    prio.push_back(-best_lit);
-    */
+    return best_lit;
+}
+*/
 
-    // to begin with: just return the first var
-    for(const auto& var: (*cnf_vars)){
-        return var;
+/*
+*/
+int get_priority(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars){
+    // pick most satisfying first
+    int num_satisfied;
+    int most_satisfied = 0;
+    int best_lit;
+    int pos_satisfying, neg_satisfying;
+    for(const auto& var: *cnf_vars){
+        pos_satisfying = 0;
+        neg_satisfying = 0;
+        for(const auto& lit_clause: vars[var]){
+            if(cnf_clauses->count(abs(lit_clause))){
+                if(lit_clause < 0){
+                    neg_satisfying++;
+                }else{
+                    pos_satisfying++;
+                }
+            }
+        }
+        num_satisfied = max(pos_satisfying, neg_satisfying);
+        if(num_satisfied > most_satisfied){
+            most_satisfied = num_satisfied;
+            if(pos_satisfying > neg_satisfying){
+                best_lit = var;
+            }else{
+                best_lit = -var;
+            }
+        }
     }
+    return best_lit;
+}
+
+int get_trivial(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars){
+    int num_unassigned, lit;
+    for(const auto& var: *cnf_vars){
+        for(const auto& lit_clause: vars[var]){
+            num_unassigned = 0;
+            for(const auto& sister_lit: clauses[abs(lit_clause)]){
+                if(cnf_vars->count(abs(sister_lit))){
+                    num_unassigned++;
+                    lit = sister_lit;
+                }
+            }
+            if(num_unassigned == 1){
+                // we found a clause with a single unassigned variable
+                // - the lit must be assumed
+                return lit;
+            }
+        }
+    }
+    return 0;
 }
 
 
 bool solve(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, ASSIGNMENT* assignment){
+    CALLS_TO_SOLVE++;
+    if(CALLS_TO_SOLVE % 10000 == 0){
+        printf("calls to solve: %d\n", CALLS_TO_SOLVE);
+    }
     if(not cnf_clauses->size()){
         return true;
     }
 
     int best_lit, lit, var;
 
-    best_lit = get_priority(cnf_clauses, cnf_vars);
-    printf("best_lit: %d\n", best_lit);
+    best_lit = get_trivial(cnf_clauses, cnf_vars); // check for trivial assignments
+    if(not best_lit){
+        best_lit = get_priority(cnf_clauses, cnf_vars);
+    }
+    DEBUG("best_lit: %d\n", best_lit);
     for(const auto& lit: {best_lit, -best_lit}){
-        printf("lit: %d\n", lit);
+        DEBUG("lit: %d\n", lit);
         var = abs(lit);
         // either assumption fails right away b.c. clause gets empty
         // or it fails down the line
         if(assume(cnf_clauses, cnf_vars, assignment, lit)){
-            printf("size cnf_clauses, post assume: %lu\n", cnf_clauses->size());
+            DEBUG("size cnf_clauses, post assume: %lu\n", cnf_clauses->size());
             if(solve(cnf_clauses, cnf_vars, assignment)){
                 // assumption worked - walk up
                 return true;
@@ -128,6 +207,43 @@ bool solve(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, ASSIGNMENT* assignment)
     return false;
 }
 
+vector<std::string> split(std::string s, char delimiter){
+    vector<std::string> v;
+    int i;
+
+    while(1){
+        i = s.find(delimiter);
+        if(i < 0){
+            break;
+        }
+        v.push_back(s.substr(0, i));
+        s = s.substr(i+1, s.length());
+    }
+    v.push_back(s);
+    return v;
+}
+
+
+void read_from_file(){
+    ifstream f;
+    f.open("/home/jdw/garageofcode/results/sat/out.cnf");
+
+    std::string line;
+    std::getline(f, line); // skip the header
+
+    int i = 1;
+    while(std::getline(f, line)){
+        set<int> s;
+        vector<std::string> v = split(line, ' ');
+        for(int j=0; j < v.size()-1; j++){
+            s.insert(std::stoi(v[j]));
+        }
+        clauses[i] = s;
+        i++;
+    }
+
+    f.close();
+}
 
 int main(int argc, char const *argv[])
 {
@@ -136,14 +252,20 @@ int main(int argc, char const *argv[])
     ASSIGNMENT assignment;
     bool solved;
 
+    read_from_file();
+    //print_map(clauses);
+    //exit(0);
+
     //clauses[1] = {1, 2};
     //clauses[2] = {-1, -2};
+    /*
     clauses[1] = {1, 2, 3};
     clauses[2] = {1, -2, -3};
     clauses[3] = {-1, 2, -3};
     clauses[4] = {-1, -2, 3};
     clauses[5] = {-1, -2, -3};
     clauses[6] = {3};
+    */
 
     int var;
     int sgn;
@@ -162,12 +284,18 @@ int main(int argc, char const *argv[])
         cnf_clauses.insert(clause);
     }
 
+    auto t0 = std::chrono::high_resolution_clock::now();
     solved = solve(&cnf_clauses, &cnf_vars, &assignment);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    int total_time = (t1 - t0) / std::chrono::milliseconds(1);
+
     printf("solved: %s\n", solved? "TRUE": "FALSE");
     for(const auto& [var, lit]: assignment){
         cout << lit << " ";
     }
     cout << "\n";
+    printf("Total calls to solve: %d\n", CALLS_TO_SOLVE);
+    printf("Total time: %d ms\n", total_time);
 
 }
 
