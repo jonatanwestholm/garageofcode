@@ -231,7 +231,7 @@ bool solve(CNF_CLAUSES* cnf_clauses, CNF_VARS* cnf_vars, ASSIGNMENT* assignment)
             
         }
         unassume(cnf_clauses, cnf_vars, assignment, lit);
-        
+
 
 
     }while(lit_stack.size() > 0);
