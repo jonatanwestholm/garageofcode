@@ -86,7 +86,7 @@ def disjunction_test():
     '''
 
 def main():
-    langford_test(3)
+    langford_test(7)
 
     #negate_test()
 
