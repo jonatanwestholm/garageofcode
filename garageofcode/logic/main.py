@@ -16,7 +16,7 @@ def search(tokens, target, unary_ops, merge_ops):
 
     G = nx.DiGraph()
     heap = Heap()
-    G.add_node(tuple(tokens), visited=False)
+    G.add_node(tuple(tokensf), visited=False)
     heap.push((0, tokens))
     root = tokens
     g_root = tuple(root)
