@@ -5,12 +5,11 @@ from sugarrush.solver import SugarRush
 
 from garageofcode.tools.main import powerset
 
-def equivalent():
+def equivalent(solver, a, b):
     """Given two cnfs a and b (in the same variables),
     determine if they are equivalent,
     or if there is some assignment to the variables,
     such that a is true and b is false, or vice versa
-    """
 
     solver = SugarRush()
 
@@ -18,6 +17,14 @@ def equivalent():
     x2 = solver.var()
     a = [[x1, x2], [x1, -x2]]
     b = [[x1]]
+
+    Problem: auxilliary variables are present in all but 
+      the simplest models.
+    Extended equivalent: take in also set of main lits x,
+      and iterate over all solutions to a, see with 
+      assumptions if they b can be sat with those too,
+      and then do vice versa for solutions to b. 
+    """
 
     # get indicator variables, 
     # ta <=> a(x1, x2, ...)
@@ -173,91 +180,137 @@ def unit_propagation(cnf):
             break
     return cnf
 
-def leq(solver, a, b):
-    tp_1 = None
-    for ap, bp in zip(a, b):
-        # if tp becomes true anywhere,
-        #  then this will propagate to all subsequent clauses,
-        #  and pop them
-        if tp_1 is None:
-            already_smaller = [[-ap], [bp]]
-        else:
-            already_smaller = [[tp_1, -ap], [tp_1, bp]]
-        tp, tp_bind = solver.indicator(already_smaller)
-        solver.add(tp_bind)
-        solver.add([tp, -ap, bp]) # tp OR (ap <= bp) == (tp OR !ap OR bp)
-        tp_1 = tp
-
 def to_binary(N, n, a):
     n = n % 2**N
     b = "{1:0{0:d}b}".format(N, n)
     return [ap if bp == '1' else -ap for bp, ap in zip(b, a)]    
 
-def plus(solver, a, b, z):
-    """Constrains 
-    z = a + b
-    It is assumed that
-    len(a) == len(b) == len(z)
-    Note that z can overflow
+def all_equal(a):
+    """Constrains all elements
+    of a to be either 0 or 1
     """
 
-    carry = None
-    for ap, bp, zp in zip(a[::-1], b[::-1], z[::-1]):
-        if carry is None:
-            t, t_bind = solver.parity([ap, bp])
-            carry = solver.var()
-            solver.add([[-carry, ap], [-carry, bp], [carry, -ap, -bp]]) # carry == ap AND bp
-        else:
-            t, t_bind = solver.parity([ap, bp, carry])
-            carry_1 = solver.var()
-            solver.add([[carry_1, -ap, -bp], [carry_1, -ap, -carry], [carry_1, -bp, -carry], 
-                        [-carry_1, ap,  bp], [-carry_1, ap,  carry], [-carry_1, bp,  carry]]) 
-            # carry_1 == (ap + bp + carry >= 2)
-            carry = carry_1
-        solver.add(t_bind)
-        solver.add([[zp, -t], [-zp, t]]) # zp == t
+    cnf = []
+    for a0, a1 in zip(a, a[1:]):
+        cnf.extend([[a0, -a1], [-a0, a1]])
+    return cnf
+
+def element(solver, v, a, z):
+    """Constrain
+    
+    z = v[a]
+
+    where a is uintK,
+    z is uintN,
+    v is a vector of at most 2**K uintN
+    """
+
+    assert len(v) <= 2**len(a)
+    assert all([len(vi) == len(z) for vi in v])
+
+    K = len(a)
+    def a_eq_i(a, i):
+        b = "{1:0{0:d}b}".format(K, i)
+        return [[ai] if bi == '1' else [-ai] for ai, bi in zip(a, b)]
+
+    cnf = []
+    for i, vi in enumerate(v):
+        a_eq_i_clauses = a_eq_i(a, i)
+        ti, ti_bind = solver.indicator(a_eq_i_clauses)
+        cnf.extend(ti_bind)
+        for vij, zj in zip(vi, z):
+            # if ti is true then vij == zj
+            cnf.extend([[-ti, -vij, zj], [-ti, vij, -zj]])
+    return cnf
 
 def main():
     solver = SugarRush()
 
+    N = 8
+    K = 4
+
+    a = [solver.var() for _ in range(K)]
+    z = [solver.var() for _ in range(N)]
+    v = [[solver.var() for _ in range(N)] for _ in range(2**K)]
+
+    v0_assumptions = to_binary(N, 2, v[0])
+    for v0, v1 in zip(v, v[1:]):
+        solver.add(solver.plus(v0, 3, v1))
+
+    solver.add(solver.element(v, a, z))
+
+    a_int = 3
+    a_assumptions = to_binary(K, a_int, a)
+
+    solver.solve(assumptions= v0_assumptions + a_assumptions)
+
+    z_solve = [(solver.solution_value(zp) > 0)*1 for zp in z]
+    z_int = sum([2**i * zp for i, zp in enumerate(z_solve[::-1])])
+
+    solver.print_stats()
+
+    print("v[{0:d}] = {1:d}".format(a_int, z_int))
+
     '''
+    K = 2
+    N = 2
+    a = [solver.var() for _ in range(K)]
+    z = [solver.var() for _ in range(N)]
+    v = [[solver.var() for _ in range(N)] for _ in range(2**K)]
+    v_assumptions = [-v[0][0], -v[0][1],
+                     -v[1][0],  v[1][1],
+                      v[2][0], -v[2][1],
+                      v[3][0],  v[3][1]]
+
+    cnf = element(solver, v, a, z)
+    solver.add(cnf)
+
+    a_assumptions = [a[0], a[1]]
+    solver.solve(assumptions= v_assumptions + a_assumptions)
+
+    z_solve = [(solver.solution_value(zp) > 0)*1 for zp in z]
+    z_int = sum([2**i * zp for i, zp in enumerate(z_solve[::-1])])
+
+    print("z =", z_int)
+
     x1 = solver.var()
     x2 = solver.var()
 
     cnf = [[x1, x2], [-x1, -x2]]
 
-    x = [solver.var() for _ in range(3)]
-    cnf = solver.atmost(x, 1, encoding=1)
+    x = [solver.var() for _ in range(10)]
+    cnf = all_equal(x)
 
     print(cnf)
-    ext = cnf + [[3]]
-    u = unit_propagation(ext)
-    print(u)
+    ext = cnf + [[-x[5]]]
+    print(unit_propagation(ext))
     '''
 
+    '''
     N = 8
     a = [solver.var() for _ in range(N)]
-    b = [solver.var() for _ in range(N)]
+    # b = [solver.var() for _ in range(N)]
     z = [solver.var() for _ in range(N)]
 
-
     a_assumptions = to_binary(N, 2, a)
-    b_assumptions = to_binary(N, 1, b)
+    # b_assumptions = to_binary(N, 1, b)
 
-    plus(solver, a, z, b)
-    #leq(solver, a, b)
+    cnf = solver.plus(a, 12, z)
+    #solver.leq(a, b)
+    solver.add(cnf)
 
-    satisfiable = solver.solve(assumptions = a_assumptions + b_assumptions)
+    satisfiable = solver.solve(assumptions = a_assumptions)
     if satisfiable:
         z_solve = [(solver.solution_value(zp) > 0)*1 for zp in z]
         z_int = sum([2**i * zp for i, zp in enumerate(z_solve[::-1])])
 
-        print("b - a =", z_int)
+        print("a + b =", z_int)
     else:
         print("not satisfiable")
+    '''
 
     '''
-    leq(solver, a, b)
+    solver.leq(a, b)
 
     for i in range(2**N - 1):
         a_assumptions = to_binary(N, i, a)
