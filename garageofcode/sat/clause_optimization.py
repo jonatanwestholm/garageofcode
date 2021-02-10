@@ -195,41 +195,14 @@ def all_equal(a):
         cnf.extend([[a0, -a1], [-a0, a1]])
     return cnf
 
-def element(solver, v, a, z):
-    """Constrain
-    
-    z = v[a]
-
-    where a is uintK,
-    z is uintN,
-    v is a vector of at most 2**K uintN
-    """
-
-    assert len(v) <= 2**len(a)
-    assert all([len(vi) == len(z) for vi in v])
-
-    K = len(a)
-    def a_eq_i(a, i):
-        b = "{1:0{0:d}b}".format(K, i)
-        return [[ai] if bi == '1' else [-ai] for ai, bi in zip(a, b)]
-
-    cnf = []
-    for i, vi in enumerate(v):
-        a_eq_i_clauses = a_eq_i(a, i)
-        ti, ti_bind = solver.indicator(a_eq_i_clauses)
-        cnf.extend(ti_bind)
-        for vij, zj in zip(vi, z):
-            # if ti is true then vij == zj
-            cnf.extend([[-ti, -vij, zj], [-ti, vij, -zj]])
-    return cnf
-
 def main():
     solver = SugarRush()
 
     N = 8
     K = 4
 
-    a = [solver.var() for _ in range(K)]
+    #a = [solver.var() for _ in range(K)]
+    a = 100
     z = [solver.var() for _ in range(N)]
     v = [[solver.var() for _ in range(N)] for _ in range(2**K)]
 
@@ -239,17 +212,18 @@ def main():
 
     solver.add(solver.element(v, a, z))
 
-    a_int = 3
-    a_assumptions = to_binary(K, a_int, a)
+    #a_int = 3
+    #a_assumptions = to_binary(K, a_int, a)
 
-    solver.solve(assumptions= v0_assumptions + a_assumptions)
+    #solver.solve(assumptions= v0_assumptions + a_assumptions)
+    solver.solve(assumptions = v0_assumptions)
 
     z_solve = [(solver.solution_value(zp) > 0)*1 for zp in z]
     z_int = sum([2**i * zp for i, zp in enumerate(z_solve[::-1])])
 
     solver.print_stats()
 
-    print("v[{0:d}] = {1:d}".format(a_int, z_int))
+    print("v[{0:d}] = {1:d}".format(a, z_int))
 
     '''
     K = 2
