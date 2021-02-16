@@ -4,7 +4,7 @@ from sugarrush.solver import SugarRush
 
 from garageofcode.common.utils import flatten_simple
 
-N = 4
+N = 3
 
 def get_state(solver):
     # one-hot encoding
@@ -41,11 +41,13 @@ def get_transition(solver, X0, X1):
             hot = X0[i][j][0]
             # if the empty square is on (i, j) (is 'hot'), 
             # then one of the adjacent swaps must be used
+            cnf.append([-hot] + ij2swaps[(i, j)])
+
+            # the non-adjacent swaps must be 0
             for swap in swap2ijs:
                 if swap not in ij2swaps[(i, j)]:
                     cnf.append([-hot, -swap])
 
-            cnf.append([-hot] + ij2swaps[(i, j)])
 
     for swap, ijs in swap2ijs.items():
         # if a swap is used, one of the adjacent
@@ -93,7 +95,7 @@ def print_solve(solver, Xr):
         print([x.index(1) for x in row])
 
 def main():
-    for r in range(3, 24):
+    for r in range(4, 24, 2):
         solver = SugarRush()
 
         #r = 5 # note: r is number of steps i.e. num states minus one
@@ -121,8 +123,6 @@ def main():
             return
         else:
             print(r, "not satisfiable")
-
-
 
 if __name__ == '__main__':
     main()
