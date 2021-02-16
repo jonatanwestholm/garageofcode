@@ -1,9 +1,10 @@
-from collections import defaultdict
-from itertools import chain, combinations
+#from collections import defaultdict
+#from itertools import chain, combinations
 
 from sugarrush.solver import SugarRush
 
 from garageofcode.tools.main import powerset
+from garageofcode.common.utils import flatten_simple
 
 def equivalent(solver, a, b):
     """Given two cnfs a and b (in the same variables),
@@ -180,6 +181,40 @@ def unit_propagation(cnf):
             break
     return cnf
 
+def purelit_propagation(cnf, core):
+    while True:
+        pure_lits = []
+        lits = set(flatten_simple(cnf))
+        for lit in lits:
+            if -lit not in lits and abs(lit) not in core:
+                pure_lits.append(lit)
+
+        keep_cnf = []
+        for clause in cnf:
+            for lit in pure_lits:
+                if lit in clause:
+                    break
+            else:
+                keep_cnf.append(clause)
+
+        cnf = keep_cnf
+
+        if not len(pure_lits) or not len(cnf):
+            break
+    return cnf
+
+def unary_propagation(cnf, core):
+    #print("original:", cnf)
+    while True:
+        orig_len = len(cnf)
+        cnf = unit_propagation(cnf)
+        #print("after unit:", cnf)
+        cnf = purelit_propagation(cnf, core)
+        #print("after pure:", cnf)
+        if orig_len == len(cnf):
+            break
+    return cnf
+
 def to_binary(N, n, a):
     n = n % 2**N
     b = "{1:0{0:d}b}".format(N, n)
@@ -195,8 +230,76 @@ def all_equal(a):
         cnf.extend([[a0, -a1], [-a0, a1]])
     return cnf
 
+def mergesort(solver, X):
+    if len(X) == 1:
+        return X, []
+    mid = len(X) // 2
+    x1, cnf1 = mergesort(solver, X[:mid])
+    x2, cnf2 = mergesort(solver, X[mid:])
+    z , cnfz  = merge(solver, x1, x2)
+    return z, cnf1 + cnf2 + cnfz
+
+def merge(solver, X, Y):
+    N = len(X)
+    M = len(Y)
+    W = [[None] + Y] + \
+        [[x] + [solver.var() for _ in range(M)] for _, x in enumerate(X)]
+
+    cnf = []
+    for i in range(1, N+1):
+        for j in range(1, M+1):
+            cnf.extend([[-W[i-1][j], -W[i][j-1], W[i][j]], 
+                        [-W[i][j], W[i-1][j]],
+                        [-W[i][j], W[i][j-1]]
+                       ])
+    Z = []
+    for k in range(1, N+M+1):
+        ws = [W[i][k-i] for i in range(k+1) if (0 <= k-i <= M) and (0 <= i <= N)]
+        #print(k, ws)
+        z, z_bind = solver.indicate_disjunction(ws)
+        #print(z, z_bind)
+        cnf.extend(z_bind)
+        Z.append(z)
+    return Z, cnf
+
 def main():
     solver = SugarRush()
+
+    N = 16
+    X = [solver.var() for _ in range(N)]
+    Z, cnf = mergesort(solver, X)
+    print(len(cnf))
+    solver.add(cnf)
+
+    #solver.solve(assumptions=[-X[0], -X[1], X[2], -X[3]])
+    #print([solver.solution_value(z) for z in Z])
+
+    # how many clauses would it take to do it the naive way?
+    negX = [-x for x in X]
+    print(sum([len(solver.atmost(negX, r)) for r in range(N)]))
+
+
+    '''
+    # testing epistemic efficiency - do 
+    #  assumptions propagate to the new 
+    #  full state of knowledge?
+
+    #c = [[1, 2], [-2, 3], [-3, 2]]
+    #print(purelit_propagation(c))
+
+
+    r = 4
+    N = 10
+    X = [solver.var() for _ in range(N)]
+    #for enc in [1]:
+    for enc in [1, 2, 3, 6, 8]:
+        original = [len(unary_propagation(solver.equals(X[:n], r, encoding=enc), core=X[:n])) for n in range(r+1, N)]
+        reduced = [len(unary_propagation(solver.equals(X[:n+1], r, encoding=enc) + [[-1]], core=X[:n+1])) for n in range(r+1, N)]
+        print("enc:", enc)
+        print("original:", original)
+        print("reduced: ", reduced)
+        print()
+
 
     N = 8
     K = 4
@@ -225,7 +328,6 @@ def main():
 
     print("v[{0:d}] = {1:d}".format(a, z_int))
 
-    '''
     K = 2
     N = 2
     a = [solver.var() for _ in range(K)]
