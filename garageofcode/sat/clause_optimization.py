@@ -262,11 +262,57 @@ def merge(solver, X, Y):
         Z.append(z)
     return Z, cnf
 
+
+def vsum(solver, X):
+    if len(X) == 1:
+        return X, []
+
+    if len(X) == 2:
+        x0, x1 = X
+        t0, cnf0 = solver.xor(x0, x1)
+        t1, cnf1 = solver.indicate_conjunction([x0, x1])
+        return [t1, t0], cnf0 + cnf1
+
+    mid = len(X) // 2
+    t0, cnf0 = vsum(solver, X[:mid])
+    t1, cnf1 = vsum(solver, X[mid:])
+    n = max(len(t0), len(t1)) + 1
+    pad0 = [solver.var() for _ in range(len(t1) + 1 - len(t0))]
+    pad1 = [solver.var()]
+    t0 = pad0 + t0
+    t1 = pad1 + t1
+    cnfpad = [[-p] for p in pad0 + pad1]
+    z = [solver.var() for _ in range(n)]
+    cnfz = solver.plus(t0, t1, z)
+    return z, cnf0 + cnf1 + cnfz + cnfpad
+
+
 def main():
     solver = SugarRush()
 
-    N = 16
+    N = 66
     X = [solver.var() for _ in range(N)]
+
+    z, cnf = vsum(solver, X)
+    zlen = len(z)
+    print("zlen:", zlen)
+    solver.add(cnf)
+    solver.add([[zi] for zi in z[2:]])
+    satisfiable = solver.solve()
+    if satisfiable:
+        z_solve = [(solver.solution_value(zp) > 0)*1 for zp in z]
+        print(z_solve)
+        z_int = sum([2**i * zp for i, zp in enumerate(z_solve[::-1])])
+        print("z:", z_int)
+        print([solver.solution_value(x) for x in X])
+    else:
+        print("not satisfiable")
+
+    #tl, cnfl = solver.less(z, [solver.var() for _ in range(zlen)])
+    #print(len(unary_propagation(cnf + cnfl, core=X)))
+
+
+    '''
     Z, cnf = mergesort(solver, X)
     print(len(cnf))
     solver.add(cnf)
@@ -275,11 +321,12 @@ def main():
     #print([solver.solution_value(z) for z in Z])
 
     # how many clauses would it take to do it the naive way?
-    negX = [-x for x in X]
-    print(sum([len(solver.atmost(negX, r)) for r in range(N)]))
+    for enc in [1, 2, 3, 6, 8]:
+        print("enc:", enc)
+        print([len(solver.atmost(X, r, encoding=enc)) for r in range(N)])
+        print()
 
 
-    '''
     # testing epistemic efficiency - do 
     #  assumptions propagate to the new 
     #  full state of knowledge?
