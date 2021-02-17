@@ -290,12 +290,13 @@ def vsum(solver, X):
 def main():
     solver = SugarRush()
 
-    N = 66
+    N = 16
     X = [solver.var() for _ in range(N)]
 
     z, cnf = vsum(solver, X)
     zlen = len(z)
     print("zlen:", zlen)
+    '''
     solver.add(cnf)
     solver.add([[zi] for zi in z[2:]])
     satisfiable = solver.solve()
@@ -307,12 +308,16 @@ def main():
         print([solver.solution_value(x) for x in X])
     else:
         print("not satisfiable")
+    '''
 
-    #tl, cnfl = solver.less(z, [solver.var() for _ in range(zlen)])
-    #print(len(unary_propagation(cnf + cnfl, core=X)))
+    for r in range(64):
+        tl, cnfl = solver.less(z, r)
+        print(r, len(unary_propagation(cnf + cnfl + [[-tl]], core=X)))
 
+        # for r > N it should be empty!
 
     '''
+
     Z, cnf = mergesort(solver, X)
     print(len(cnf))
     solver.add(cnf)
