@@ -1,0 +1,3 @@
+output ["q = array1d(1..4, ",show(q),");\n"];
+int: n = 4;
+array [1..n] of int: q;
